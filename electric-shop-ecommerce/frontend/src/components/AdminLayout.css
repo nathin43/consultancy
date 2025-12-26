@@ -1,0 +1,158 @@
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--light-color);
+}
+
+/* Sidebar */
+.admin-sidebar {
+  width: 260px;
+  background: var(--dark-color);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  padding: 24px 20px;
+  border-bottom: 1px solid #374151;
+}
+
+.sidebar-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--primary-color);
+}
+
+.sidebar-header p {
+  font-size: 12px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.sidebar-menu {
+  flex: 1;
+  padding: 20px 0;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  color: #d1d5db;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.menu-item:hover {
+  background: #374151;
+  color: white;
+}
+
+.menu-item.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.menu-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: white;
+}
+
+.menu-icon {
+  font-size: 20px;
+  margin-right: 12px;
+}
+
+.menu-label {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.sidebar-footer {
+  padding: 20px;
+  border-top: 1px solid #374151;
+}
+
+.admin-info {
+  margin-bottom: 12px;
+}
+
+.admin-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.admin-role {
+  font-size: 12px;
+  color: #9ca3af;
+  text-transform: uppercase;
+}
+
+.sidebar-footer .btn {
+  width: 100%;
+}
+
+/* Main Content */
+.admin-content {
+  flex: 1;
+  margin-left: 260px;
+  min-height: 100vh;
+}
+
+.admin-header {
+  background: white;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.view-site-link {
+  color: var(--primary-color);
+  font-weight: 500;
+  transition: opacity 0.3s;
+}
+
+.view-site-link:hover {
+  opacity: 0.7;
+}
+
+.admin-main {
+  padding: 32px;
+}
+
+@media (max-width: 768px) {
+  .admin-sidebar {
+    width: 100%;
+    position: static;
+    height: auto;
+  }
+
+  .admin-content {
+    margin-left: 0;
+  }
+
+  .admin-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+}
