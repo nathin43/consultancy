@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import LightbulbIcon from './LightbulbIcon';
 import './Footer.css';
 
 /**
@@ -11,7 +12,10 @@ const Footer = () => {
       <div className="container">
         <div className="footer-content">
           <div className="footer-section">
-            <h3>⚡ Mani Electrical</h3>
+            <h3>
+              <LightbulbIcon size={28} color="#ffffff" />
+              Mani Electrical
+            </h3>
             <p>Your trusted online store for all electrical appliances and electronics.</p>
           </div>
 

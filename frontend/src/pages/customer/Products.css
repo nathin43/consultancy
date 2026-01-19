@@ -1,7 +1,7 @@
 .products-page {
   padding: 40px 0;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
 }
 
 .page-title {
@@ -26,16 +26,17 @@
   flex: 1;
   padding: 14px 18px;
   font-size: 15px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #e2e8f0;
   border-radius: 8px;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  color: #1e293b;
   transition: all 0.3s ease;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #00d4ff;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
 }
 
 .search-form .btn {

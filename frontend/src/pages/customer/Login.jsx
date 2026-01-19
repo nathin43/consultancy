@@ -6,6 +6,8 @@ import Footer from '../../components/Footer';
 import { AuthContext } from '../../context/AuthContext';
 import './Login.css';
 
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
 /**
  * Customer Login Page Component
  */
@@ -42,24 +44,46 @@ const Login = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     setError('');
     setLoading(true);
+    try {
+      const result = await loginWithGoogle(credentialResponse.credential);
 
-    const result = await loginWithGoogle(credentialResponse.credential);
-
-    if (result.success) {
-      navigate('/');
-    } else {
-      setError(result.message);
+      if (result.success) {
+        navigate('/');
+      } else {
+        setError(result.message || 'Google login failed');
+      }
+    } catch (err) {
+      setError('An error occurred during Google login');
+      console.error('Google login error:', err);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleGoogleError = () => {
     setError('Google login failed. Please try again.');
   };
 
+  if (!googleClientId || googleClientId === 'dummy') {
+    return (
+      <>
+        <Navbar />
+        <div className="auth-page">
+          <div className="container">
+            <div className="auth-card">
+              <div className="alert alert-danger">
+                Google Client ID is not configured. Please set VITE_GOOGLE_CLIENT_ID in your .env file.
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
   return (
-    <>
+    <GoogleOAuthProvider clientId={googleClientId}>
       <Navbar />
 
       <div className="auth-page">
@@ -105,28 +129,16 @@ const Login = () => {
               </button>
             </form>
 
-            <div style={{ textAlign: 'center', margin: '20px 0' }}>
-              <p style={{ color: '#666', marginBottom: '15px' }}>or continue with</p>
+            <div style={{ textAlign: 'center', margin: '24px 0', padding: '20px 0', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
+              <p style={{ color: '#5f6368', fontSize: '14px', fontWeight: '500', marginBottom: '16px' }}>or continue with</p>
               <div style={{ display: 'flex', justifyContent: 'center' }}>
-                {import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_ID !== 'your-google-client-id-here' ? (
-                  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-                    <GoogleLogin
-                      onSuccess={handleGoogleSuccess}
-                      onError={handleGoogleError}
-                      theme="outline"
-                      size="large"
-                    />
-                  </GoogleOAuthProvider>
-                ) : (
-                  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy'}>
-                    <GoogleLogin
-                      onSuccess={handleGoogleSuccess}
-                      onError={handleGoogleError}
-                      theme="outline"
-                      size="large"
-                    />
-                  </GoogleOAuthProvider>
-                )}
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  useOneTap={false}
+                  auto_select={false}
+                  itp_supported={false}
+                />
               </div>
             </div>
 
@@ -145,7 +157,7 @@ const Login = () => {
       </div>
 
       <Footer />
-    </>
+    </GoogleOAuthProvider>
   );
 };
 

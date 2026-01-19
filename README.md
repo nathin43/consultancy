@@ -411,6 +411,8 @@ For issues and questions, please create an issue in the repository.
 ---
 
 **Happy Coding! 🚀**
-#   c o n s  
- #   s e m 6  
+#   c o n s 
+ 
+ #   s e m 6 
+ 
  

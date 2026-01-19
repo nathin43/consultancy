@@ -2,6 +2,7 @@ import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import UPIPayment from '../../components/UPIPayment';
 import { CartContext } from '../../context/CartContext';
 import { AuthContext } from '../../context/AuthContext';
 import API from '../../services/api';
@@ -36,6 +37,7 @@ const Checkout = () => {
     debitCvv: '',
     // UPI fields
     upiId: '',
+    upiProvider: 'gpay',
     // Net Banking fields
     bankName: '',
     accountNumber: '',
@@ -114,7 +116,7 @@ const Checkout = () => {
           setLoading(false);
           return;
         }
-      } else if (formData.paymentMethod === 'UPI to UPI') {
+      } else if (formData.paymentMethod === 'UPI') {
         if (!formData.upiId) {
           setError('Please enter UPI ID');
           setLoading(false);
@@ -159,8 +161,9 @@ const Checkout = () => {
             cardNumber: formData.debitCardNumber.slice(-4),
             expiryDate: formData.debitExpiryDate
           } : null,
-          upi: formData.paymentMethod === 'UPI to UPI' ? {
-            upiId: formData.upiId
+          upi: formData.paymentMethod === 'UPI' ? {
+            upiId: formData.upiId,
+            provider: formData.upiProvider
           } : null,
           netBanking: formData.paymentMethod === 'Net Banking' ? {
             bankName: formData.bankName,
@@ -275,7 +278,7 @@ const Checkout = () => {
                   <h2>Payment Method</h2>
                   
                   <div className="payment-methods">
-                    {['Cash on Delivery', 'Credit Card', 'Debit Card', 'UPI to UPI', 'Net Banking'].map(method => (
+                    {['Cash on Delivery', 'Credit Card', 'Debit Card', 'UPI', 'Net Banking'].map(method => (
                       <label key={method} className="payment-option">
                         <input
                           type="radio"
@@ -401,23 +404,15 @@ const Checkout = () => {
                     </div>
                   )}
 
-                  {/* UPI to UPI Details */}
-                  {formData.paymentMethod === 'UPI to UPI' && (
+                  {/* UPI Payment Methods */}
+                  {formData.paymentMethod === 'UPI' && (
                     <div className="payment-details">
-                      <h3>🔗 UPI to UPI Transfer</h3>
-                      <p className="payment-info">Transfer payment directly using your UPI app (Google Pay, PhonePe, Paytm, etc.)</p>
-                      <div className="form-group">
-                        <label>Your UPI ID *</label>
-                        <input
-                          type="text"
-                          name="upiId"
-                          placeholder="yourname@upi"
-                          value={formData.upiId}
-                          onChange={handleChange}
-                          required
-                        />
-                        <small>Enter your UPI ID to receive refunds if needed</small>
-                      </div>
+                      <UPIPayment 
+                        upiId={formData.upiId}
+                        onUpiIdChange={(value) => setFormData({ ...formData, upiId: value })}
+                        selectedUpiProvider={formData.upiProvider}
+                        onProviderChange={(provider) => setFormData({ ...formData, upiProvider: provider })}
+                      />
                     </div>
                   )}
 

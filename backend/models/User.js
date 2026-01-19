@@ -28,6 +28,20 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please provide a phone number']
   },
+  profileImage: {
+    type: String,
+    default: null
+  },
+  googleId: {
+    type: String,
+    default: null,
+    sparse: true
+  },
+  loginType: {
+    type: String,
+    enum: ['email', 'google'],
+    default: 'email'
+  },
   address: {
     street: String,
     city: String,
@@ -53,6 +67,17 @@ const userSchema = new mongoose.Schema({
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
+  // Check for duplicate googleId if it exists
+  if (this.googleId) {
+    const existingUser = await mongoose.model('User').findOne({
+      googleId: this.googleId,
+      _id: { $ne: this._id }
+    });
+    if (existingUser) {
+      throw new Error('User with this Google ID already exists');
+    }
+  }
+
   if (!this.isModified('password')) {
     return next();
   }

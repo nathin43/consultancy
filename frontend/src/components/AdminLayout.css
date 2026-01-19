@@ -1,31 +1,33 @@
 .admin-layout {
   display: flex;
   min-height: 100vh;
-  background: var(--light-color);
+  background: #f8fafc;
 }
 
 /* Sidebar */
 .admin-sidebar {
   width: 260px;
-  background: var(--dark-color);
-  color: white;
+  background: rgba(255, 255, 255, 0.98);
+  color: #1e293b;
   display: flex;
   flex-direction: column;
   position: fixed;
   height: 100vh;
   overflow-y: auto;
+  border-right: 1px solid rgba(0, 212, 255, 0.1);
 }
 
 .sidebar-header {
   padding: 24px 20px;
-  border-bottom: 1px solid #374151;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.15);
 }
 
 .sidebar-header h2 {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 4px;
-  color: var(--primary-color);
+  color: #00d4ff;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
 }
 
 .sidebar-header p {
@@ -50,13 +52,14 @@
 }
 
 .menu-item:hover {
-  background: #374151;
+  background: rgba(0, 212, 255, 0.15);
   color: white;
 }
 
 .menu-item.active {
-  background: var(--primary-color);
-  color: white;
+  background: rgba(0, 212, 255, 0.2);
+  color: #00d4ff;
+  box-shadow: inset -4px 0 0 0 #00d4ff;
 }
 
 .menu-item.active::before {

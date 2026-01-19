@@ -28,7 +28,7 @@ exports.googleAuth = async (req, res) => {
     });
 
     const payload = ticket.getPayload();
-    const { email, name, picture } = payload;
+    const { email, name, picture, sub: googleId } = payload;
 
     // Check if user exists
     let user = await User.findOne({ email });
@@ -38,6 +38,9 @@ exports.googleAuth = async (req, res) => {
       user = await User.create({
         name: name || email.split('@')[0],
         email,
+        googleId,
+        profileImage: picture || null,
+        loginType: 'google',
         password: Math.random().toString(36).substring(2, 15), // Random password
         phone: '0000000000', // Default phone since field is required
         address: {
@@ -48,6 +51,12 @@ exports.googleAuth = async (req, res) => {
           country: 'India'
         }
       });
+    } else if (!user.googleId) {
+      // Update existing email user with Google ID if not already set
+      user.googleId = googleId;
+      user.profileImage = picture || user.profileImage;
+      user.loginType = 'google';
+      await user.save();
     }
 
     // Generate token
@@ -62,6 +71,8 @@ exports.googleAuth = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        profileImage: user.profileImage,
+        loginType: user.loginType,
         address: user.address,
         role: user.role
       }

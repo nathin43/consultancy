@@ -9,7 +9,7 @@ const Product = require('../models/Product');
  */
 exports.createOrder = async (req, res) => {
   try {
-    const { items, shippingAddress, paymentMethod } = req.body;
+    const { items, shippingAddress, paymentMethod, paymentDetails } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({
@@ -64,6 +64,7 @@ exports.createOrder = async (req, res) => {
       items: orderItems,
       shippingAddress,
       paymentMethod,
+      paymentDetails: paymentDetails || {}, // Store payment details if provided
       itemsPrice,
       shippingPrice,
       taxPrice,

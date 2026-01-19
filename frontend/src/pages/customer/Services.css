@@ -1,13 +1,13 @@
 /* Services Page */
 .services-page {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   min-height: 100vh;
 }
 
 /* Hero Section */
 .services-hero {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #1e293b;
   padding: 60px 20px;
   text-align: center;
   margin-bottom: 50px;
@@ -21,7 +21,7 @@
 
 .services-hero .services-subtitle {
   font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(30, 41, 59, 0.8);
   margin: 0;
 }
 

@@ -1,7 +1,7 @@
 .checkout-page {
   padding: 40px 0;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
 }
 
 .checkout-page h1 {
@@ -17,10 +17,11 @@
 }
 
 .checkout-form-section {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
   padding: 32px;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 212, 255, 0.1);
 }
 
 .form-section {
@@ -98,7 +99,48 @@
   margin-bottom: 16px;
 }
 
+/* UPI Payment Specific Styling */
+.payment-details .upi-payment-container {
+  background: white;
+  border: 2px solid #f0f4f8;
+}
+
+.payment-details .upi-providers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.payment-details .upi-provider-label {
+  padding: 14px;
+  min-height: 130px;
+}
+
+.payment-details .upi-logo {
+  font-size: 28px;
+}
+
+.payment-details .upi-provider-name {
+  font-size: 13px;
+}
+
+.payment-details .upi-provider-desc {
+  font-size: 10px;
+}
+
+.payment-details .upi-security-info {
+  background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+  margin-top: 16px;
+}
+
 .payment-details .form-group small {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  font-style: italic;
+}.payment-details .form-group small {
   display: block;
   font-size: 12px;
   color: var(--text-secondary);
