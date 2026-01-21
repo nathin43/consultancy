@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import ProductCard from '../../components/ProductCard';
@@ -11,10 +11,14 @@ import './Home.css';
  * Landing page with featured products and categories
  */
 const Home = () => {
+  const navigate = useNavigate();
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [autoPlayEnabled, setAutoPlayEnabled] = useState(true);
+  const [activeModal, setActiveModal] = useState(null);
+  const autoPlayTimerRef = useRef(null);
 
   useEffect(() => {
     // Auto-rotate categories every 3 seconds
@@ -22,26 +26,39 @@ const Home = () => {
       setCurrentCategoryIndex((prev) => (prev + 1) % categories.length);
     }, 3000);
 
-    // Auto-rotate products every 4 seconds
-    const productInterval = setInterval(() => {
-      if (products.length > 0) {
-        setCurrentProductIndex((prev) => (prev + 1) % products.length);
-      }
-    }, 4000);
-
     // Fetch products
     fetchProducts();
 
     return () => {
       clearInterval(categoryInterval);
-      clearInterval(productInterval);
     };
   }, []);
+
+  // Auto-play carousel only when enabled
+  useEffect(() => {
+    if (!autoPlayEnabled || products.length === 0) {
+      if (autoPlayTimerRef.current) {
+        clearInterval(autoPlayTimerRef.current);
+      }
+      return;
+    }
+
+    autoPlayTimerRef.current = setInterval(() => {
+      setCurrentProductIndex((prev) => (prev + 1) % products.length);
+    }, 5000);
+
+    return () => {
+      if (autoPlayTimerRef.current) {
+        clearInterval(autoPlayTimerRef.current);
+      }
+    };
+  }, [autoPlayEnabled, products.length]);
 
   const fetchProducts = async () => {
     try {
       const { data } = await API.get('/products');
       setProducts(data.products || []);
+      setCurrentProductIndex(0); // Reset to first product
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -49,16 +66,94 @@ const Home = () => {
     }
   };
 
+  // Handle carousel navigation
+  const handlePrevProduct = () => {
+    setAutoPlayEnabled(false); // Pause auto-play on user interaction
+    setCurrentProductIndex((prev) => (prev - 1 + products.length) % products.length);
+  };
+
+  const handleNextProduct = () => {
+    setAutoPlayEnabled(false); // Pause auto-play on user interaction
+    setCurrentProductIndex((prev) => (prev + 1) % products.length);
+  };
+
+  const handleThumbnailClick = (index) => {
+    setAutoPlayEnabled(false); // Pause auto-play on user interaction
+    setCurrentProductIndex(index);
+  };
+
+  // Resume auto-play after user inactivity (10 seconds)
+  useEffect(() => {
+    if (autoPlayEnabled) return;
+
+    const resumeTimer = setTimeout(() => {
+      setAutoPlayEnabled(true);
+    }, 10000);
+
+    return () => clearTimeout(resumeTimer);
+  }, [autoPlayEnabled]);
+
+  // Feature card handlers
+  const handleFreeShippingClick = () => {
+    setActiveModal('shipping');
+  };
+
+  const handleSecurePaymentClick = () => {
+    setActiveModal('payment');
+  };
+
+  const handleEasyReturnsClick = () => {
+    navigate('/contact');
+  };
+
+  const handleSupportClick = () => {
+    navigate('/contact');
+  };
+
   const categories = [
-    { name: 'Wire & Cables', icon: '�', color: '#3b82f6' },
-    { name: 'Pipes', icon: '�', color: '#06b6d4' },
-    { name: 'Heater', icon: '�', color: '#8b5cf6' },
+    { name: 'Wire & Cables', icon: '🔌', color: '#3b82f6' },
+    { name: 'Pipes', icon: '🔧', color: '#06b6d4' },
+    { name: 'Heater', icon: '🔥', color: '#8b5cf6' },
     { name: 'Motors', icon: '⚙️', color: '#ec4899' },
     { name: 'Fan', icon: '💨', color: '#10b981' },
-    { name: 'Lights', icon: '�', color: '#f59e0b' },
-    { name: 'Switches', icon: '�', color: '#ef4444' },
+    { name: 'Lights', icon: '💡', color: '#f59e0b' },
+    { name: 'Switches', icon: '🔘', color: '#ef4444' },
     { name: 'Tank', icon: '🚡', color: '#6366f1' }
   ];
+
+  // Get thumbnail display count
+  const THUMBNAIL_DISPLAY_COUNT = 6;
+  const totalProducts = products.length;
+  const displayedThumbnails = Math.min(THUMBNAIL_DISPLAY_COUNT, totalProducts);
+
+  // Calculate which thumbnails to show based on current index
+  const getThumbnailsToDisplay = () => {
+    if (totalProducts <= THUMBNAIL_DISPLAY_COUNT) {
+      return products.slice(0, totalProducts);
+    }
+
+    // Show 6 thumbnails centered around active product
+    let startIndex = Math.max(0, currentProductIndex - Math.floor(THUMBNAIL_DISPLAY_COUNT / 2));
+    const endIndex = Math.min(totalProducts, startIndex + THUMBNAIL_DISPLAY_COUNT);
+
+    // Adjust start if we're near the end
+    if (endIndex === totalProducts) {
+      startIndex = Math.max(0, totalProducts - THUMBNAIL_DISPLAY_COUNT);
+    }
+
+    return products.slice(startIndex, endIndex);
+  };
+
+  // Get the actual index within the displayed thumbnails
+  const getActiveThumbnailIndex = () => {
+    if (totalProducts <= THUMBNAIL_DISPLAY_COUNT) {
+      return currentProductIndex;
+    }
+
+    const displayedThumbs = getThumbnailsToDisplay();
+    const activeProduct = products[currentProductIndex];
+    return displayedThumbs.findIndex(p => p._id === activeProduct._id);
+  };
 
   return (
     <>
@@ -115,60 +210,149 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Products Carousel Section */}
-      <section className="categories-section">
+      {/* Featured Products Section */}
+      <section className="featured-products-section">
+        <div className="featured-bg-shape featured-shape-1"></div>
+        <div className="featured-bg-shape featured-shape-2"></div>
+        
         <div className="container">
-          <h2 className="section-title">Featured Products</h2>
-          
+          {/* Section Title */}
+          <div className="featured-title-wrapper">
+            <h2 className="featured-section-title">Featured Products</h2>
+            <div className="featured-title-divider"></div>
+            <p className="featured-section-subtitle">Discover our bestselling electrical products</p>
+          </div>
+
           {loading ? (
-            <div className="spinner"></div>
+            <div className="featured-loading">
+              <div className="spinner"></div>
+              <p>Loading featured products...</p>
+            </div>
           ) : products.length > 0 ? (
-            <div className="product-carousel-wrapper">
-              <div className="featured-product-card">
-                <Link to={`/product/${products[currentProductIndex]._id}`} className="product-link">
-                  <div className="product-image-container">
+            <div className="featured-carousel-wrapper">
+              {/* Main Featured Card */}
+              <div className="featured-card-main">
+                <Link to={`/product/${products[currentProductIndex]._id}`} className="featured-card-link">
+                  <div className="featured-image-wrapper">
                     <img 
                       src={products[currentProductIndex].image} 
                       alt={products[currentProductIndex].name} 
+                      className="featured-image"
                       onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/300x300?text=Product';
+                        e.target.src = 'https://via.placeholder.com/400x400?text=Product';
                       }}
                     />
+                    <div className="featured-image-overlay"></div>
                   </div>
-                  <div className="product-info">
-                    <h3>{products[currentProductIndex].name}</h3>
-                    <p className="product-description">{products[currentProductIndex].category}</p>
-                    <p className="product-price">₹{products[currentProductIndex].price}</p>
+
+                  <div className="featured-card-content">
+                    <span className="featured-category-badge">
+                      {products[currentProductIndex].category}
+                    </span>
+                    <h3 className="featured-product-name">
+                      {products[currentProductIndex].name}
+                    </h3>
+                    <p className="featured-product-desc">
+                      Premium quality electrical component
+                    </p>
+                    <div className="featured-product-meta">
+                      <span className="featured-price">
+                        ₹{products[currentProductIndex].price?.toLocaleString()}
+                      </span>
+                      {products[currentProductIndex].stock > 0 && (
+                        <span className="featured-stock-badge in-stock">In Stock</span>
+                      )}
+                    </div>
                   </div>
                 </Link>
+
+                <div className="featured-card-actions">
+                  <button className="featured-btn-primary">
+                    <span>Add to Cart</span>
+                  </button>
+                  <Link to={`/product/${products[currentProductIndex]._id}`} className="featured-btn-secondary">
+                    View Details
+                  </Link>
+                </div>
               </div>
 
-              <div className="product-controls">
+              {/* Navigation Controls */}
+              <div className="featured-controls">
                 <button 
-                  className="product-btn prev"
-                  onClick={() => setCurrentProductIndex((prev) => (prev - 1 + products.length) % products.length)}
+                  className="featured-nav-btn prev"
+                  onClick={handlePrevProduct}
+                  aria-label="Previous product"
+                  disabled={products.length <= 1}
                 >
-                  ‹
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
                 </button>
-                <div className="product-dots">
-                  {products.slice(0, 8).map((product, index) => (
-                    <button
-                      key={product._id}
-                      className={`dot-product ${index === currentProductIndex ? 'active' : ''}`}
-                      onClick={() => setCurrentProductIndex(index)}
-                    />
-                  ))}
+
+                <div className="featured-dots-wrapper">
+                  {getThumbnailsToDisplay().map((product, displayIndex) => {
+                    const isActive = getActiveThumbnailIndex() === displayIndex;
+                    return (
+                      <button
+                        key={`${product._id}-${displayIndex}`}
+                        className={`featured-dot ${isActive ? 'active' : ''}`}
+                        onClick={() => handleThumbnailClick(products.indexOf(product))}
+                        style={{
+                          backgroundImage: `url(${product.image})`,
+                          opacity: isActive ? 1 : 0.6
+                        }}
+                        title={product.name}
+                        aria-label={`Go to ${product.name}`}
+                        aria-current={isActive ? 'true' : 'false'}
+                      />
+                    );
+                  })}
                 </div>
+
                 <button 
-                  className="product-btn next"
-                  onClick={() => setCurrentProductIndex((prev) => (prev + 1) % products.length)}
+                  className="featured-nav-btn next"
+                  onClick={handleNextProduct}
+                  aria-label="Next product"
+                  disabled={products.length <= 1}
                 >
-                  ›
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
                 </button>
               </div>
+
+              {/* Progress Indicator */}
+              <div className="featured-progress">
+                <div className="featured-progress-bar" 
+                  style={{ 
+                    width: `${((currentProductIndex + 1) / products.length) * 100}%` 
+                  }}>
+                </div>
+              </div>
+
+              {/* Auto-play Status Indicator */}
+              {!autoPlayEnabled && (
+                <div className="featured-autoplay-paused">
+                  <span>Auto-play paused • Click resume or wait 10 seconds</span>
+                  <button 
+                    className="featured-resume-btn"
+                    onClick={() => setAutoPlayEnabled(true)}
+                    aria-label="Resume auto-play"
+                  >
+                    Resume
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
-            <p className="text-center">No products available</p>
+            <div className="featured-empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <box x="3" y="3" width="18" height="18" rx="2" ry="2"></box>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+              <p>No featured products available</p>
+            </div>
           )}
         </div>
       </section>
@@ -177,22 +361,46 @@ const Home = () => {
       <section className="features-section">
         <div className="container">
           <div className="features-grid">
-            <div className="feature-card">
+            <div 
+              className="feature-card" 
+              onClick={handleFreeShippingClick}
+              role="button"
+              tabIndex="0"
+              onKeyPress={(e) => e.key === 'Enter' && handleFreeShippingClick()}
+            >
               <span className="feature-icon">🚚</span>
               <h3>Free Shipping</h3>
               <p>On orders above ₹10,000</p>
             </div>
-            <div className="feature-card">
+            <div 
+              className="feature-card"
+              onClick={handleSecurePaymentClick}
+              role="button"
+              tabIndex="0"
+              onKeyPress={(e) => e.key === 'Enter' && handleSecurePaymentClick()}
+            >
               <span className="feature-icon">💳</span>
               <h3>Secure Payment</h3>
               <p>100% secure transactions</p>
             </div>
-            <div className="feature-card">
+            <div 
+              className="feature-card"
+              onClick={handleEasyReturnsClick}
+              role="button"
+              tabIndex="0"
+              onKeyPress={(e) => e.key === 'Enter' && handleEasyReturnsClick()}
+            >
               <span className="feature-icon">🔄</span>
               <h3>Easy Returns</h3>
               <p>7 days return policy</p>
             </div>
-            <div className="feature-card">
+            <div 
+              className="feature-card"
+              onClick={handleSupportClick}
+              role="button"
+              tabIndex="0"
+              onKeyPress={(e) => e.key === 'Enter' && handleSupportClick()}
+            >
               <span className="feature-icon">🎧</span>
               <h3>24/7 Support</h3>
               <p>Dedicated customer support</p>
@@ -200,6 +408,63 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* Modals */}
+      {activeModal === 'shipping' && (
+        <div className="modal-overlay" onClick={() => setActiveModal(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setActiveModal(null)}>✕</button>
+            <h2>Free Shipping Policy</h2>
+            <div className="modal-body">
+              <div className="policy-item">
+                <h4>📦 Minimum Order Value</h4>
+                <p>Free shipping is available on orders above ₹10,000. For orders below this amount, shipping charges will apply.</p>
+              </div>
+              <div className="policy-item">
+                <h4>📍 Applicable Locations</h4>
+                <p>We deliver across India. Shipping is available to all major cities and many remote areas. Delivery times may vary based on location.</p>
+              </div>
+              <div className="policy-item">
+                <h4>⏱️ Delivery Timeline</h4>
+                <p>Standard Delivery: 5-7 business days | Express Delivery: 2-3 business days (additional charges apply)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeModal === 'payment' && (
+        <div className="modal-overlay" onClick={() => setActiveModal(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setActiveModal(null)}>✕</button>
+            <h2>Secure Payment Methods</h2>
+            <div className="modal-body">
+              <div className="payment-methods">
+                <div className="payment-item">
+                  <h4>💳 Credit & Debit Cards</h4>
+                  <p>Visa, Mastercard, and American Express cards are securely processed.</p>
+                </div>
+                <div className="payment-item">
+                  <h4>📱 UPI Payments</h4>
+                  <p>Google Pay, PhonePe, and other UPI apps for instant and secure transactions.</p>
+                </div>
+                <div className="payment-item">
+                  <h4>🏦 Net Banking</h4>
+                  <p>Direct bank transfers from all major Indian banks with 256-bit encryption.</p>
+                </div>
+                <div className="payment-item">
+                  <h4>💰 Cash on Delivery</h4>
+                  <p>Pay securely at your doorstep when your order arrives.</p>
+                </div>
+              </div>
+              <div className="security-assurance">
+                <h4>🔒 Security Guarantee</h4>
+                <p>All transactions are encrypted and processed through trusted payment gateways. Your financial information is 100% secure.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </>

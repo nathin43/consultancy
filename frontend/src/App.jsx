@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import ToastContainer from './components/ToastContainer';
 
 // Customer Pages
 import Home from './pages/customer/Home';
@@ -34,33 +35,36 @@ import AdminRoute from './components/AdminRoute';
  */
 function App() {
   return (
-    <Routes>
-      {/* Customer Routes */}
-      <Route path="/" element={<Home />} />
-      <Route path="/products" element={<Products />} />
-      <Route path="/product/:id" element={<ProductDetails />} />
-      <Route path="/services" element={<Services />} />
-      <Route path="/service/:serviceId" element={<ServiceDetails />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/cart" element={<Cart />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      
-      {/* Protected Customer Routes */}
-      <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />
-      <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
-      <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+    <>
+      <ToastContainer />
+      <Routes>
+        {/* Customer Routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/product/:id" element={<ProductDetails />} />
+        <Route path="/services" element={<Services />} />
+        <Route path="/service/:serviceId" element={<ServiceDetails />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        
+        {/* Protected Customer Routes */}
+        <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />
+        <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
+        <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
 
-      {/* Admin Routes */}
-      <Route path="/admin" element={<AdminLogin />} />
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-      <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
-      <Route path="/admin/products/add" element={<AdminRoute><AdminAddProduct /></AdminRoute>} />
-      <Route path="/admin/products/edit/:id" element={<AdminRoute><AdminEditProduct /></AdminRoute>} />
-      <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
-      <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />
-    </Routes>
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
+        <Route path="/admin/products/add" element={<AdminRoute><AdminAddProduct /></AdminRoute>} />
+        <Route path="/admin/products/edit/:id" element={<AdminRoute><AdminEditProduct /></AdminRoute>} />
+        <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
+        <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />
+      </Routes>
+    </>
   );
 }
 

@@ -4,6 +4,7 @@ import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { AuthContext } from '../../context/AuthContext';
+import { useToast } from '../../hooks/useToast';
 import './Login.css';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -14,6 +15,7 @@ const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const Register = () => {
   const navigate = useNavigate();
   const { register, loginWithGoogle } = useContext(AuthContext);
+  const { success, error: showError, warning } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -206,8 +208,12 @@ const Register = () => {
     const result = await register(userData);
 
     if (result.success) {
-      navigate('/login');
+      success('Registration Successful! Please log in to your account.');
+      setTimeout(() => {
+        navigate('/login');
+      }, 500);
     } else {
+      showError(result.message || 'Registration failed. Please try again.');
       setError(result.message);
     }
 
@@ -221,11 +227,16 @@ const Register = () => {
       const result = await loginWithGoogle(credentialResponse.credential);
 
       if (result.success) {
-        navigate('/');
+        success('Google Registration Successful! Welcome.');
+        setTimeout(() => {
+          navigate('/');
+        }, 500);
       } else {
+        showError(result.message || 'Google registration failed');
         setError(result.message || 'Google registration failed');
       }
     } catch (err) {
+      showError('An error occurred during Google registration');
       setError('An error occurred during Google registration');
       console.error('Google registration error:', err);
     } finally {
@@ -234,7 +245,9 @@ const Register = () => {
   };
 
   const handleGoogleError = () => {
-    setError('Google registration failed. Please try again.');
+    const errorMsg = 'Google registration failed. Please try again.';
+    showError(errorMsg);
+    setError(errorMsg);
   };
 
   const getStrengthColor = () => {
@@ -290,20 +303,10 @@ const Register = () => {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   placeholder="Enter your full name"
-                  style={{
-                    borderColor:
-                      touched.name && validationErrors.name ? '#ef4444' : 'inherit'
-                  }}
+                  className={touched.name && validationErrors.name ? 'input-error' : ''}
                 />
                 {touched.name && validationErrors.name && (
-                  <div style={{
-                    color: '#ef4444',
-                    fontSize: '13px',
-                    marginTop: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}>
+                  <div className="validation-error">
                     ✗ {validationErrors.name}
                   </div>
                 )}
@@ -318,20 +321,10 @@ const Register = () => {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   placeholder="Enter your email"
-                  style={{
-                    borderColor:
-                      touched.email && validationErrors.email ? '#ef4444' : 'inherit'
-                  }}
+                  className={touched.email && validationErrors.email ? 'input-error' : ''}
                 />
                 {touched.email && validationErrors.email && (
-                  <div style={{
-                    color: '#ef4444',
-                    fontSize: '13px',
-                    marginTop: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}>
+                  <div className="validation-error">
                     ✗ {validationErrors.email}
                   </div>
                 )}
@@ -346,20 +339,10 @@ const Register = () => {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   placeholder="Enter your phone number"
-                  style={{
-                    borderColor:
-                      touched.phone && validationErrors.phone ? '#ef4444' : 'inherit'
-                  }}
+                  className={touched.phone && validationErrors.phone ? 'input-error' : ''}
                 />
                 {touched.phone && validationErrors.phone && (
-                  <div style={{
-                    color: '#ef4444',
-                    fontSize: '13px',
-                    marginTop: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}>
+                  <div className="validation-error">
                     ✗ {validationErrors.phone}
                   </div>
                 )}
@@ -374,72 +357,46 @@ const Register = () => {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   placeholder="Enter password (min 6 characters)"
-                  style={{
-                    borderColor:
-                      touched.password && validationErrors.password ? '#ef4444' : 'inherit'
-                  }}
+                  className={touched.password && validationErrors.password ? 'input-error' : ''}
                 />
                 {formData.password && (
-                  <div style={{ marginTop: '10px' }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      marginBottom: '6px'
-                    }}>
-                      <span style={{ fontSize: '13px', fontWeight: '600' }}>
-                        Password Strength:
-                      </span>
-                      <span style={{
-                        display: 'inline-block',
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        backgroundColor: getStrengthColor()
-                      }}></span>
-                      <span style={{
-                        fontSize: '13px',
-                        fontWeight: '600',
-                        color: getStrengthColor()
-                      }}>
-                        {passwordStrength}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: '1.5' }}>
-                      {passwordStrength === 'Excellent' && (
-                        <div style={{ color: '#10b981', display: 'flex', gap: '4px' }}>
-                          <span>✓</span>
-                          <span>Excellent security</span>
-                        </div>
-                      )}
-                      {passwordStrength === 'Strong' && (
-                        <div>
-                          <div style={{ color: '#10b981', display: 'flex', gap: '4px' }}>
-                            <span>✓</span>
-                            <span>Good! Add uppercase letter and special character for Excellent</span>
-                          </div>
-                        </div>
-                      )}
-                      {passwordStrength === 'Poor' && (
-                        <div>
-                          <div style={{ display: 'flex', gap: '4px' }}>
-                            <span>•</span>
-                            <span>Add letters and numbers</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                  <div className="password-strength-container">
+                    <span className="password-strength-label">Password Strength:</span>
+                    <span 
+                      className="password-strength-dot" 
+                      style={{ backgroundColor: getStrengthColor() }}
+                    ></span>
+                    <span 
+                      className={`password-strength-text ${passwordStrength.toLowerCase()}`}
+                    >
+                      {passwordStrength}
+                    </span>
+                  </div>
+                )}
+                {formData.password && (
+                  <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: '1.6', marginTop: '8px' }}>
+                    {passwordStrength === 'Excellent' && (
+                      <div style={{ color: '#10b981', display: 'flex', gap: '4px' }}>
+                        <span>✓</span>
+                        <span>Excellent security</span>
+                      </div>
+                    )}
+                    {passwordStrength === 'Strong' && (
+                      <div style={{ color: '#10b981', display: 'flex', gap: '4px' }}>
+                        <span>✓</span>
+                        <span>Good! Add special character for Excellent</span>
+                      </div>
+                    )}
+                    {passwordStrength === 'Poor' && (
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <span>•</span>
+                        <span>Add letters and numbers</span>
+                      </div>
+                    )}
                   </div>
                 )}
                 {touched.password && validationErrors.password && (
-                  <div style={{
-                    color: '#ef4444',
-                    fontSize: '13px',
-                    marginTop: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}>
+                  <div className="validation-error">
                     ✗ {validationErrors.password}
                   </div>
                 )}
@@ -454,20 +411,10 @@ const Register = () => {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   placeholder="Confirm your password"
-                  style={{
-                    borderColor:
-                      touched.confirmPassword && validationErrors.confirmPassword ? '#ef4444' : 'inherit'
-                  }}
+                  className={touched.confirmPassword && validationErrors.confirmPassword ? 'input-error' : ''}
                 />
                 {touched.confirmPassword && validationErrors.confirmPassword && (
-                  <div style={{
-                    color: '#ef4444',
-                    fontSize: '13px',
-                    marginTop: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}>
+                  <div className="validation-error">
                     ✗ {validationErrors.confirmPassword}
                   </div>
                 )}

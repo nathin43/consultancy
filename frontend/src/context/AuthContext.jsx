@@ -95,9 +95,8 @@ export const AuthProvider = ({ children }) => {
       // Clear local storage and state
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      // Clear cart from localStorage on logout
-      // Cart will only be preserved when logged in
-      localStorage.removeItem('electric_shop_cart');
+      // DO NOT clear cart - cart is persisted in MongoDB linked to user ID
+      // When user logs back in, cart will be restored from database
       setUser(null);
     }
   };

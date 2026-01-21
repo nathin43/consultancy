@@ -4,6 +4,7 @@ import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { AuthContext } from '../../context/AuthContext';
+import { useToast } from '../../hooks/useToast';
 import './Login.css';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -14,6 +15,7 @@ const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const Login = () => {
   const navigate = useNavigate();
   const { login, loginWithGoogle } = useContext(AuthContext);
+  const { success, error: showError, warning } = useToast();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -33,8 +35,12 @@ const Login = () => {
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      navigate('/');
+      success('Login Successful! Welcome back.');
+      setTimeout(() => {
+        navigate('/');
+      }, 500);
     } else {
+      showError(result.message || 'Login failed. Please try again.');
       setError(result.message);
     }
 
@@ -48,11 +54,16 @@ const Login = () => {
       const result = await loginWithGoogle(credentialResponse.credential);
 
       if (result.success) {
-        navigate('/');
+        success('Google Login Successful! Welcome back.');
+        setTimeout(() => {
+          navigate('/');
+        }, 500);
       } else {
+        showError(result.message || 'Google login failed');
         setError(result.message || 'Google login failed');
       }
     } catch (err) {
+      showError('An error occurred during Google login');
       setError('An error occurred during Google login');
       console.error('Google login error:', err);
     } finally {
@@ -61,7 +72,9 @@ const Login = () => {
   };
 
   const handleGoogleError = () => {
-    setError('Google login failed. Please try again.');
+    const errorMsg = 'Google login failed. Please try again.';
+    showError(errorMsg);
+    setError(errorMsg);
   };
 
   if (!googleClientId || googleClientId === 'dummy') {

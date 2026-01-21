@@ -13,6 +13,19 @@ const AdminCustomers = () => {
   const [customerOrders, setCustomerOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Disable body scroll when modal is open
+  useEffect(() => {
+    if (selectedCustomer) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedCustomer]);
+
   useEffect(() => {
     fetchCustomers();
   }, []);

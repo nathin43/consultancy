@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import { useToast } from '../../hooks/useToast';
 import API from '../../services/api';
 import './Orders.css';
 
@@ -11,6 +12,8 @@ import './Orders.css';
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const { success, error: showError } = useToast();
 
   useEffect(() => {
     fetchOrders();
@@ -18,10 +21,15 @@ const Orders = () => {
 
   const fetchOrders = async () => {
     try {
+      setError('');
       const { data } = await API.get('/orders/myorders');
-      setOrders(data.orders);
+      console.log('Fetched orders:', data);
+      setOrders(data.orders || []);
     } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message || 'Error fetching orders';
       console.error('Error fetching orders:', error);
+      setError(errorMsg);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -46,10 +54,10 @@ const Orders = () => {
 
     try {
       await API.put(`/orders/${orderId}/cancel`);
-      alert('Order cancelled successfully');
+      success('Order cancelled successfully 🎯');
       fetchOrders();
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to cancel order');
+      showError(error.response?.data?.message || 'Failed to cancel order');
     }
   };
 
@@ -69,6 +77,12 @@ const Orders = () => {
       <div className="orders-page">
         <div className="container">
           <h1>My Orders</h1>
+
+          {error && (
+            <div className="alert alert-danger">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
 
           {orders.length === 0 ? (
             <div className="no-orders">

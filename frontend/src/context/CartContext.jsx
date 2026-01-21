@@ -17,7 +17,7 @@ export const CartProvider = ({ children }) => {
 
   const STORAGE_KEY = 'electric_shop_cart';
 
-  // Initialize cart on mount
+  // Initialize cart on mount and when authentication changes
   useEffect(() => {
     initializeCart();
   }, [isAuthenticated]);
@@ -25,8 +25,12 @@ export const CartProvider = ({ children }) => {
   // Initialize cart from localStorage or API
   const initializeCart = async () => {
     if (isAuthenticated) {
+      // When user logs in, ALWAYS fetch from database
+      // This restores their persistent cart from MongoDB
       await fetchCart();
     } else {
+      // When user is not authenticated, show empty cart
+      // Cart data is NOT cleared - it's stored in MongoDB tied to user ID
       loadLocalCart();
     }
   };
@@ -58,28 +62,40 @@ export const CartProvider = ({ children }) => {
     return items.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
 
-  // Fetch cart from API
+  // Fetch cart from API - MongoDB Persistent Cart
   const fetchCart = async () => {
     try {
       setLoading(true);
       const { data } = await API.get('/cart');
       if (data.cart) {
+        // User cart restored from MongoDB
         setCart(data.cart);
         setUseLocalStorage(false);
       } else {
+        // No cart found, show empty cart
         loadLocalCart();
       }
     } catch (error) {
-      console.warn('Error fetching cart from API, using localStorage:', error.message);
+      console.warn('Error fetching cart from API:', error.message);
+      // If API fails, show empty cart instead of localStorage
+      // Cart is persistent in MongoDB, but show empty on client if fetch fails
       loadLocalCart();
     } finally {
       setLoading(false);
     }
   };
 
-  // Add item to cart
+  // Add item to cart - MongoDB Persistent Cart
   const addToCart = async (productId, quantity = 1, product = null) => {
     try {
+      // User must be authenticated to use cart
+      if (!isAuthenticated) {
+        return {
+          success: false,
+          message: 'Please log in to add items to cart'
+        };
+      }
+
       // Fetch product details if not provided
       let productDetails = product;
       if (!productDetails) {
@@ -92,59 +108,26 @@ export const CartProvider = ({ children }) => {
         }
       }
 
-      // Try API first if authenticated
-      if (isAuthenticated) {
-        try {
-          const { data } = await API.post('/cart/add', { productId, quantity });
-          if (data.cart) {
-            // Ensure cart items have proper product object structure
-            const cart = data.cart;
-            if (cart.items && Array.isArray(cart.items)) {
-              cart.items = cart.items.map(item => ({
-                ...item,
-                product: item.product || { _id: productId, name: 'Product', price: item.price }
-              }));
-            }
-            setCart(cart);
-            setUseLocalStorage(false);
-            return { success: true, message: data.message };
-          }
-        } catch (apiError) {
-          console.warn('API add to cart failed, using localStorage:', apiError.message);
+      // Add to cart via MongoDB persistent storage
+      const { data } = await API.post('/cart/add', { productId, quantity });
+      if (data.cart) {
+        // Ensure cart items have proper product object structure
+        const cartData = data.cart;
+        if (cartData.items && Array.isArray(cartData.items)) {
+          cartData.items = cartData.items.map(item => ({
+            ...item,
+            product: item.product || { _id: productId, name: 'Product', price: item.price }
+          }));
         }
+        setCart(cartData);
+        setUseLocalStorage(false);
+        return { success: true, message: data.message };
       }
 
-      // Fallback to localStorage
-      const updatedCart = { ...cart } || { items: [], totalAmount: 0 };
-      const existingItem = updatedCart.items?.find(item => 
-        item.product?._id === productId || 
-        item.product?._id === productDetails._id ||
-        item.productId === productId
-      );
-      
-      if (existingItem) {
-        existingItem.quantity += quantity;
-      } else {
-        updatedCart.items = (updatedCart.items || []).concat([{
-          product: {
-            _id: productDetails._id || productId,
-            name: productDetails.name || 'Product',
-            price: productDetails.price || 0,
-            image: productDetails.image || '',
-            brand: productDetails.brand || '',
-            stock: productDetails.stock || 0
-          },
-          quantity,
-          price: productDetails.price || 0
-        }]);
-      }
-      
-      updatedCart.totalAmount = calculateTotal(updatedCart.items);
-      setCart(updatedCart);
-      saveToLocalStorage(updatedCart);
-      setUseLocalStorage(true);
-      
-      return { success: true, message: 'Item added to cart' };
+      return {
+        success: false,
+        message: 'Failed to add item to cart'
+      };
     } catch (error) {
       return {
         success: false,
@@ -153,48 +136,37 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Update cart item quantity
+  // Update cart item quantity - MongoDB Persistent Cart
   const updateCartItem = async (productId, quantity) => {
     try {
-      // Try API first if authenticated
-      if (isAuthenticated) {
-        try {
-          const { data } = await API.put('/cart/update', { productId, quantity });
-          if (data.cart) {
-            // Ensure cart items have proper product object structure
-            const cart = data.cart;
-            if (cart.items && Array.isArray(cart.items)) {
-              cart.items = cart.items.map(item => ({
-                ...item,
-                product: item.product || { _id: productId, name: 'Product', price: item.price }
-              }));
-            }
-            setCart(cart);
-            setUseLocalStorage(false);
-            return { success: true };
-          }
-        } catch (apiError) {
-          console.warn('API update cart failed, using localStorage:', apiError.message);
-        }
+      // User must be authenticated
+      if (!isAuthenticated) {
+        return {
+          success: false,
+          message: 'Authentication required to update cart'
+        };
       }
 
-      // Fallback to localStorage
-      const updatedCart = { ...cart };
-      const item = updatedCart.items?.find(item => 
-        item.product?._id === productId || 
-        item.productId === productId
-      );
-      
-      if (item) {
-        item.quantity = Math.max(1, quantity);
+      // Update cart via MongoDB persistent storage
+      const { data } = await API.put('/cart/update', { productId, quantity });
+      if (data.cart) {
+        // Ensure cart items have proper product object structure
+        const cartData = data.cart;
+        if (cartData.items && Array.isArray(cartData.items)) {
+          cartData.items = cartData.items.map(item => ({
+            ...item,
+            product: item.product || { _id: productId, name: 'Product', price: item.price }
+          }));
+        }
+        setCart(cartData);
+        setUseLocalStorage(false);
+        return { success: true };
       }
-      
-      updatedCart.totalAmount = calculateTotal(updatedCart.items);
-      setCart(updatedCart);
-      saveToLocalStorage(updatedCart);
-      setUseLocalStorage(true);
-      
-      return { success: true };
+
+      return {
+        success: false,
+        message: 'Failed to update cart item'
+      };
     } catch (error) {
       return {
         success: false,
@@ -203,43 +175,37 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Remove item from cart
+  // Remove item from cart - MongoDB Persistent Cart
   const removeFromCart = async (productId) => {
     try {
-      // Try API first if authenticated
-      if (isAuthenticated) {
-        try {
-          const { data } = await API.delete(`/cart/remove/${productId}`);
-          if (data.cart) {
-            // Ensure cart items have proper product object structure
-            const cart = data.cart;
-            if (cart.items && Array.isArray(cart.items)) {
-              cart.items = cart.items.map(item => ({
-                ...item,
-                product: item.product || { _id: productId, name: 'Product', price: item.price }
-              }));
-            }
-            setCart(cart);
-            setUseLocalStorage(false);
-            return { success: true, message: data.message };
-          }
-        } catch (apiError) {
-          console.warn('API remove from cart failed, using localStorage:', apiError.message);
-        }
+      // User must be authenticated
+      if (!isAuthenticated) {
+        return {
+          success: false,
+          message: 'Authentication required to remove from cart'
+        };
       }
 
-      // Fallback to localStorage
-      const updatedCart = { ...cart };
-      updatedCart.items = updatedCart.items?.filter(item => 
-        item.product?._id !== productId && item.productId !== productId
-      ) || [];
-      
-      updatedCart.totalAmount = calculateTotal(updatedCart.items);
-      setCart(updatedCart);
-      saveToLocalStorage(updatedCart);
-      setUseLocalStorage(true);
-      
-      return { success: true, message: 'Item removed from cart' };
+      // Remove from cart via MongoDB persistent storage
+      const { data } = await API.delete(`/cart/remove/${productId}`);
+      if (data.cart) {
+        // Ensure cart items have proper product object structure
+        const cartData = data.cart;
+        if (cartData.items && Array.isArray(cartData.items)) {
+          cartData.items = cartData.items.map(item => ({
+            ...item,
+            product: item.product || { _id: productId, name: 'Product', price: item.price }
+          }));
+        }
+        setCart(cartData);
+        setUseLocalStorage(false);
+        return { success: true, message: data.message };
+      }
+
+      return {
+        success: false,
+        message: 'Failed to remove item from cart'
+      };
     } catch (error) {
       return {
         success: false,
@@ -248,32 +214,34 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Clear cart
+  // Clear cart - MongoDB Persistent Cart
   const clearCart = async () => {
     try {
-      // Try API first if authenticated
-      if (isAuthenticated) {
-        try {
-          const { data } = await API.delete('/cart/clear');
-          if (data.cart) {
-            setCart(data.cart);
-            setUseLocalStorage(false);
-            return { success: true };
-          }
-        } catch (apiError) {
-          console.warn('API clear cart failed, using localStorage:', apiError.message);
-        }
+      // User must be authenticated
+      if (!isAuthenticated) {
+        return {
+          success: false,
+          message: 'Authentication required to clear cart'
+        };
       }
 
-      // Fallback to localStorage
-      const clearedCart = { items: [], totalAmount: 0 };
-      setCart(clearedCart);
-      saveToLocalStorage(clearedCart);
-      setUseLocalStorage(true);
-      
-      return { success: true };
+      // Clear cart via MongoDB persistent storage
+      const { data } = await API.delete('/cart/clear');
+      if (data.cart) {
+        setCart(data.cart);
+        setUseLocalStorage(false);
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        message: 'Failed to clear cart'
+      };
     } catch (error) {
-      return { success: false };
+      return { 
+        success: false,
+        message: error.response?.data?.message || 'Failed to clear cart'
+      };
     }
   };
 

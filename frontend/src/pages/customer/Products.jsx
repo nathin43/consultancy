@@ -8,13 +8,14 @@ import './Products.css';
 
 /**
  * Products Page Component
- * Product listing with filters and search
+ * Modern product listing with advanced filters and search
  */
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     category: searchParams.get('category') || 'all',
     search: searchParams.get('search') || '',
@@ -50,7 +51,7 @@ const Products = () => {
       if (filters.minPrice) params.append('minPrice', filters.minPrice);
       if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
       if (filters.sort) params.append('sort', filters.sort);
-      params.append('limit', '100'); // Fetch up to 100 products
+      params.append('limit', '100');
 
       const { data } = await API.get(`/products?${params.toString()}`);
       setProducts(data.products || []);
@@ -70,6 +71,24 @@ const Products = () => {
     fetchProducts();
   };
 
+  const clearFilters = () => {
+    setFilters({
+      category: 'all',
+      search: '',
+      minPrice: '',
+      maxPrice: '',
+      sort: 'newest'
+    });
+  };
+
+  const hasActiveFilters = 
+    filters.category !== 'all' || 
+    filters.search !== '' || 
+    filters.minPrice !== '' || 
+    filters.maxPrice !== '' ||
+    filters.sort !== 'newest';
+
+
   return (
     <>
       <Navbar />
@@ -78,77 +97,158 @@ const Products = () => {
         <div className="container">
           <h1 className="page-title">Our Products</h1>
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="search-form">
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="search-input"
-            />
-            <button type="submit" className="btn btn-primary">Search</button>
-          </form>
+          {/* Search Bar Container */}
+          <div className="search-filter-container">
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="search-form">
+              <div className="search-input-wrapper">
+                <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search products by name, brand..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  className="search-input"
+                  aria-label="Search products"
+                />
+              </div>
+              <button type="submit" className="search-button" aria-label="Submit search">
+                <span>Search</span>
+              </button>
+            </form>
 
-          {/* Filters */}
-          <div className="filters-section">
-            <div className="filter-group">
-              <label>Category:</label>
-              <select
-                value={filters.category}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
-              >
-                <option value="all">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
+            {/* Filters Toggle Button (Mobile) */}
+            <button 
+              className="filters-toggle-btn"
+              onClick={() => setShowFilters(!showFilters)}
+              aria-label="Toggle filters"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path>
+              </svg>
+              Filters
+              <span className={`toggle-icon ${showFilters ? 'open' : ''}`}>⌄</span>
+            </button>
 
-            <div className="filter-group">
-              <label>Min Price:</label>
-              <input
-                type="number"
-                placeholder="Min"
-                value={filters.minPrice}
-                onChange={(e) => handleFilterChange('minPrice', e.target.value)}
-              />
-            </div>
+            {/* Filters Section */}
+            <div className={`filters-section ${showFilters ? 'show' : ''}`}>
+              {/* Category Filter */}
+              <div className="filter-group">
+                <label htmlFor="category-select">Category</label>
+                <div className="filter-input-wrapper">
+                  <svg className="filter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 4h18v4H3zM5 12h14v4H5zM7 20h10v2H7z"></path>
+                  </svg>
+                  <select
+                    id="category-select"
+                    value={filters.category}
+                    onChange={(e) => handleFilterChange('category', e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="all">All Categories</option>
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-            <div className="filter-group">
-              <label>Max Price:</label>
-              <input
-                type="number"
-                placeholder="Max"
-                value={filters.maxPrice}
-                onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
-              />
-            </div>
+              {/* Min Price Filter */}
+              <div className="filter-group">
+                <label htmlFor="min-price">Min Price</label>
+                <div className="filter-input-wrapper">
+                  <span className="currency-prefix">₹</span>
+                  <input
+                    id="min-price"
+                    type="number"
+                    placeholder="0"
+                    value={filters.minPrice}
+                    onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                    className="filter-input"
+                    aria-label="Minimum price"
+                  />
+                </div>
+              </div>
 
-            <div className="filter-group">
-              <label>Sort By:</label>
-              <select
-                value={filters.sort}
-                onChange={(e) => handleFilterChange('sort', e.target.value)}
-              >
-                <option value="newest">Newest First</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="name">Name</option>
-              </select>
+              {/* Max Price Filter */}
+              <div className="filter-group">
+                <label htmlFor="max-price">Max Price</label>
+                <div className="filter-input-wrapper">
+                  <span className="currency-prefix">₹</span>
+                  <input
+                    id="max-price"
+                    type="number"
+                    placeholder="100000"
+                    value={filters.maxPrice}
+                    onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                    className="filter-input"
+                    aria-label="Maximum price"
+                  />
+                </div>
+              </div>
+
+              {/* Sort By Filter */}
+              <div className="filter-group">
+                <label htmlFor="sort-select">Sort By</label>
+                <div className="filter-input-wrapper">
+                  <svg className="filter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 6h4v12H3zm6-2h4v14h-4zm6 4h4v10h-4z"></path>
+                  </svg>
+                  <select
+                    id="sort-select"
+                    value={filters.sort}
+                    onChange={(e) => handleFilterChange('sort', e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                    <option value="name">Product Name</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Clear Filters Button */}
+              {hasActiveFilters && (
+                <button 
+                  className="clear-filters-btn"
+                  onClick={clearFilters}
+                  aria-label="Clear all filters"
+                >
+                  Clear Filters
+                </button>
+              )}
             </div>
           </div>
 
           {/* Products Grid */}
           {loading ? (
-            <div className="spinner"></div>
+            <div className="loading-container">
+              <div className="spinner"></div>
+              <p className="loading-text">Loading products...</p>
+            </div>
           ) : products.length === 0 ? (
             <div className="no-products">
-              <p>No products found</p>
+              <svg className="no-products-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              <h3>No products found</h3>
+              <p>Try adjusting your search or filters to find what you're looking for</p>
+              {hasActiveFilters && (
+                <button className="clear-filters-btn" onClick={clearFilters}>
+                  Clear Filters
+                </button>
+              )}
             </div>
           ) : (
             <>
-              <p className="products-count">{products.length} products found</p>
+              <div className="products-header">
+                <p className="products-count">{products.length} products found</p>
+              </div>
               <div className="grid grid-4">
                 {products.map((product) => (
                   <ProductCard key={product._id} product={product} />

@@ -1,21 +1,28 @@
-import { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useContext, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import UPIPayment from '../../components/UPIPayment';
 import { CartContext } from '../../context/CartContext';
 import { AuthContext } from '../../context/AuthContext';
+import { useToast } from '../../hooks/useToast';
 import API from '../../services/api';
 import './Checkout.css';
 
 /**
  * Checkout Page Component
- * Order placement and payment
+ * Order placement with selected items only
+ * No GST or shipping charges
  */
 const Checkout = () => {
   const navigate = useNavigate();
-  const { cart, clearCart } = useContext(CartContext);
+  const location = useLocation();
+  const { cart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
+  const { success, error: showError } = useToast();
+  
+  // Get selected items from navigation state
+  const selectedItemIds = location.state?.selectedItems || [];
   
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -47,17 +54,29 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  if (!cart || cart.items.length === 0) {
+  // Validate selected items exist
+  useEffect(() => {
+    if (!cart || cart.items.length === 0 || selectedItemIds.length === 0) {
+      navigate('/cart');
+    }
+  }, []);
+
+  // Filter selected items from cart
+  const selectedItems = cart.items.filter(item => 
+    selectedItemIds.includes(item.product._id)
+  );
+
+  if (!selectedItems || selectedItems.length === 0) {
     return (
       <>
         <Navbar />
         <div className="checkout-page">
           <div className="container">
             <div className="empty-cart">
-              <h2>Your cart is empty</h2>
-              <p>Add items to cart before checkout</p>
-              <button onClick={() => navigate('/products')} className="btn btn-primary">
-                Continue Shopping
+              <h2>No items selected for checkout</h2>
+              <p>Please select items from your cart</p>
+              <button onClick={() => navigate('/cart')} className="btn btn-primary">
+                Back to Cart
               </button>
             </div>
           </div>
@@ -67,11 +86,13 @@ const Checkout = () => {
     );
   }
 
-  const subtotal = cart.totalAmount;
-  const shipping = subtotal > 10000 ? 0 : 500;
-  // Calculate tax dynamically: 18% for orders above ₹500, 5% for smaller orders
-  const tax = subtotal > 500 ? Math.round(subtotal * 0.18) : Math.round(subtotal * 0.05);
-  const total = subtotal + shipping + tax;
+  // Calculate subtotal of selected items only (NO GST, NO SHIPPING)
+  const subtotal = selectedItems.reduce((total, item) => {
+    const itemPrice = item.price || item.product.price || 0;
+    return total + (itemPrice * item.quantity);
+  }, 0);
+
+  const total = subtotal; // No GST, no shipping - only selected items total
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -136,7 +157,8 @@ const Checkout = () => {
       }
 
       const orderData = {
-        items: cart.items.map(item => ({
+        // Use ONLY selected items for order
+        items: selectedItems.map(item => ({
           product: item.product._id,
           quantity: item.quantity
         })),
@@ -176,12 +198,15 @@ const Checkout = () => {
       const { data } = await API.post('/orders', orderData);
 
       if (data.success) {
-        // Keep cart in localStorage for reference/recovery - don't clear it
-        alert('Order placed successfully!');
-        navigate('/orders');
+        // DO NOT clear cart - items persist for easy re-ordering
+        // Order has been created with copies of cart items
+        // Cart and Order are independent - user can place new orders without losing cart
+        success('Order placed successfully! 🎉');
+        setTimeout(() => navigate('/orders'), 1500);
       }
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to place order');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to place order');
+      showError(err.response?.data?.message || 'Failed to place order');
     } finally {
       setLoading(false);
     }
@@ -476,9 +501,12 @@ const Checkout = () => {
 
             <div className="checkout-summary">
               <h2>Order Summary</h2>
+              <p className="selected-info">
+                {selectedItems.length} item(s) selected for checkout
+              </p>
 
               <div className="summary-items">
-                {cart.items.map(item => (
+                {selectedItems.map(item => (
                   <div key={item._id} className="summary-item">
                     <img 
                       src={item.product.image} 
@@ -500,19 +528,12 @@ const Checkout = () => {
 
               <div className="summary-totals">
                 <div className="summary-row">
-                  <span>Subtotal</span>
+                  <span>Subtotal ({selectedItems.length} items)</span>
                   <span>₹{subtotal.toLocaleString()}</span>
                 </div>
-                <div className="summary-row">
-                  <span>Shipping</span>
-                  <span>{shipping === 0 ? 'FREE' : `₹${shipping}`}</span>
-                </div>{subtotal > 500 ? '18% GST' : '5% GST'}
-                <div className="summary-row">
-                  <span>Tax (18% GST)</span>
-                  <span>₹{tax.toLocaleString()}</span>
-                </div>
+                
                 <div className="summary-total">
-                  <span>Total</span>
+                  <span>Total (No GST/Shipping)</span>
                   <span>₹{total.toLocaleString()}</span>
                 </div>
               </div>

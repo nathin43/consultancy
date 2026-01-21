@@ -74,11 +74,9 @@ exports.createOrder = async (req, res) => {
 
     await order.save();
 
-    // Clear user's cart
-    await Cart.findOneAndUpdate(
-      { user: req.user.id },
-      { items: [], totalAmount: 0 }
-    );
+    // DO NOT clear cart - cart persists for easy re-ordering
+    // Cart and Order are independent collections
+    // User can reference cart items or place a new order
 
     res.status(201).json({
       success: true,

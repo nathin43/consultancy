@@ -5,6 +5,7 @@ import Footer from '../../components/Footer';
 import ProductReviews from '../../components/ProductReviews';
 import { CartContext } from '../../context/CartContext';
 import { AuthContext } from '../../context/AuthContext';
+import { useToast } from '../../hooks/useToast';
 import API from '../../services/api';
 import './ProductDetails.css';
 
@@ -17,6 +18,7 @@ const ProductDetails = () => {
   const navigate = useNavigate();
   const { addToCart } = useContext(CartContext);
   const { isAuthenticated } = useContext(AuthContext);
+  const { success, error, info } = useToast();
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -31,7 +33,7 @@ const ProductDetails = () => {
       setProduct(data.product);
     } catch (error) {
       console.error('Error fetching product:', error);
-      alert('Product not found');
+      error('Product not found');
       navigate('/products');
     } finally {
       setLoading(false);
@@ -40,22 +42,22 @@ const ProductDetails = () => {
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
-      alert('Please login to add items to cart');
+      info('Please login to add items to cart');
       navigate('/login');
       return;
     }
 
     const result = await addToCart(product._id, quantity);
     if (result.success) {
-      alert('Product added to cart!');
+      success('Product added to cart! 🛒');
     } else {
-      alert(result.message);
+      error(result.message);
     }
   };
 
   const handleBuyNow = async () => {
     if (!isAuthenticated) {
-      alert('Please login to purchase');
+      info('Please login to purchase');
       navigate('/login');
       return;
     }

@@ -10,42 +10,40 @@ const MOCK_PRODUCTS = {
 };
 
 /**
- * Get user's cart (or guest cart from body)
+ * Get user's cart - MongoDB Persistent Cart
  * @route GET /api/cart
- * @access Public/Private
+ * @access Private (Authentication Required)
+ * 
+ * Returns the persistent cart stored in MongoDB for the authenticated user.
+ * Cart persists across sessions until cleared after order placement.
  */
 exports.getCart = async (req, res) => {
   try {
-    // If user is authenticated, get from database
-    if (req.user) {
-      try {
-        let cart = await Cart.findOne({ user: req.user.id }).populate('items.product');
-
-        if (!cart) {
-          // Create empty cart if doesn't exist
-          cart = await Cart.create({
-            user: req.user.id,
-            items: [],
-            totalAmount: 0
-          });
-        }
-
-        return res.status(200).json({
-          success: true,
-          cart,
-          source: 'database'
-        });
-      } catch (dbError) {
-        console.warn('Database query failed for cart:', dbError.message);
-      }
+    // User must be authenticated - cart is user-specific and persistent
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required to access cart'
+      });
     }
 
-    // For guest users or when database is unavailable, cart is managed on frontend
-    res.status(200).json({
+    // Find cart in database for this user
+    let cart = await Cart.findOne({ user: req.user.id }).populate('items.product');
+
+    if (!cart) {
+      // Create empty cart for new user
+      cart = await Cart.create({
+        user: req.user.id,
+        items: [],
+        totalAmount: 0
+      });
+    }
+
+    return res.status(200).json({
       success: true,
-      message: 'Cart managed on client side',
-      source: 'localStorage',
-      cart: { items: [], totalAmount: 0 }
+      cart,
+      source: 'database',
+      message: 'Persistent cart restored from database'
     });
   } catch (error) {
     res.status(500).json({
@@ -56,77 +54,27 @@ exports.getCart = async (req, res) => {
 };
 
 /**
- * Add item to cart
+ * Add item to cart - MongoDB Persistent Cart
  * @route POST /api/cart/add
- * @access Public/Private
+ * @access Private (Authentication Required)
+ * 
+ * Adds/updates an item in the user's persistent MongoDB cart.
+ * Cart items are stored with user ID and persist across sessions.
  */
 exports.addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
 
-    // If user is authenticated, use database
-    if (req.user) {
-      try {
-        // Validate product
-        const product = await Product.findById(productId);
-        if (!product) {
-          return res.status(404).json({
-            success: false,
-            message: 'Product not found'
-          });
-        }
-
-        // Check stock
-        if (product.stock < quantity) {
-          return res.status(400).json({
-            success: false,
-            message: 'Insufficient stock'
-          });
-        }
-
-        // Find or create cart
-        let cart = await Cart.findOne({ user: req.user.id });
-        if (!cart) {
-          cart = await Cart.create({
-            user: req.user.id,
-            items: [],
-            totalAmount: 0
-          });
-        }
-
-        // Check if product already in cart
-        const existingItemIndex = cart.items.findIndex(
-          item => item.product.toString() === productId
-        );
-
-        if (existingItemIndex > -1) {
-          // Update quantity
-          cart.items[existingItemIndex].quantity += quantity;
-        } else {
-          // Add new item
-          cart.items.push({
-            product: productId,
-            quantity,
-            price: product.price
-          });
-        }
-
-        await cart.save();
-        await cart.populate('items.product');
-
-        return res.status(200).json({
-          success: true,
-          message: 'Item added to cart',
-          cart,
-          source: 'database'
-        });
-      } catch (dbError) {
-        console.warn('Database operation failed for add to cart:', dbError.message);
-      }
+    // User must be authenticated
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required to add to cart'
+      });
     }
 
-    // For guest users or when database is unavailable, validate against mock data
-    const product = MOCK_PRODUCTS[productId];
+    // Validate product
+    const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -134,6 +82,7 @@ exports.addToCart = async (req, res) => {
       });
     }
 
+    // Check stock
     if (product.stock < quantity) {
       return res.status(400).json({
         success: false,
@@ -141,11 +90,41 @@ exports.addToCart = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    // Find or create cart
+    let cart = await Cart.findOne({ user: req.user.id });
+    if (!cart) {
+      cart = await Cart.create({
+        user: req.user.id,
+        items: [],
+        totalAmount: 0
+      });
+    }
+
+    // Check if product already in cart
+    const existingItemIndex = cart.items.findIndex(
+      item => item.product.toString() === productId
+    );
+
+    if (existingItemIndex > -1) {
+      // Update quantity
+      cart.items[existingItemIndex].quantity += quantity;
+    } else {
+      // Add new item
+      cart.items.push({
+        product: productId,
+        quantity,
+        price: product.price
+      });
+    }
+
+    await cart.save();
+    await cart.populate('items.product');
+
+    return res.status(200).json({
       success: true,
-      message: 'Item added to cart (client-side)',
-      source: 'localStorage',
-      product: { ...product, quantity }
+      message: 'Item added to persistent cart',
+      cart,
+      source: 'database'
     });
   } catch (error) {
     res.status(500).json({
@@ -156,69 +135,45 @@ exports.addToCart = async (req, res) => {
 };
 
 /**
- * Update cart item quantity
+ * Update cart item quantity - MongoDB Persistent Cart
  * @route PUT /api/cart/update
- * @access Public/Private
+ * @access Private (Authentication Required)
+ * 
+ * Updates the quantity of an item in the user's persistent MongoDB cart.
  */
 exports.updateCartItem = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
 
-    // If user is authenticated, use database
-    if (req.user) {
-      try {
-        const cart = await Cart.findOne({ user: req.user.id });
-        if (!cart) {
-          return res.status(404).json({
-            success: false,
-            message: 'Cart not found'
-          });
-        }
-
-        const itemIndex = cart.items.findIndex(
-          item => item.product.toString() === productId
-        );
-
-        if (itemIndex === -1) {
-          return res.status(404).json({
-            success: false,
-            message: 'Item not found in cart'
-          });
-        }
-
-        // Validate stock
-        const product = await Product.findById(productId);
-        if (product.stock < quantity) {
-          return res.status(400).json({
-            success: false,
-            message: 'Insufficient stock'
-          });
-        }
-
-        cart.items[itemIndex].quantity = quantity;
-        await cart.save();
-        await cart.populate('items.product');
-
-        return res.status(200).json({
-          success: true,
-          message: 'Cart updated',
-          cart,
-          source: 'database'
-        });
-      } catch (dbError) {
-        console.warn('Database operation failed for update cart:', dbError.message);
-      }
-    }
-
-    // For guest users or when database is unavailable
-    const product = MOCK_PRODUCTS[productId];
-    if (!product) {
-      return res.status(404).json({
+    // User must be authenticated
+    if (!req.user) {
+      return res.status(401).json({
         success: false,
-        message: 'Product not found'
+        message: 'Authentication required to update cart'
       });
     }
 
+    const cart = await Cart.findOne({ user: req.user.id });
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cart not found'
+      });
+    }
+
+    const itemIndex = cart.items.findIndex(
+      item => item.product.toString() === productId
+    );
+
+    if (itemIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Item not found in cart'
+      });
+    }
+
+    // Validate stock
+    const product = await Product.findById(productId);
     if (product.stock < quantity) {
       return res.status(400).json({
         success: false,
@@ -226,11 +181,15 @@ exports.updateCartItem = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    cart.items[itemIndex].quantity = quantity;
+    await cart.save();
+    await cart.populate('items.product');
+
+    return res.status(200).json({
       success: true,
-      message: 'Cart item updated (client-side)',
-      source: 'localStorage',
-      product: { ...product, quantity }
+      message: 'Cart updated',
+      cart,
+      source: 'database'
     });
   } catch (error) {
     res.status(500).json({
@@ -241,47 +200,42 @@ exports.updateCartItem = async (req, res) => {
 };
 
 /**
- * Remove item from cart
+ * Remove item from cart - MongoDB Persistent Cart
  * @route DELETE /api/cart/remove/:productId
- * @access Public/Private
+ * @access Private (Authentication Required)
+ * 
+ * Removes an item from the user's persistent MongoDB cart.
  */
 exports.removeFromCart = async (req, res) => {
   try {
-    // If user is authenticated, use database
-    if (req.user) {
-      try {
-        const cart = await Cart.findOne({ user: req.user.id });
-        if (!cart) {
-          return res.status(404).json({
-            success: false,
-            message: 'Cart not found'
-          });
-        }
-
-        cart.items = cart.items.filter(
-          item => item.product.toString() !== req.params.productId
-        );
-
-        await cart.save();
-        await cart.populate('items.product');
-
-        return res.status(200).json({
-          success: true,
-          message: 'Item removed from cart',
-          cart,
-          source: 'database'
-        });
-      } catch (dbError) {
-        console.warn('Database operation failed for remove from cart:', dbError.message);
-      }
+    // User must be authenticated
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required to remove from cart'
+      });
     }
 
-    // For guest users or when database is unavailable
-    res.status(200).json({
+    const cart = await Cart.findOne({ user: req.user.id });
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cart not found'
+      });
+    }
+
+    cart.items = cart.items.filter(
+      item => item.product.toString() !== req.params.productId
+    );
+
+    await cart.save();
+    await cart.populate('items.product');
+
+    return res.status(200).json({
       success: true,
-      message: 'Item removed from cart (client-side)',
-      source: 'localStorage',
-      productId: req.params.productId
+      message: 'Item removed from persistent cart',
+      cart,
+      source: 'database'
     });
   } catch (error) {
     res.status(500).json({
@@ -292,43 +246,40 @@ exports.removeFromCart = async (req, res) => {
 };
 
 /**
- * Clear cart
+ * Clear cart - MongoDB Persistent Cart
  * @route DELETE /api/cart/clear
- * @access Public/Private
+ * @access Private (Authentication Required)
+ * 
+ * Clears the user's persistent MongoDB cart.
+ * Should only be called after successful order placement or by user request.
  */
 exports.clearCart = async (req, res) => {
   try {
-    // If user is authenticated, use database
-    if (req.user) {
-      try {
-        const cart = await Cart.findOne({ user: req.user.id });
-        if (!cart) {
-          return res.status(404).json({
-            success: false,
-            message: 'Cart not found'
-          });
-        }
-
-        cart.items = [];
-        cart.totalAmount = 0;
-        await cart.save();
-
-        return res.status(200).json({
-          success: true,
-          message: 'Cart cleared',
-          cart,
-          source: 'database'
-        });
-      } catch (dbError) {
-        console.warn('Database operation failed for clear cart:', dbError.message);
-      }
+    // User must be authenticated
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required to clear cart'
+      });
     }
 
-    // For guest users or when database is unavailable
-    res.status(200).json({
+    const cart = await Cart.findOne({ user: req.user.id });
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cart not found'
+      });
+    }
+
+    cart.items = [];
+    cart.totalAmount = 0;
+    await cart.save();
+
+    return res.status(200).json({
       success: true,
-      message: 'Cart cleared (client-side)',
-      source: 'localStorage'
+      message: 'Persistent cart cleared',
+      cart,
+      source: 'database'
     });
   } catch (error) {
     res.status(500).json({
