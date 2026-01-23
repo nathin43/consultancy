@@ -16,15 +16,6 @@ const Navbar = () => {
   const { info } = useToast();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
-      setSearchQuery('');
-    }
-  };
 
   const handleLogout = () => {
     logout();
@@ -46,25 +37,8 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* RIGHT - Search + Login */}
+          {/* RIGHT - Login */}
           <div className="header-right">
-            {/* Search Box */}
-            <div className="search-box">
-              <form onSubmit={handleSearch} className="search-form">
-                <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <path d="m21 21-4.35-4.35"></path>
-                </svg>
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Search products…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </form>
-            </div>
-
             {/* Login Button / Auth Dropdown */}
             <div className="auth-dropdown-wrapper">
               <button 

@@ -9,7 +9,7 @@ import './ProductCard.css';
  * Product Card Component
  * Modern, clean, and professional product card display
  */
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, hideAddToCart = false }) => {
   const { addToCart } = useContext(CartContext);
   const { isAuthenticated } = useContext(AuthContext);
   const { success, error, info } = useToast();
@@ -35,7 +35,12 @@ const ProductCard = ({ product }) => {
 
   return (
     <div className="product-card">
-      {/* Image Section */}
+      {/* Category Badge - Overlaid */}
+      <div className="category-badge">
+        {product.category || 'ELECTRICAL'}
+      </div>
+
+      {/* Image Section - Premium with gradient background */}
       <Link to={`/product/${product._id}`} className="product-image-wrapper">
         <div className="product-image">
           <img 
@@ -46,88 +51,60 @@ const ProductCard = ({ product }) => {
             }}
           />
         </div>
-
-        {/* Stock Badges */}
-        {product.stock === 0 && (
-          <div className="stock-badge out-of-stock">Out of Stock</div>
-        )}
-
-        {product.stock > 0 && product.stock < 5 && (
-          <div className="stock-badge low-stock">Low Stock</div>
-        )}
-
-        {product.stock >= 5 && (
-          <div className="stock-badge in-stock">In Stock</div>
-        )}
       </Link>
 
       {/* Details Section */}
       <div className="product-details">
-        {/* Brand Badge */}
-        <div className="brand-badge">{product.brand}</div>
-
-        {/* Product Name */}
+        {/* Product Name - Bold and prominent */}
         <Link to={`/product/${product._id}`} className="product-name-link">
           <h3 className="product-name">{product.name}</h3>
         </Link>
 
+        {/* Brand/Subtitle */}
+        <div className="product-subtitle">{product.brand}</div>
+
         {/* Rating */}
-        {product.ratings && (
+        {product.ratings && product.ratings.count > 0 && (
           <div className="rating-section">
-            <div className="stars-display">
-              {product.ratings.count > 0 ? (
-                <>
-                  <span className="star-icon">★</span>
-                  <span className="rating-value">{product.ratings.average?.toFixed(1) || '0'}</span>
-                  <span className="rating-count">({product.ratings.count})</span>
-                </>
-              ) : (
-                <>
-                  <span className="star-icon empty">★</span>
-                  <span className="rating-value empty">No Reviews</span>
-                </>
-              )}
-            </div>
+            <span className="star-icon">★</span>
+            <span className="rating-value">{product.ratings.average?.toFixed(1) || '0'}</span>
+            <span className="rating-count">({product.ratings.count})</span>
           </div>
         )}
 
-        {/* Price Section */}
-        <div className="price-section">
-          {product.priceType === 'range' ? (
-            <div className="price-display">
-              <span className="price-label">Starting from</span>
+        {/* Price and Stock Section - Inline Layout */}
+        <div className="price-stock-section">
+          <div className="price-container">
+            {product.priceType === 'range' ? (
+              <>
+                <span className="price-label">from</span>
+                <span className="price-value">
+                  {formatPrice(product.priceMin)}
+                </span>
+              </>
+            ) : (
               <span className="price-value">
-                {formatPrice(product.priceMin)} - {formatPrice(product.priceMax)}
+                {formatPrice(product.price)}
               </span>
+            )}
+          </div>
+
+          {/* Stock Badge - Premium pill style */}
+          {product.stock > 0 ? (
+            <div className="stock-badge-premium in-stock">
+              In Stock
             </div>
           ) : (
-            <span className="price-value">
-              {formatPrice(product.price)}
-            </span>
+            <div className="stock-badge-premium out-of-stock">
+              Out of Stock
+            </div>
           )}
         </div>
 
-        {/* Stock Indicator */}
-        <div className="stock-info">
-          <span className={`stock-badge-inline ${product.stock > 10 ? 'plenty' : product.stock > 0 ? 'limited' : 'out'}`}>
-            {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-          </span>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="action-buttons">
-          <button
-            onClick={handleAddToCart}
-            disabled={product.stock === 0}
-            className={`btn-primary ${product.stock === 0 ? 'disabled' : ''}`}
-          >
-            {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-          </button>
-
-          <Link to={`/product/${product._id}`} className="btn-secondary">
-            View Details
-          </Link>
-        </div>
+        {/* View Details Button - Full Width Premium */}
+        <Link to={`/product/${product._id}`} className="view-details-btn">
+          View Details
+        </Link>
       </div>
     </div>
   );

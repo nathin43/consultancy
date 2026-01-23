@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import API from '../../services/api';
 import './AdminDashboard.css';
 
 /**
- * Admin Dashboard Page
- * Overview of store statistics and recent activities
+ * Admin Dashboard
+ * Modern, clean dashboard for daily decision-making
  */
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [recentOrders, setRecentOrders] = useState([]);
-  const [categorySales, setCategorySales] = useState({});
   const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [timeView, setTimeView] = useState('daily');
 
   useEffect(() => {
     fetchDashboardData();
@@ -23,19 +24,18 @@ const AdminDashboard = () => {
       const { data } = await API.get('/admin/dashboard');
       setStats(data.stats);
       setRecentOrders(data.recentOrders);
-      setCategorySales(data.categorySales);
       
-      // Generate mock chart data
+      // Generate chart data
       setChartData({
         daily: generateDailyData(),
-        monthly: generateMonthlyData()
+        weekly: generateWeeklyData()
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       // Set mock data on error
       setChartData({
         daily: generateDailyData(),
-        monthly: generateMonthlyData()
+        weekly: generateWeeklyData()
       });
     } finally {
       setLoading(false);
@@ -49,100 +49,150 @@ const AdminDashboard = () => {
     }));
   };
 
-  const generateMonthlyData = () => {
-    return Array.from({ length: 12 }, (_, i) => ({
-      month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i],
-      sales: Math.floor(Math.random() * 100000) + 50000
+  const generateWeeklyData = () => {
+    return Array.from({ length: 4 }, (_, i) => ({
+      week: `Week ${i + 1}`,
+      sales: Math.floor(Math.random() * 200000) + 100000
     }));
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return '🌅 Good Morning';
+    if (hour < 18) return '☀️ Good Afternoon';
+    return '🌙 Good Evening';
+  };
+
+  const getSystemStatus = () => {
+    const statuses = ['All Systems Operational', 'System Running Smoothly', 'Everything Normal'];
+    return statuses[Math.floor(Math.random() * statuses.length)];
   };
 
   if (loading) {
     return (
       <AdminLayout>
-        <div className="spinner"></div>
+        <div className="dashboard-container">
+          <div className="skeleton-header"></div>
+          <div className="skeleton-metrics">
+            {[1, 2, 3, 4].map(i => <div key={i} className="skeleton-kpi"></div>)}
+          </div>
+          <div className="skeleton-charts">
+            {[1, 2].map(i => <div key={i} className="skeleton-chart"></div>)}
+          </div>
+        </div>
       </AdminLayout>
     );
   }
 
   return (
     <AdminLayout>
-      <div className="dashboard">
-        {/* Welcome Section */}
-        <div className="welcome-section">
-          <h2>Welcome back to your dashboard</h2>
-          <p>Here's your store performance overview</p>
+      <div className="dashboard-container">
+        
+        {/* Header Section */}
+        <div className="dashboard-header">
+          <div className="header-left">
+            <h1>{getGreeting()}, Admin</h1>
+            <p className="header-date">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
+          <div className="header-right">
+            <div className="system-status">
+              <span className="status-indicator online"></span>
+              <span className="status-text">{getSystemStatus()}</span>
+            </div>
+            <Link to="/" className="btn-view-site">View Site</Link>
+          </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="stats-grid">
-          <div className="stat-card premium">
-            <div className="stat-header">
-              <div className="stat-icon" style={{ background: '#dbeafe' }}>
-                <span style={{ color: '#2563eb' }}>💰</span>
-              </div>
-              <div className="stat-badge">+12.5%</div>
-            </div>
-            <div className="stat-content">
-              <h3>Total Sales</h3>
-              <p className="stat-value">₹{stats?.totalSales?.toLocaleString() || 0}</p>
-              <span className="stat-subtitle">vs last month</span>
+        {/* KPI Cards */}
+        <div className="kpi-grid">
+          <div className="kpi-card">
+            <div className="kpi-icon sales">💰</div>
+            <div className="kpi-content">
+              <p className="kpi-label">Total Sales</p>
+              <h3 className="kpi-value">₹{stats?.totalSales?.toLocaleString() || 0}</h3>
+              <div className="kpi-trend up">↑ 12.5%</div>
             </div>
           </div>
 
-          <div className="stat-card premium">
-            <div className="stat-header">
-              <div className="stat-icon" style={{ background: '#dcfce7' }}>
-                <span style={{ color: '#16a34a' }}>🛒</span>
-              </div>
-              <div className="stat-badge green">+8.2%</div>
-            </div>
-            <div className="stat-content">
-              <h3>Total Orders</h3>
-              <p className="stat-value">{stats?.totalOrders || 0}</p>
-              <span className="stat-subtitle">vs last month</span>
+          <div className="kpi-card">
+            <div className="kpi-icon orders">🛒</div>
+            <div className="kpi-content">
+              <p className="kpi-label">Total Orders</p>
+              <h3 className="kpi-value">{stats?.totalOrders || 0}</h3>
+              <div className="kpi-trend up">↑ 8.2%</div>
             </div>
           </div>
 
-          <div className="stat-card premium">
-            <div className="stat-header">
-              <div className="stat-icon" style={{ background: '#fef3c7' }}>
-                <span style={{ color: '#d97706' }}>📦</span>
-              </div>
-              <div className="stat-badge orange">+5.1%</div>
-            </div>
-            <div className="stat-content">
-              <h3>Total Products</h3>
-              <p className="stat-value">{stats?.totalProducts || 0}</p>
-              <span className="stat-subtitle">in inventory</span>
+          <div className="kpi-card">
+            <div className="kpi-icon products">📦</div>
+            <div className="kpi-content">
+              <p className="kpi-label">Total Products</p>
+              <h3 className="kpi-value">{stats?.totalProducts || 0}</h3>
+              <div className="kpi-trend down">↓ 2.1%</div>
             </div>
           </div>
 
-          <div className="stat-card premium">
-            <div className="stat-header">
-              <div className="stat-icon" style={{ background: '#e0e7ff' }}>
-                <span style={{ color: '#6366f1' }}>👥</span>
-              </div>
-              <div className="stat-badge purple">+15.3%</div>
-            </div>
-            <div className="stat-content">
-              <h3>Total Customers</h3>
-              <p className="stat-value">{stats?.totalCustomers || 0}</p>
-              <span className="stat-subtitle">active users</span>
+          <div className="kpi-card">
+            <div className="kpi-icon customers">👥</div>
+            <div className="kpi-content">
+              <p className="kpi-label">Total Customers</p>
+              <h3 className="kpi-value">{stats?.totalCustomers || 0}</h3>
+              <div className="kpi-trend up">↑ 15.3%</div>
             </div>
           </div>
         </div>
 
         {/* Charts Section */}
         <div className="charts-section">
-          <div className="chart-container">
-            <h3>Daily Sales</h3>
+          <div className="chart-card">
+            <div className="chart-header">
+              <h2>Sales Trend</h2>
+              <div className="chart-controls">
+                <button
+                  className={`chart-btn ${timeView === 'daily' ? 'active' : ''}`}
+                  onClick={() => setTimeView('daily')}
+                >
+                  Daily
+                </button>
+                <button
+                  className={`chart-btn ${timeView === 'weekly' ? 'active' : ''}`}
+                  onClick={() => setTimeView('weekly')}
+                >
+                  Weekly
+                </button>
+              </div>
+            </div>
+
             <div className="chart-wrapper">
-              {chartData?.daily && (
-                <div className="bar-chart">
+              {timeView === 'daily' && chartData?.daily && (
+                <div className="line-chart">
                   {chartData.daily.map((item, idx) => (
-                    <div key={idx} className="bar-item">
-                      <div className="bar-column" style={{ height: `${(item.sales / 60000) * 200}px` }}></div>
+                    <div key={idx} className="chart-bar">
+                      <div
+                        className="bar-fill"
+                        style={{ height: `${(item.sales / 60000) * 100}%` }}
+                        title={`${item.day}: ₹${item.sales.toLocaleString()}`}
+                      >
+                        {idx === 3 && <span className="peak-dot">●</span>}
+                      </div>
                       <label>{item.day}</label>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {timeView === 'weekly' && chartData?.weekly && (
+                <div className="line-chart">
+                  {chartData.weekly.map((item, idx) => (
+                    <div key={idx} className="chart-bar">
+                      <div
+                        className="bar-fill"
+                        style={{ height: `${(item.sales / 250000) * 100}%` }}
+                        title={`${item.week}: ₹${item.sales.toLocaleString()}`}
+                      >
+                        {idx === 2 && <span className="peak-dot">●</span>}
+                      </div>
+                      <label>{item.week}</label>
                     </div>
                   ))}
                 </div>
@@ -150,111 +200,136 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="chart-container">
-            <h3>Sales Performance</h3>
-            <div className="performance-metrics">
-              <div className="metric">
-                <div className="metric-circle" style={{ background: 'conic-gradient(#7c3aed 0deg 270deg, #e5e7eb 270deg)' }}>
-                  <span>75%</span>
+          <div className="chart-card">
+            <div className="chart-header">
+              <h2>Order Status</h2>
+            </div>
+
+            <div className="donut-wrapper">
+              <div className="donut-chart">
+                <div className="donut-segment delivered" style={{ '--percentage': '45%' }}></div>
+                <div className="donut-segment shipped" style={{ '--percentage': '30%' }}></div>
+                <div className="donut-segment pending" style={{ '--percentage': '20%' }}></div>
+                <div className="donut-segment cancelled" style={{ '--percentage': '5%' }}></div>
+                <div className="donut-center">
+                  <span className="donut-value">100</span>
+                  <span className="donut-label">Orders</span>
                 </div>
-                <p>Monthly Target</p>
               </div>
-              <div className="metric">
-                <div className="metric-circle" style={{ background: 'conic-gradient(#3b82f6 0deg 180deg, #e5e7eb 180deg)' }}>
-                  <span>60%</span>
+
+              <div className="donut-legend">
+                <div className="legend-item">
+                  <span className="legend-dot delivered"></span>
+                  <span className="legend-label">Delivered (45)</span>
                 </div>
-                <p>Growth Rate</p>
+                <div className="legend-item">
+                  <span className="legend-dot shipped"></span>
+                  <span className="legend-label">Shipped (30)</span>
+                </div>
+                <div className="legend-item">
+                  <span className="legend-dot pending"></span>
+                  <span className="legend-label">Pending (20)</span>
+                </div>
+                <div className="legend-item">
+                  <span className="legend-dot cancelled"></span>
+                  <span className="legend-label">Cancelled (5)</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="quick-stats">
-          <div className="quick-stat-item">
-            <span className="quick-stat-label">⏳ Pending Orders</span>
-            <span className="quick-stat-value">{stats?.pendingOrders || 0}</span>
+        {/* Quick Insights */}
+        <div className="insights-row">
+          <div className="insight-card">
+            <div className="insight-icon pending">⏳</div>
+            <div className="insight-content">
+              <p className="insight-label">Pending Orders</p>
+              <h4 className="insight-value">{stats?.pendingOrders || 0}</h4>
+              <p className="insight-desc">Awaiting processing</p>
+            </div>
           </div>
-          <div className="quick-stat-item">
-            <span className="quick-stat-label">📉 Out of Stock</span>
-            <span className="quick-stat-value">{stats?.outOfStock || 0}</span>
+
+          <div className="insight-card">
+            <div className="insight-icon lowstock">⚠️</div>
+            <div className="insight-content">
+              <p className="insight-label">Low Stock Items</p>
+              <h4 className="insight-value">{stats?.lowStockItems || 0}</h4>
+              <p className="insight-desc">Less than 10 units</p>
+            </div>
           </div>
-          <div className="quick-stat-item">
-            <span className="quick-stat-label">⭐ Avg Rating</span>
-            <span className="quick-stat-value">4.5</span>
+
+          <div className="insight-card">
+            <div className="insight-icon outofstock">🚫</div>
+            <div className="insight-content">
+              <p className="insight-label">Out of Stock</p>
+              <h4 className="insight-value">{stats?.outOfStock || 0}</h4>
+              <p className="insight-desc">Need restocking</p>
+            </div>
+          </div>
+
+          <div className="insight-card">
+            <div className="insight-icon rating">⭐</div>
+            <div className="insight-content">
+              <p className="insight-label">Avg Rating</p>
+              <h4 className="insight-value">4.8</h4>
+              <p className="insight-desc">From customers</p>
+            </div>
           </div>
         </div>
 
-        {/* Category Sales */}
-        <div className="dashboard-section">
-          <h2>Sales by Category</h2>
-          <div className="category-sales">
-            {Object.entries(categorySales).map(([category, sales]) => (
-              <div key={category} className="category-item">
-                <div className="category-info">
-                  <span className="category-name">{category}</span>
-                  <span className="category-sales">₹{sales.toLocaleString()}</span>
-                </div>
-                <div className="category-bar">
-                  <div
-                    className="category-bar-fill"
-                    style={{
-                      width: `${(sales / Math.max(...Object.values(categorySales))) * 100}%`
-                    }}
-                  ></div>
-                </div>
-              </div>
-            ))}
+        {/* Quick Actions */}
+        <div className="quick-actions-section">
+          <h2>Quick Actions</h2>
+          <div className="actions-grid">
+            <Link to="/admin/products/add" className="action-card">
+              <div className="action-icon">➕</div>
+              <p>Add Product</p>
+            </Link>
+
+            <Link to="/admin/orders" className="action-card">
+              <div className="action-icon">📋</div>
+              <p>View Orders</p>
+            </Link>
+
+            <Link to="/admin/products" className="action-card">
+              <div className="action-icon">📦</div>
+              <p>Manage Stock</p>
+            </Link>
+
+            <Link to="/admin/customers" className="action-card">
+              <div className="action-icon">👥</div>
+              <p>Customers</p>
+            </Link>
           </div>
         </div>
 
         {/* Recent Orders */}
-        <div className="dashboard-section">
-          <h2>Recent Orders</h2>
-          <div className="orders-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Order Number</th>
-                  <th>Customer</th>
-                  <th>Total</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentOrders.map((order) => (
-                  <tr key={order._id}>
-                    <td>#{order.orderNumber}</td>
-                    <td>{order.user?.name}</td>
-                    <td>₹{order.totalPrice.toLocaleString()}</td>
-                    <td>
-                      <span className={`badge badge-${getStatusColor(order.orderStatus)}`}>
-                        {order.orderStatus}
-                      </span>
-                    </td>
-                    <td>{new Date(order.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {recentOrders.length > 0 && (
+          <div className="recent-orders-section">
+            <h2>Recent Orders</h2>
+            <div className="orders-grid">
+              {recentOrders.slice(0, 6).map((order) => (
+                <div key={order._id} className="order-item">
+                  <div className="order-header-mini">
+                    <span className="order-number">#{order.orderNumber}</span>
+                    <span className={`order-status-badge status-${order.orderStatus}`}>
+                      {order.orderStatus}
+                    </span>
+                  </div>
+                  <p className="order-customer">{order.user?.name}</p>
+                  <div className="order-footer-mini">
+                    <span className="order-total">₹{order.totalPrice.toLocaleString()}</span>
+                    <span className="order-date">{new Date(order.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </AdminLayout>
   );
-};
-
-const getStatusColor = (status) => {
-  const colors = {
-    pending: 'warning',
-    confirmed: 'primary',
-    processing: 'primary',
-    shipped: 'primary',
-    delivered: 'success',
-    cancelled: 'danger'
-  };
-  return colors[status] || 'primary';
 };
 
 export default AdminDashboard;

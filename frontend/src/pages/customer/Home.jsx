@@ -103,7 +103,7 @@ const Home = () => {
   };
 
   const handleEasyReturnsClick = () => {
-    navigate('/contact');
+    navigate('/easy-return');
   };
 
   const handleSupportClick = () => {
@@ -267,9 +267,6 @@ const Home = () => {
                 </Link>
 
                 <div className="featured-card-actions">
-                  <button className="featured-btn-primary">
-                    <span>Add to Cart</span>
-                  </button>
                   <Link to={`/product/${products[currentProductIndex]._id}`} className="featured-btn-secondary">
                     View Details
                   </Link>

@@ -8,6 +8,7 @@ import ProductDetails from './pages/customer/ProductDetails';
 import Services from './pages/customer/Services';
 import ServiceDetails from './pages/customer/ServiceDetails';
 import Contact from './pages/customer/Contact';
+import EasyReturn from './pages/customer/EasyReturn';
 import Cart from './pages/customer/Cart';
 import Checkout from './pages/customer/Checkout';
 import Login from './pages/customer/Login';
@@ -45,6 +46,7 @@ function App() {
         <Route path="/services" element={<Services />} />
         <Route path="/service/:serviceId" element={<ServiceDetails />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/easy-return" element={<EasyReturn />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
