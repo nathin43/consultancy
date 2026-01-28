@@ -25,8 +25,18 @@ const adminSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'superadmin'],
-    default: 'admin'
+    enum: ['MAIN_ADMIN', 'SUB_ADMIN'],
+    default: 'SUB_ADMIN'
+  },
+  status: {
+    type: String,
+    enum: ['Active', 'Disabled'],
+    default: 'Active'
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
+    default: null
   },
   permissions: {
     canManageProducts: {

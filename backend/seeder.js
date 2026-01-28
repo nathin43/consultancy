@@ -21,10 +21,10 @@ dotenv.config();
 // Sample Admin Data
 const admins = [
   {
-    name: 'Admin User',
-    email: 'admin@electricshop.com',
-    password: 'admin123',
-    role: 'superadmin',
+    name: 'Mani Admin',
+    email: 'manielectricals@gmail.com',
+    password: 'Mani1234',
+    role: 'MAIN_ADMIN',
     permissions: {
       canManageProducts: true,
       canManageOrders: true,
@@ -33,10 +33,10 @@ const admins = [
     }
   },
   {
-    name: 'Tyson Admin',
-    email: 'tysontysontt43@gmail.com',
-    password: 'Tyson123',
-    role: 'superadmin',
+    name: 'Sub Admin',
+    email: 'subadmin@electricshop.com',
+    password: 'SubAdmin123',
+    role: 'SUB_ADMIN',
     permissions: {
       canManageProducts: true,
       canManageOrders: true,

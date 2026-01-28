@@ -49,7 +49,8 @@ const ProductDetails = () => {
 
     const result = await addToCart(product._id, quantity);
     if (result.success) {
-      success('Product added to cart! 🛒');
+      success(`Added ${quantity} item(s) to cart! 🛒`);
+      setQuantity(1); // Reset quantity after successful add
     } else {
       error(result.message);
     }

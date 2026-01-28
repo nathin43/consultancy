@@ -24,7 +24,8 @@ export const AuthProvider = ({ children }) => {
     }
 
     if (adminToken && adminData) {
-      setAdmin(JSON.parse(adminData));
+      const parsedAdmin = JSON.parse(adminData);
+      setAdmin(parsedAdmin);
     }
 
     setLoading(false);

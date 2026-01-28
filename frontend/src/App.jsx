@@ -24,10 +24,12 @@ import AdminAddProduct from './pages/admin/AdminAddProduct';
 import AdminEditProduct from './pages/admin/AdminEditProduct';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminCustomers from './pages/admin/AdminCustomers';
+import AdminManagement from './pages/admin/AdminManagement';
 
 // Components
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
+import MainAdminRoute from './components/MainAdminRoute';
 
 /**
  * Main App Component
@@ -65,6 +67,7 @@ function App() {
         <Route path="/admin/products/edit/:id" element={<AdminRoute><AdminEditProduct /></AdminRoute>} />
         <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
         <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />
+        <Route path="/admin/admin-management" element={<MainAdminRoute><AdminManagement /></MainAdminRoute>} />
       </Routes>
     </>
   );

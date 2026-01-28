@@ -10,6 +10,7 @@ import './ProductReviews.css';
 const ProductReviews = ({ productId }) => {
   const { isAuthenticated, user } = useContext(AuthContext);
   const [reviews, setReviews] = useState([]);
+  const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [canReview, setCanReview] = useState(true);
@@ -27,6 +28,7 @@ const ProductReviews = ({ productId }) => {
 
   useEffect(() => {
     fetchReviews();
+    fetchProduct();
     if (isAuthenticated) {
       checkIfUserCanReview();
     }
@@ -41,6 +43,15 @@ const ProductReviews = ({ productId }) => {
       console.error('Error fetching reviews:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProduct = async () => {
+    try {
+      const { data } = await API.get(`/products/${productId}`);
+      setProduct(data.product);
+    } catch (error) {
+      console.error('Error fetching product:', error);
     }
   };
 
@@ -203,12 +214,14 @@ const ProductReviews = ({ productId }) => {
       <div className="review-summary">
         <div className="rating-info">
           <div className="average-rating">
-            <div className="rating-number">4.5</div>
+            <div className="rating-number">
+              {product?.ratings?.average || 0}
+            </div>
             <div className="rating-stars">
-              {renderStars(4.5)}
+              {renderStars(product?.ratings?.average || 0)}
             </div>
             <div className="rating-count">
-              Based on {reviews.length} reviews
+              Based on {product?.ratings?.count || reviews.length} reviews
             </div>
           </div>
         </div>

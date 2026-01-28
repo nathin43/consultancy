@@ -15,6 +15,9 @@ const AdminLayout = ({ children }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Debug: Log admin data
+  console.log('AdminLayout - Admin Data:', admin);
+
   const handleLogout = () => {
     adminLogout();
     navigate('/admin/login');
@@ -26,6 +29,11 @@ const AdminLayout = ({ children }) => {
     { path: '/admin/orders', icon: '🛒', label: 'Orders', tooltip: 'Orders' },
     { path: '/admin/customers', icon: '👥', label: 'Customers', tooltip: 'Customers' }
   ];
+
+  // Only add Admin Management menu for MAIN_ADMIN (role-based check)
+  const adminMenuItems = admin?.role === 'MAIN_ADMIN'
+    ? [{ path: '/admin/admin-management', icon: '🔐', label: 'Admin Management', tooltip: 'Admin Management' }]
+    : [];
 
   return (
     <div className="admin-layout">
@@ -63,6 +71,35 @@ const AdminLayout = ({ children }) => {
               ))}
             </div>
           </div>
+
+          {/* Admin Management Section - MAIN_ADMIN Only */}
+          {adminMenuItems.length > 0 && (
+            <div className="menu-section">
+              {!sidebarCollapsed && <span className="menu-section-label">Administration</span>}
+              <div className="menu-items">
+                {adminMenuItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`menu-item ${location.pathname === item.path ? 'active' : ''}`}
+                    title={sidebarCollapsed ? item.tooltip : item.label}
+                  >
+                    <span className="menu-icon">{item.icon}</span>
+                    {!sidebarCollapsed && <span className="menu-label">{item.label}</span>}
+                    {location.pathname === item.path && <span className="active-indicator"></span>}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* DEBUG: Show email for testing */}
+          {!sidebarCollapsed && (
+            <div style={{ padding: '10px', fontSize: '10px', color: '#999', borderTop: '1px solid #ddd', marginTop: 'auto' }}>
+              <p>Email: {admin?.email || 'Not logged in'}</p>
+              <p>Role: {admin?.role || 'N/A'}</p>
+            </div>
+          )}
         </nav>
 
         {/* Collapse Toggle */}
@@ -79,7 +116,11 @@ const AdminLayout = ({ children }) => {
 
       <main className="admin-content">
         <div className="admin-header">
-          <h1>{menuItems.find(item => item.path === location.pathname)?.label || 'Admin Panel'}</h1>
+          <h1>
+            {menuItems.find(item => item.path === location.pathname)?.label ||
+             adminMenuItems.find(item => item.path === location.pathname)?.label ||
+             'Admin Panel'}
+          </h1>
           
           <div className="header-actions">
             <a href="/" target="_blank" rel="noopener noreferrer" className="view-site-link">

@@ -156,8 +156,17 @@ exports.adminLogin = async (req, res) => {
       });
     }
 
-    // Generate token
-    const token = generateToken(admin._id);
+    // Set role based on email - manielectricals@gmail.com is MAIN_ADMIN
+    let adminRole = admin.email === 'manielectricals@gmail.com' ? 'MAIN_ADMIN' : 'SUB_ADMIN';
+    
+    // Update role in database if needed
+    if (admin.role !== adminRole) {
+      admin.role = adminRole;
+      await admin.save();
+    }
+
+    // Generate token with role included for validation on protected routes
+    const token = generateToken(admin._id, adminRole);
 
     res.status(200).json({
       success: true,
@@ -167,7 +176,7 @@ exports.adminLogin = async (req, res) => {
         id: admin._id,
         name: admin.name,
         email: admin.email,
-        role: admin.role,
+        role: adminRole,
         permissions: admin.permissions
       }
     });

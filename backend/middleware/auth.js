@@ -81,6 +81,9 @@ exports.adminProtect = async (req, res, next) => {
       });
     }
 
+    // Set role from JWT token (for role-based access control)
+    req.admin.role = decoded.role || 'SUB_ADMIN';
+
     next();
   } catch (error) {
     return res.status(401).json({
@@ -88,4 +91,50 @@ exports.adminProtect = async (req, res, next) => {
       message: 'Not authorized to access admin panel'
     });
   }
+};
+
+/**
+ * Role-based authorization middleware
+ * Only allows MAIN_ADMIN to access admin management features
+ * SUB_ADMIN receives 403 Forbidden
+ */
+exports.mainAdminOnly = (req, res, next) => {
+  if (!req.admin) {
+    return res.status(401).json({
+      success: false,
+      message: 'Not authenticated'
+    });
+  }
+
+  // Check if admin is MAIN_ADMIN by role
+  if (req.admin.role !== 'MAIN_ADMIN') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Admin management is restricted.'
+    });
+  }
+
+  next();
+};
+
+/**
+ * Check admin status middleware
+ * Ensures admin is Active
+ */
+exports.checkAdminStatus = (req, res, next) => {
+  if (!req.admin) {
+    return res.status(401).json({
+      success: false,
+      message: 'Not authenticated'
+    });
+  }
+
+  if (req.admin.status === 'Disabled') {
+    return res.status(403).json({
+      success: false,
+      message: 'Your admin account has been disabled'
+    });
+  }
+
+  next();
 };
