@@ -337,12 +337,64 @@
   padding: 16px 40px;
   box-sizing: border-box;
   margin: 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.navbar-menu-container {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.menu-toggle {
+  display: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: #ffffff;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-direction: column;
+  cursor: pointer;
+  position: absolute;
+  right: 0;
+  transition: all 0.2s ease;
+}
+
+.menu-toggle:hover {
+  border-color: rgba(66, 121, 163, 0.5);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.menu-toggle-bar {
+  width: 18px;
+  height: 2px;
+  background: #1e293b;
+  border-radius: 999px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.menu-toggle.open .menu-toggle-bar:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.menu-toggle.open .menu-toggle-bar:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-toggle.open .menu-toggle-bar:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
 }
 
 .navbar-menu {
   display: flex;
   list-style: none;
-  gap: 50px;
+  gap: 36px;
   margin: 0;
   flex: 0;
   justify-content: center;
@@ -351,39 +403,48 @@
   width: auto;
 }
 
-.navbar-menu a {
+.nav-link {
   font-weight: 500;
-  color: #1e293b;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #1f2937;
+  transition: all 0.25s ease;
   position: relative;
-  padding: 10px 14px;
-  border-radius: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
   white-space: nowrap;
   text-decoration: none;
+  letter-spacing: 0.2px;
 }
 
-.navbar-menu a::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #4279a3, #4279a3);
-  transition: width 0.3s;
-  box-shadow: 0 0 10px rgba(66, 121, 163, 0.3);
-}
-
-.navbar-menu a:hover {
+.nav-link:hover {
   color: #4279a3;
-  transform: translateY(-2px);
-  background: rgba(66, 121, 163, 0.05);
-  box-shadow: 0 0 15px rgba(66, 121, 163, 0.1);
+  background: rgba(66, 121, 163, 0.08);
+  transform: translateY(-1px);
 }
 
-.navbar-menu a:hover::before {
-  width: 80%;
+.nav-link.active {
+  color: #4279a3;
+  font-weight: 600;
+  background: rgba(66, 121, 163, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(66, 121, 163, 0.32);
+  padding: 10px 18px;
+  animation: nav-active-pop 0.28s ease-in-out;
+}
+
+.nav-link.active:hover {
+  background: rgba(66, 121, 163, 0.26);
+  transform: scale(1.03);
+}
+
+@keyframes nav-active-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 }
 
 .cart-link {
@@ -391,9 +452,6 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #1e293b;
-  font-weight: 500;
-  transition: color 0.3s;
 }
 
 .cart-badge {
@@ -410,6 +468,7 @@
   justify-content: center;
   font-size: 11px;
   font-weight: 600;
+  box-shadow: 0 6px 14px rgba(239, 68, 68, 0.35);
 }
 
 /* RESPONSIVE DESIGN */
@@ -443,14 +502,44 @@
     display: inline;
   }
 
-  .navbar-menu {
-    gap: 16px;
-    font-size: 14px;
-  }
-
   .navbar-menu-section {
     padding: 12px 20px;
   }
+
+  .navbar-menu-container {
+    justify-content: space-between;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+  }
+
+  .navbar-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    left: 0;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+    z-index: 90;
+  }
+
+  .navbar-menu.open {
+    display: flex;
+  }
+
+  .nav-link {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
 }
 
 @media (max-width: 576px) {
@@ -491,16 +580,11 @@
     font-size: 16px;
   }
 
-  .navbar-menu {
-    gap: 12px;
-    font-size: 12px;
-  }
-
   .navbar-menu-section {
     padding: 12px 16px;
   }
 
-  .navbar-menu a {
-    padding: 8px 10px;
+  .nav-link {
+    padding: 10px 12px;
   }
 }

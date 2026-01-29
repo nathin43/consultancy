@@ -55,30 +55,137 @@
   border: 2px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  background: white;
 }
 
 .payment-option:hover {
   border-color: var(--primary-color);
   background: var(--light-color);
+  transform: translateX(4px);
 }
 
 .payment-option input[type="radio"] {
   width: auto;
   margin-right: 12px;
+  cursor: pointer;
 }
 
-.payment-option input[type="radio"]:checked + span {
+.payment-option input[type="radio"]:checked ~ span {
   font-weight: 600;
   color: var(--primary-color);
 }
 
+.payment-option:has(input[type="radio"]:checked) {
+  border-color: var(--primary-color);
+  background: rgba(139, 92, 246, 0.05);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
 .payment-details {
   background: var(--light-color);
-  padding: 20px;
+  padding: 24px;
   border-radius: 8px;
-  margin-top: 16px;
+  margin-top: 20px;
   border-left: 4px solid var(--primary-color);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+    transform: translateY(0);
+  }
+}
+
+/* Cash on Delivery Styles */
+.payment-details.cod-message {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  border-left-color: #0ea5e9;
+  text-align: center;
+}
+
+.cod-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.payment-details.cod-message h3 {
+  color: #0369a1;
+  margin-bottom: 8px;
+  font-size: 20px;
+}
+
+.cod-description {
+  font-size: 16px;
+  color: #0c4a6e;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.cod-info {
+  background: white;
+  padding: 16px;
+  border-radius: 6px;
+  text-align: left;
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.cod-info p {
+  margin: 8px 0;
+  color: #475569;
+  font-size: 14px;
+}
+
+/* Card Details Styles */
+.payment-details.card-details {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border-left-color: #a855f7;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.card-icon {
+  font-size: 28px;
+}
+
+.card-header h3 {
+  color: #7e22ce;
+  margin: 0;
+}
+
+.card-security-info {
+  background: rgba(167, 139, 250, 0.1);
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 16px;
+  text-align: center;
+}
+
+.card-security-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #6b21a8;
+  font-weight: 500;
+}
+
+/* UPI Details Styles */
+.payment-details.upi-details {
+  background: white;
+  border-left-color: #10b981;
+  padding: 20px;
 }
 
 .payment-details h3 {
@@ -289,5 +396,30 @@
 
   .checkout-summary {
     position: static;
+  }
+
+  .payment-option {
+    padding: 14px 12px;
+  }
+
+  .payment-option span {
+    font-size: 14px;
+  }
+
+  .payment-details {
+    padding: 16px;
+  }
+
+  .card-header h3,
+  .payment-details.cod-message h3 {
+    font-size: 18px;
+  }
+
+  .payment-details .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-page h1 {
+    font-size: 24px;
   }
 }

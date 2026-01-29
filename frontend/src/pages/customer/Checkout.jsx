@@ -44,11 +44,7 @@ const Checkout = () => {
     debitCvv: '',
     // UPI fields
     upiId: '',
-    upiProvider: 'gpay',
-    // Net Banking fields
-    bankName: '',
-    accountNumber: '',
-    ifscCode: ''
+    upiProvider: 'gpay'
   });
   
   const [loading, setLoading] = useState(false);
@@ -111,7 +107,8 @@ const Checkout = () => {
           setLoading(false);
           return;
         }
-        if (formData.cardNumber.replace(/\s/g, '').length !== 16) {
+        const cleanCardNumber = formData.cardNumber.replace(/\s/g, '');
+        if (cleanCardNumber.length !== 16) {
           setError('Card number must be 16 digits');
           setLoading(false);
           return;
@@ -121,19 +118,30 @@ const Checkout = () => {
           setLoading(false);
           return;
         }
+        if (!formData.expiryDate.match(/^(0[1-9]|1[0-2])\/\d{2}$/)) {
+          setError('Expiry date must be in MM/YY format');
+          setLoading(false);
+          return;
+        }
       } else if (formData.paymentMethod === 'Debit Card') {
         if (!formData.debitCardholderName || !formData.debitCardNumber || !formData.debitExpiryDate || !formData.debitCvv) {
           setError('Please fill all debit card details');
           setLoading(false);
           return;
         }
-        if (formData.debitCardNumber.replace(/\s/g, '').length !== 16) {
+        const cleanCardNumber = formData.debitCardNumber.replace(/\s/g, '');
+        if (cleanCardNumber.length !== 16) {
           setError('Card number must be 16 digits');
           setLoading(false);
           return;
         }
         if (!formData.debitCvv.match(/^\d{3,4}$/)) {
           setError('CVV must be 3-4 digits');
+          setLoading(false);
+          return;
+        }
+        if (!formData.debitExpiryDate.match(/^(0[1-9]|1[0-2])\/\d{2}$/)) {
+          setError('Expiry date must be in MM/YY format');
           setLoading(false);
           return;
         }
@@ -145,12 +153,6 @@ const Checkout = () => {
         }
         if (!formData.upiId.match(/^[a-zA-Z0-9._-]+@[a-zA-Z]+$/)) {
           setError('Please enter valid UPI ID (e.g., username@upi)');
-          setLoading(false);
-          return;
-        }
-      } else if (formData.paymentMethod === 'Net Banking') {
-        if (!formData.bankName || !formData.accountNumber || !formData.ifscCode) {
-          setError('Please fill all net banking details');
           setLoading(false);
           return;
         }
@@ -175,22 +177,17 @@ const Checkout = () => {
         paymentDetails: {
           creditCard: formData.paymentMethod === 'Credit Card' ? {
             cardholderName: formData.cardholderName,
-            cardNumber: formData.cardNumber.slice(-4), // Only store last 4 digits for security
+            cardNumber: formData.cardNumber.replace(/\s/g, '').slice(-4), // Only store last 4 digits for security
             expiryDate: formData.expiryDate
           } : null,
           debitCard: formData.paymentMethod === 'Debit Card' ? {
             cardholderName: formData.debitCardholderName,
-            cardNumber: formData.debitCardNumber.slice(-4),
+            cardNumber: formData.debitCardNumber.replace(/\s/g, '').slice(-4),
             expiryDate: formData.debitExpiryDate
           } : null,
           upi: formData.paymentMethod === 'UPI' ? {
             upiId: formData.upiId,
             provider: formData.upiProvider
-          } : null,
-          netBanking: formData.paymentMethod === 'Net Banking' ? {
-            bankName: formData.bankName,
-            accountNumber: formData.accountNumber.slice(-4),
-            ifscCode: formData.ifscCode
           } : null
         }
       };
@@ -303,7 +300,7 @@ const Checkout = () => {
                   <h2>Payment Method</h2>
                   
                   <div className="payment-methods">
-                    {['Cash on Delivery', 'Credit Card', 'Debit Card', 'UPI', 'Net Banking'].map(method => (
+                    {['Cash on Delivery', 'Credit Card', 'Debit Card', 'UPI'].map(method => (
                       <label key={method} className="payment-option">
                         <input
                           type="radio"
@@ -317,10 +314,27 @@ const Checkout = () => {
                     ))}
                   </div>
 
+                  {/* Cash on Delivery Confirmation */}
+                  {formData.paymentMethod === 'Cash on Delivery' && (
+                    <div className="payment-details cod-message">
+                      <div className="cod-icon">💵</div>
+                      <h3>Cash on Delivery</h3>
+                      <p className="cod-description">Pay when your order is delivered.</p>
+                      <div className="cod-info">
+                        <p>✓ No advance payment required</p>
+                        <p>✓ Pay to delivery person in cash</p>
+                        <p>✓ Inspect product before payment</p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Credit Card Details */}
                   {formData.paymentMethod === 'Credit Card' && (
-                    <div className="payment-details">
-                      <h3>Credit Card Details</h3>
+                    <div className="payment-details card-details">
+                      <div className="card-header">
+                        <div className="card-icon">💳</div>
+                        <h3>Credit Card Details</h3>
+                      </div>
                       <div className="form-group">
                         <label>Cardholder Name *</label>
                         <input
@@ -331,6 +345,7 @@ const Checkout = () => {
                           onChange={handleChange}
                           required
                         />
+                        <small>Enter name as on card</small>
                       </div>
                       <div className="form-group">
                         <label>Card Number *</label>
@@ -339,10 +354,15 @@ const Checkout = () => {
                           name="cardNumber"
                           placeholder="1234 5678 9012 3456"
                           value={formData.cardNumber}
-                          onChange={handleChange}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\s/g, '').replace(/\D/g, '');
+                            const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+                            setFormData({ ...formData, cardNumber: formatted });
+                          }}
                           maxLength="19"
                           required
                         />
+                        <small>16-digit card number</small>
                       </div>
                       <div className="form-row">
                         <div className="form-group">
@@ -352,7 +372,14 @@ const Checkout = () => {
                             name="expiryDate"
                             placeholder="12/25"
                             value={formData.expiryDate}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, '');
+                              let formatted = value;
+                              if (value.length >= 2) {
+                                formatted = value.slice(0, 2) + '/' + value.slice(2, 4);
+                              }
+                              setFormData({ ...formData, expiryDate: formatted });
+                            }}
                             maxLength="5"
                             required
                           />
@@ -360,23 +387,32 @@ const Checkout = () => {
                         <div className="form-group">
                           <label>CVV *</label>
                           <input
-                            type="text"
+                            type="password"
                             name="cvv"
                             placeholder="123"
                             value={formData.cvv}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, '');
+                              setFormData({ ...formData, cvv: value });
+                            }}
                             maxLength="4"
                             required
                           />
                         </div>
+                      </div>
+                      <div className="card-security-info">
+                        <p>🔒 Your card details are encrypted and secure</p>
                       </div>
                     </div>
                   )}
 
                   {/* Debit Card Details */}
                   {formData.paymentMethod === 'Debit Card' && (
-                    <div className="payment-details">
-                      <h3>Debit Card Details</h3>
+                    <div className="payment-details card-details">
+                      <div className="card-header">
+                        <div className="card-icon">💳</div>
+                        <h3>Debit Card Details</h3>
+                      </div>
                       <div className="form-group">
                         <label>Cardholder Name *</label>
                         <input
@@ -387,6 +423,7 @@ const Checkout = () => {
                           onChange={handleChange}
                           required
                         />
+                        <small>Enter name as on card</small>
                       </div>
                       <div className="form-group">
                         <label>Card Number *</label>
@@ -395,10 +432,15 @@ const Checkout = () => {
                           name="debitCardNumber"
                           placeholder="1234 5678 9012 3456"
                           value={formData.debitCardNumber}
-                          onChange={handleChange}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\s/g, '').replace(/\D/g, '');
+                            const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+                            setFormData({ ...formData, debitCardNumber: formatted });
+                          }}
                           maxLength="19"
                           required
                         />
+                        <small>16-digit card number</small>
                       </div>
                       <div className="form-row">
                         <div className="form-group">
@@ -408,7 +450,14 @@ const Checkout = () => {
                             name="debitExpiryDate"
                             placeholder="12/25"
                             value={formData.debitExpiryDate}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, '');
+                              let formatted = value;
+                              if (value.length >= 2) {
+                                formatted = value.slice(0, 2) + '/' + value.slice(2, 4);
+                              }
+                              setFormData({ ...formData, debitExpiryDate: formatted });
+                            }}
                             maxLength="5"
                             required
                           />
@@ -416,75 +465,34 @@ const Checkout = () => {
                         <div className="form-group">
                           <label>CVV *</label>
                           <input
-                            type="text"
+                            type="password"
                             name="debitCvv"
                             placeholder="123"
                             value={formData.debitCvv}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, '');
+                              setFormData({ ...formData, debitCvv: value });
+                            }}
                             maxLength="4"
                             required
                           />
                         </div>
+                      </div>
+                      <div className="card-security-info">
+                        <p>🔒 Your card details are encrypted and secure</p>
                       </div>
                     </div>
                   )}
 
                   {/* UPI Payment Methods */}
                   {formData.paymentMethod === 'UPI' && (
-                    <div className="payment-details">
+                    <div className="payment-details upi-details">
                       <UPIPayment 
                         upiId={formData.upiId}
                         onUpiIdChange={(value) => setFormData({ ...formData, upiId: value })}
                         selectedUpiProvider={formData.upiProvider}
                         onProviderChange={(provider) => setFormData({ ...formData, upiProvider: provider })}
                       />
-                    </div>
-                  )}
-
-                  {/* Net Banking Details */}
-                  {formData.paymentMethod === 'Net Banking' && (
-                    <div className="payment-details">
-                      <h3>Net Banking Details</h3>
-                      <div className="form-group">
-                        <label>Bank Name *</label>
-                        <select
-                          name="bankName"
-                          value={formData.bankName}
-                          onChange={handleChange}
-                          required
-                        >
-                          <option value="">Select Bank</option>
-                          <option value="HDFC">HDFC Bank</option>
-                          <option value="ICICI">ICICI Bank</option>
-                          <option value="SBI">State Bank of India</option>
-                          <option value="AXIS">Axis Bank</option>
-                          <option value="KOTAK">Kotak Mahindra Bank</option>
-                          <option value="PUNJAB">Punjab National Bank</option>
-                          <option value="CANARA">Canara Bank</option>
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label>Account Number *</label>
-                        <input
-                          type="text"
-                          name="accountNumber"
-                          placeholder="12345678901234"
-                          value={formData.accountNumber}
-                          onChange={handleChange}
-                          required
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>IFSC Code *</label>
-                        <input
-                          type="text"
-                          name="ifscCode"
-                          placeholder="HDFC0000001"
-                          value={formData.ifscCode}
-                          onChange={handleChange}
-                          required
-                        />
-                      </div>
                     </div>
                   )}
                 </div>

@@ -65,7 +65,7 @@ const orderSchema = new mongoose.Schema({
   paymentMethod: {
     type: String,
     required: true,
-    enum: ['Cash on Delivery', 'Credit Card', 'Debit Card', 'UPI', 'Net Banking']
+    enum: ['Cash on Delivery', 'Credit Card', 'Debit Card', 'UPI']
   },
   paymentDetails: {
     creditCard: {
@@ -82,14 +82,9 @@ const orderSchema = new mongoose.Schema({
       upiId: String,
       provider: {
         type: String,
-        enum: ['gpay', 'paytm', 'phonepe'],
+        enum: ['gpay', 'phonepe', 'paytm', 'bhim'],
         default: 'gpay'
       }
-    },
-    netBanking: {
-      bankName: String,
-      accountNumber: String, // Last 4 digits only
-      ifscCode: String
     }
   },
   paymentStatus: {

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
@@ -16,6 +16,7 @@ const Navbar = () => {
   const { info } = useToast();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -114,18 +115,58 @@ const Navbar = () => {
       </div>
 
       <div className="navbar-menu-section">
-        <ul className="navbar-menu">
-          <li><Link to="/">Home</Link></li>
-          <li><Link to="/products">Products</Link></li>
-          <li><Link to="/services">Services</Link></li>
-          <li><Link to="/contact">Contact</Link></li>
-          <li>
-            <Link to="/cart" className="cart-link">
-              🛒 Cart
-              {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
-            </Link>
-          </li>
-        </ul>
+        <div className="navbar-menu-container">
+          <button
+            className={`menu-toggle ${menuOpen ? 'open' : ''}`}
+            type="button"
+            aria-label="Toggle navigation"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((prev) => !prev)}
+          >
+            <span className="menu-toggle-bar"></span>
+            <span className="menu-toggle-bar"></span>
+            <span className="menu-toggle-bar"></span>
+          </button>
+
+          <ul className={`navbar-menu ${menuOpen ? 'open' : ''}`}>
+            <li>
+              <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                onClick={() => setMenuOpen(false)}
+              >
+                Home
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/products" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                onClick={() => setMenuOpen(false)}
+              >
+                Products
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/services" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                onClick={() => setMenuOpen(false)}
+              >
+                Services
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/contact" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                onClick={() => setMenuOpen(false)}
+              >
+                Contact
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/cart" className={({ isActive }) => `nav-link cart-link ${isActive ? 'active' : ''}`}
+                onClick={() => setMenuOpen(false)}
+              >
+                🛒 Cart
+                {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+              </NavLink>
+            </li>
+          </ul>
+        </div>
       </div>
     </nav>
   );

@@ -65,7 +65,7 @@ const reportSchema = new mongoose.Schema({
   // Payment Information
   paymentMethod: {
     type: String,
-    enum: ['credit_card', 'debit_card', 'paypal', 'upi', 'net_banking', 'wallet', 'cod'],
+    enum: ['credit_card', 'debit_card', 'paypal', 'upi', 'wallet', 'cod'],
     required: true
   },
   transactionId: {

@@ -56,6 +56,7 @@
   border-left: 4px solid #0066cc;
   transition: all 0.3s ease;
   cursor: default;
+  min-height: 110px;
 }
 
 .stat-card:hover {
@@ -67,6 +68,11 @@
   font-size: 32px;
   min-width: 50px;
   text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover .stat-icon {
+  transform: translateY(-2px) scale(1.05);
 }
 
 .stat-content {
@@ -88,6 +94,32 @@
   color: #0066cc;
 }
 
+.stat-trend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.stat-trend.up {
+  color: #16a34a;
+}
+
+.stat-trend.down {
+  color: #dc2626;
+}
+
+.stat-trend.neutral {
+  color: #64748b;
+}
+
+.trend-arrow {
+  font-size: 12px;
+  font-weight: 700;
+}
+
 /* ========================================
    Filters Section
    ======================================== */
@@ -100,12 +132,20 @@
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  align-items: end;
 }
 
 .filter-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.filter-group.active .filter-input,
+.filter-group.active .filter-select {
+  border-color: #0066cc;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.12);
+  background: #f7fbff;
 }
 
 .filter-group label {
@@ -138,6 +178,55 @@
   color: #999;
 }
 
+.filter-hint {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: -2px;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+}
+
+.filter-btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn.apply-btn {
+  background: #0066cc;
+  color: white;
+  border-color: #0066cc;
+}
+
+.filter-btn.apply-btn:hover {
+  background: #0052a3;
+}
+
+.filter-btn.clear-btn {
+  background: #f1f5f9;
+  color: #334155;
+  border-color: #e2e8f0;
+}
+
+.filter-btn.clear-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.filter-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ========================================
    Reports Table
    ======================================== */
@@ -150,9 +239,15 @@
   min-height: 300px;
 }
 
+.reports-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
 .reports-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 980px;
 }
 
 .reports-table thead {
@@ -185,6 +280,28 @@
 
 .report-row {
   transition: background-color 0.2s ease;
+}
+
+.report-id {
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: 0.6px;
+}
+
+.user-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.user-email {
+  font-size: 12px;
+  color: #64748b;
 }
 
 /* Column Styles */
@@ -224,6 +341,17 @@
   text-transform: capitalize;
 }
 
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  text-transform: capitalize;
+}
+
 .type-badge {
   background-color: #0066cc;
 }
@@ -255,6 +383,11 @@
   justify-content: center;
   transition: all 0.2s ease;
   position: relative;
+}
+
+.action-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
 .action-btn::before {
@@ -343,6 +476,17 @@
   color: #999;
 }
 
+.empty-illustration {
+  width: 140px;
+  height: 100px;
+  margin-bottom: 16px;
+}
+
+.empty-illustration svg {
+  width: 100%;
+  height: 100%;
+}
+
 .empty-state p {
   font-size: 18px;
   font-weight: 600;
@@ -357,33 +501,39 @@
    Loading State
    ======================================== */
 
-.loading-state {
+.loading-skeleton {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+}
+
+.skeleton-row {
+  display: grid;
+  grid-template-columns: 80px 180px 140px 120px 120px 120px 160px 90px;
+  gap: 12px;
   align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  color: #999;
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #f0f0f0;
-  border-top: 3px solid #0066cc;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin-bottom: 16px;
+.skeleton-cell {
+  height: 14px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease infinite;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.skeleton-cell.actions {
+  height: 28px;
 }
 
-.loading-state p {
-  font-size: 14px;
-  font-weight: 500;
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* ========================================
@@ -581,6 +731,10 @@
   }
 
   .reports-table {
+    min-width: 900px;
+  }
+
+  .reports-table {
     font-size: 13px;
   }
 
@@ -617,8 +771,13 @@
     gap: 12px;
   }
 
+  .filter-actions {
+    justify-content: flex-start;
+  }
+
   .reports-table {
     font-size: 12px;
+    min-width: 900px;
   }
 
   .reports-table thead {
@@ -628,6 +787,10 @@
   .reports-table td,
   .reports-table th {
     padding: 8px 6px;
+  }
+
+  .reports-table-scroll {
+    overflow-x: auto;
   }
 
   .actions {
@@ -661,46 +824,20 @@
 
   .reports-table {
     font-size: 11px;
-  }
-
-  .reports-table thead {
-    display: none;
-  }
-
-  .reports-table tbody,
-  .reports-table tr,
-  .reports-table td {
-    display: block;
-    width: 100%;
-  }
-
-  .reports-table tr {
-    margin-bottom: 16px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    overflow: hidden;
-  }
-
-  .reports-table td {
-    text-align: right;
-    padding-left: 50%;
-    position: relative;
-    border: none;
-    padding: 8px 12px;
-  }
-
-  .reports-table td::before {
-    content: attr(data-label);
-    position: absolute;
-    left: 12px;
-    font-weight: 600;
-    color: #0066cc;
-    font-size: 12px;
+    min-width: 860px;
   }
 
   .actions {
     justify-content: flex-end;
     gap: 6px;
+  }
+
+  .filter-actions {
+    flex-direction: column;
+  }
+
+  .filter-btn {
+    width: 100%;
   }
 
   .pagination {

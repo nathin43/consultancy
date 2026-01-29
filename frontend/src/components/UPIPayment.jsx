@@ -1,4 +1,8 @@
 import React, { useState } from 'react';
+import gpayLogo from '../assets/upi/gpay.png';
+import paytmLogo from '../assets/upi/paytm.png';
+import phonepeLogo from '../assets/upi/phonepe.png';
+import bhimLogo from '../assets/upi/bhim.png';
 import './UPIPayment.css';
 
 /**
@@ -10,25 +14,24 @@ const UPIPayment = ({ upiId, onUpiIdChange, selectedUpiProvider, onProviderChang
 
   const upiProviders = [
     {
-      id: 'gpay',
-      name: 'Google Pay',
-      logo: '📱',
-      color: '#5F6368',
-      description: 'Fast & secure payment'
-    },
-    {
       id: 'paytm',
       name: 'Paytm',
-      logo: '💳',
-      color: '#00A4EF',
-      description: 'Cashback & offers'
+      logoSrc: paytmLogo
+    },
+    {
+      id: 'gpay',
+      name: 'Google Pay',
+      logoSrc: gpayLogo
     },
     {
       id: 'phonepe',
       name: 'PhonePe',
-      logo: '🔵',
-      color: '#5F27CD',
-      description: 'Instant money transfer'
+      logoSrc: phonepeLogo
+    },
+    {
+      id: 'bhim',
+      name: 'BHIM',
+      logoSrc: bhimLogo
     }
   ];
 
@@ -62,16 +65,16 @@ const UPIPayment = ({ upiId, onUpiIdChange, selectedUpiProvider, onProviderChang
             <label 
               htmlFor={`upi-${provider.id}`}
               className={`upi-provider-label ${selectedUpiProvider === provider.id ? 'selected' : ''}`}
-              style={{
-                borderColor: selectedUpiProvider === provider.id ? provider.color : '#ddd',
-                backgroundColor: selectedUpiProvider === provider.id ? `${provider.color}15` : 'white'
-              }}
             >
-              <div className="upi-logo" style={{ fontSize: '32px' }}>
-                {provider.logo}
+              <div className="upi-logo-wrapper">
+                <img
+                  src={provider.logoSrc}
+                  alt={`${provider.name} logo`}
+                  className="upi-logo-image"
+                  loading="lazy"
+                />
               </div>
               <div className="upi-provider-name">{provider.name}</div>
-              <div className="upi-provider-desc">{provider.description}</div>
               {selectedUpiProvider === provider.id && (
                 <div className="upi-checkmark">✓</div>
               )}
