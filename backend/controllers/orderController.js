@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
+const Report = require('../models/Report');
 
 /**
  * Create new order
@@ -18,8 +19,8 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    // Calculate prices
-    let itemsPrice = 0;
+    // Calculate total price (items only, no shipping or tax)
+    let totalPrice = 0;
     const orderItems = [];
 
     for (let item of items) {
@@ -39,7 +40,7 @@ exports.createOrder = async (req, res) => {
         });
       }
 
-      itemsPrice += product.price * item.quantity;
+      totalPrice += product.price * item.quantity;
 
       orderItems.push({
         product: product._id,
@@ -54,10 +55,6 @@ exports.createOrder = async (req, res) => {
       await product.save();
     }
 
-    const shippingPrice = itemsPrice > 10000 ? 0 : 500; // Free shipping above ₹10,000
-    const taxPrice = itemsPrice * 0.18; // 18% GST
-    const totalPrice = itemsPrice + shippingPrice + taxPrice;
-
     // Create order (use new + save to trigger pre-save hook for orderNumber)
     const order = new Order({
       user: req.user.id,
@@ -65,14 +62,48 @@ exports.createOrder = async (req, res) => {
       shippingAddress,
       paymentMethod,
       paymentDetails: paymentDetails || {}, // Store payment details if provided
-      itemsPrice,
-      shippingPrice,
-      taxPrice,
-      totalPrice,
+      totalAmount: totalPrice,
       paymentStatus: paymentMethod === 'Cash on Delivery' ? 'pending' : 'pending'
     });
 
     await order.save();
+
+    // AUTO-GENERATE REPORT WHEN ORDER IS PLACED
+    try {
+      const user = await require('../models/User').findById(req.user.id);
+      
+      const reportItems = orderItems.map(item => ({
+        product: item.product,
+        productName: item.name,
+        productPrice: item.price,
+        quantity: item.quantity,
+        itemTotal: item.price * item.quantity
+      }));
+
+      const reportData = {
+        user: req.user.id,
+        userName: user.name,
+        userEmail: user.email,
+        order: order._id,
+        orderNumber: order.orderNumber,
+        orderStatus: order.orderStatus,
+        orderDate: order.createdAt,
+        items: reportItems,
+        totalAmount: totalPrice,
+        paymentMethod: paymentMethod,
+        transactionId: null,
+        paymentStatus: 'pending',
+        paymentDate: null,
+        shippingAddress: shippingAddress,
+        reportType: 'Order Report',
+        reportStatus: 'Generated'
+      };
+
+      await Report.create(reportData);
+    } catch (reportError) {
+      // Log error but don't fail order creation
+      console.error('Error creating report for order:', reportError.message);
+    }
 
     // DO NOT clear cart - cart persists for easy re-ordering
     // Cart and Order are independent collections
@@ -172,8 +203,8 @@ exports.getAllOrders = async (req, res) => {
       })
       .sort('-createdAt');
 
-    // Calculate total sales
-    const totalSales = orders.reduce((sum, order) => sum + order.totalPrice, 0);
+    // Calculate total sales using totalAmount field (totalPrice for backward compatibility)
+    const totalSales = orders.reduce((sum, order) => sum + (order.totalAmount || order.totalPrice || 0), 0);
 
     res.status(200).json({
       success: true,
@@ -198,14 +229,18 @@ exports.getAllOrders = async (req, res) => {
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { orderStatus } = req.body;
+    const orderId = req.params.id;
 
-    const order = await Order.findById(req.params.id);
+    const order = await Order.findById(orderId);
     if (!order) {
       return res.status(404).json({
         success: false,
         message: 'Order not found'
       });
     }
+
+    // Log the update for debugging
+    console.log(`Updating order ${orderId}: status from ${order.orderStatus} to ${orderStatus}, totalAmount: ₹${order.totalAmount}`);
 
     order.orderStatus = orderStatus;
 
@@ -216,12 +251,16 @@ exports.updateOrderStatus = async (req, res) => {
 
     await order.save();
 
+    // Log the result
+    console.log(`Order ${orderId} updated successfully. New status: ${order.orderStatus}, Amount: ₹${order.totalAmount}`);
+
     res.status(200).json({
       success: true,
       message: 'Order status updated',
       order
     });
   } catch (error) {
+    console.error(`Error updating order status:`, error);
     res.status(500).json({
       success: false,
       message: error.message

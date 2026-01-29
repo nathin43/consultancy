@@ -417,19 +417,11 @@ const AdminReports = () => {
                 <div className="detail-section">
                   <h3>Amount Summary</h3>
                   <div className="detail-row">
-                    <span className="label">Subtotal:</span>
-                    <span className="value">₹{selectedReport.subtotal?.toFixed(2) || '0.00'}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">Tax:</span>
-                    <span className="value">₹{selectedReport.taxAmount?.toFixed(2) || '0.00'}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">Shipping:</span>
-                    <span className="value">₹{selectedReport.shippingCost?.toFixed(2) || '0.00'}</span>
+                    <span className="label">Items Total:</span>
+                    <span className="value">₹{(selectedReport.items?.reduce((sum, item) => sum + (item.itemTotal || 0), 0) || selectedReport.totalAmount)?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="detail-row total">
-                    <span className="label">Total:</span>
+                    <span className="label">Total Amount:</span>
                     <span className="value">₹{selectedReport.totalAmount?.toFixed(2) || '0.00'}</span>
                   </div>
                 </div>

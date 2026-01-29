@@ -304,7 +304,7 @@ const AdminCustomers = () => {
                           </div>
                           <div className="order-details">
                             <span className="order-amount">
-                              ₹{order.totalPrice.toLocaleString()}
+                              ₹{(order.totalAmount || order.totalPrice || 0).toLocaleString()}
                             </span>
                             <span className={`badge badge-${getStatusColor(order.orderStatus)}`}>
                               {order.orderStatus}

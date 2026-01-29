@@ -57,22 +57,6 @@ const reportSchema = new mongoose.Schema({
   }],
 
   // Amount Details
-  subtotal: {
-    type: Number,
-    required: true
-  },
-  taxAmount: {
-    type: Number,
-    default: 0
-  },
-  shippingCost: {
-    type: Number,
-    default: 0
-  },
-  discountAmount: {
-    type: Number,
-    default: 0
-  },
   totalAmount: {
     type: Number,
     required: true

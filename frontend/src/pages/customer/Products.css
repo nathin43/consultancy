@@ -1,7 +1,9 @@
 .products-page {
+  --primary-blue: #4279a3;
+  --primary-blue-dark: #2d5a7b;
   padding: 50px 0;
   min-height: 100vh;
-  background: #ffffff;
+  background: #f8fafc;
 }
 
 .page-title {
@@ -19,7 +21,7 @@
   display: block;
   width: 60px;
   height: 4px;
-  background: linear-gradient(90deg, #0066cc 0%, #0052a3 100%);
+  background: linear-gradient(90deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
   margin: 16px auto;
   border-radius: 2px;
 }
@@ -28,8 +30,8 @@
 .search-filter-container {
   background: #ffffff;
   border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border: 1px solid #f0f0f0;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e5e7eb;
   padding: 28px;
   margin-bottom: 40px;
   backdrop-filter: blur(10px);
@@ -93,13 +95,13 @@
 
 .search-input:focus {
   outline: none;
-  border-color: #0066cc;
-  box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 4px rgba(66, 121, 163, 0.12);
   background: #ffffff;
 }
 
 .search-input-wrapper:focus-within .search-icon {
-  color: #0066cc;
+  color: var(--primary-blue);
 }
 
 .search-button {
@@ -108,19 +110,19 @@
   font-weight: 700;
   white-space: nowrap;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
   color: white;
   border: none;
   cursor: pointer;
   font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
-  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.25);
+  box-shadow: 0 6px 16px rgba(66, 121, 163, 0.25);
   font-size: 14px;
 }
 
 .search-button:hover {
   transform: translateY(-2px) scale(1.02);
-  background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
-  box-shadow: 0 8px 20px rgba(0, 102, 204, 0.35);
+  background: linear-gradient(135deg, var(--primary-blue-dark) 0%, #1f3d54 100%);
+  box-shadow: 0 10px 24px rgba(66, 121, 163, 0.35);
 }
 
 .search-button:active {
@@ -135,7 +137,7 @@
   background: #f8f9fa;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
-  color: #0066cc;
+  color: var(--primary-blue);
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
@@ -163,7 +165,7 @@
 
 .filters-toggle-btn:hover {
   background: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
 }
 
 .filters-section {
@@ -228,8 +230,8 @@
 
 .filter-select:focus {
   outline: none;
-  border-color: #0066cc;
-  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(66, 121, 163, 0.12);
 }
 
 .filter-select:hover {
@@ -237,7 +239,7 @@
 }
 
 .filter-input-wrapper:focus-within .filter-icon {
-  color: #0066cc;
+  color: var(--primary-blue);
 }
 
 .currency-prefix {
@@ -268,8 +270,8 @@
 
 .filter-input:focus {
   outline: none;
-  border-color: #0066cc;
-  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(66, 121, 163, 0.12);
 }
 
 .filter-input:hover {
@@ -280,7 +282,7 @@
 .clear-filters-btn {
   padding: 12px 16px;
   background: transparent;
-  color: #0066cc;
+  color: var(--primary-blue);
   border: 2px solid #e5e7eb;
   border-radius: 10px;
   font-size: 13px;
@@ -295,8 +297,8 @@
 
 .clear-filters-btn:hover {
   background: #f0f4ff;
-  border-color: #0066cc;
-  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.12);
+  border-color: var(--primary-blue);
+  box-shadow: 0 6px 16px rgba(66, 121, 163, 0.16);
 }
 
 .clear-filters-btn:active {
@@ -309,12 +311,12 @@
   align-items: center;
   margin-bottom: 28px;
   padding-bottom: 16px;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .products-count {
   margin: 0;
-  color: #1f2937;
+  color: #0f172a;
   font-weight: 700;
   font-size: 16px;
   font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
@@ -340,8 +342,8 @@
   padding: 100px 20px;
   background: #ffffff;
   border-radius: 14px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid #f0f0f0;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e2e8f0;
   margin-top: 20px;
   animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -368,6 +370,60 @@
   font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
 }
 
+/* Error Container Styles */
+.error-container {
+  text-align: center;
+  padding: 100px 20px;
+  background: #fef2f2;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08);
+  border: 2px solid #fecaca;
+  margin-top: 20px;
+  animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.error-icon {
+  width: 64px;
+  height: 64px;
+  color: #dc2626;
+  margin-bottom: 16px;
+}
+
+.error-container h3 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #991b1b;
+  margin-bottom: 8px;
+  font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
+}
+
+.error-container p {
+  font-size: 15px;
+  color: #7f1d1d;
+  margin-bottom: 24px;
+  font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
+}
+
+.retry-button {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
+  margin-right: 12px;
+}
+
+.retry-button:hover {
+  background: #991b1b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
 .grid.grid-4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -377,7 +433,7 @@
 
 @media (max-width: 1400px) {
   .grid.grid-4 {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 22px;
   }
 
@@ -392,7 +448,7 @@
 
 @media (max-width: 1024px) {
   .grid.grid-4 {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
   }
 

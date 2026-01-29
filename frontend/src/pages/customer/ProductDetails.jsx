@@ -93,13 +93,15 @@ const ProductDetails = () => {
           <div className="product-details-grid">
             {/* Product Image */}
             <div className="product-image-section">
-              <img 
-                src={product.image} 
-                alt={product.name}
-                onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/400x400?text=Product';
-                }}
-              />
+              <div className="product-image-card">
+                <img 
+                  src={product.image} 
+                  alt={product.name}
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/400x400?text=Product';
+                  }}
+                />
+              </div>
               {product.stock === 0 && (
                 <div className="out-of-stock-overlay">Out of Stock</div>
               )}
@@ -112,12 +114,9 @@ const ProductDetails = () => {
               <p className="product-brand">Brand: {product.brand}</p>
 
               <div className="product-rating">
-                <span className="rating-stars">
-                  ⭐ {product.ratings.average.toFixed(1)}
-                </span>
-                <span className="rating-count">
-                  ({product.ratings.count} reviews)
-                </span>
+                <span className="rating-stars">★★★★★</span>
+                <span className="rating-value">{product.ratings.average.toFixed(1)}</span>
+                <span className="rating-count">({product.ratings.count} reviews)</span>
               </div>
 
               <div className="product-price-section">
@@ -202,10 +201,10 @@ const ProductDetails = () => {
                   </div>
 
                   <div className="action-buttons">
-                    <button onClick={handleAddToCart} className="btn btn-outline">
+                    <button onClick={handleAddToCart} className="btn add-to-cart-btn">
                       Add to Cart
                     </button>
-                    <button onClick={handleBuyNow} className="btn btn-primary">
+                    <button onClick={handleBuyNow} className="btn buy-now-btn">
                       Buy Now
                     </button>
                   </div>
@@ -215,6 +214,17 @@ const ProductDetails = () => {
           </div>
         </div>
       </div>
+
+      {product.stock > 0 && (
+        <div className="mobile-action-bar">
+          <button onClick={handleAddToCart} className="btn add-to-cart-btn">
+            Add to Cart
+          </button>
+          <button onClick={handleBuyNow} className="btn buy-now-btn">
+            Buy Now
+          </button>
+        </div>
+      )}
 
       {/* Product Reviews Section */}
       <div className="container">

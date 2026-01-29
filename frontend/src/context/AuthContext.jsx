@@ -1,7 +1,19 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
 import API from '../services/api';
 
 export const AuthContext = createContext();
+
+/**
+ * Custom hook to use the Auth context
+ * @throws {Error} If used outside of AuthProvider
+ */
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 /**
  * Authentication Context Provider
@@ -12,23 +24,47 @@ export const AuthProvider = ({ children }) => {
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if user is logged in on mount
+  // Restore session from localStorage on component mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const adminToken = localStorage.getItem('adminToken');
-    const userData = localStorage.getItem('user');
-    const adminData = localStorage.getItem('admin');
+    const restoreSession = () => {
+      try {
+        // Check for customer session
+        const token = localStorage.getItem('token');
+        const userData = localStorage.getItem('user');
 
-    if (token && userData) {
-      setUser(JSON.parse(userData));
-    }
+        if (token && userData) {
+          try {
+            const parsedUser = JSON.parse(userData);
+            setUser(parsedUser);
+            console.log('Customer session restored from storage');
+          } catch (parseError) {
+            console.error('Error parsing stored user data:', parseError);
+            localStorage.removeItem('user');
+          }
+        }
 
-    if (adminToken && adminData) {
-      const parsedAdmin = JSON.parse(adminData);
-      setAdmin(parsedAdmin);
-    }
+        // Check for admin session
+        const adminToken = localStorage.getItem('adminToken');
+        const adminData = localStorage.getItem('admin');
 
-    setLoading(false);
+        if (adminToken && adminData) {
+          try {
+            const parsedAdmin = JSON.parse(adminData);
+            setAdmin(parsedAdmin);
+            console.log('Admin session restored from storage');
+          } catch (parseError) {
+            console.error('Error parsing stored admin data:', parseError);
+            localStorage.removeItem('admin');
+          }
+        }
+      } catch (error) {
+        console.error('Error restoring session:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    restoreSession();
   }, []);
 
   // Customer Login

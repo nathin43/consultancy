@@ -208,37 +208,47 @@ const ProductReviews = ({ productId }) => {
 
   return (
     <div className="product-reviews-section">
-      <h2>Customer Reviews & Feedback</h2>
+      <div className="reviews-header">
+        <div>
+          <h2>Customer Reviews</h2>
+          <p className="reviews-subtitle">Verified feedback from real buyers</p>
+        </div>
+
+        {isAuthenticated && !showForm && (
+          <button
+            className="btn btn-primary write-review-btn"
+            onClick={() => setShowForm(true)}
+            disabled={!canReview && !editingReviewId}
+          >
+            <span className="btn-icon">✍️</span>
+            {editingReviewId ? 'Edit Review' : 'Write a Review'}
+          </button>
+        )}
+      </div>
 
       {/* Review Summary */}
       <div className="review-summary">
-        <div className="rating-info">
-          <div className="average-rating">
-            <div className="rating-number">
-              {product?.ratings?.average || 0}
-            </div>
-            <div className="rating-stars">
-              {renderStars(product?.ratings?.average || 0)}
-            </div>
-            <div className="rating-count">
-              Based on {product?.ratings?.count || reviews.length} reviews
-            </div>
+        <div className="average-rating">
+          <div className="rating-number">
+            {product?.ratings?.average || 0}
           </div>
+          <div className="rating-stars">
+            {renderStars(product?.ratings?.average || 0)}
+          </div>
+          <div className="rating-count">
+            {product?.ratings?.count || reviews.length} reviews
+          </div>
+        </div>
+        <div className="rating-meta">
+          <div className="rating-label">Average Rating</div>
+          <p>Based on verified customer feedback and experiences.</p>
         </div>
       </div>
 
       {/* Review Form */}
       {isAuthenticated && (
         <div className="review-form-container">
-          {!showForm ? (
-            <button
-              className="btn btn-primary btn-lg"
-              onClick={() => setShowForm(true)}
-              disabled={!canReview && !editingReviewId}
-            >
-              {editingReviewId ? '✎ Edit Your Review' : '✓ Write a Review'}
-            </button>
-          ) : (
+          {showForm && (
             <form className="review-form" onSubmit={handleSubmitReview}>
               <h3>{editingReviewId ? 'Edit Your Review' : 'Share Your Feedback'}</h3>
 
@@ -339,6 +349,7 @@ const ProductReviews = ({ productId }) => {
           <div className="loading">Loading reviews...</div>
         ) : reviews.length === 0 ? (
           <div className="no-reviews">
+            <div className="no-reviews-icon">💬</div>
             <p>No reviews yet. Be the first to review this product!</p>
           </div>
         ) : (

@@ -32,10 +32,21 @@ const AdminOrders = () => {
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
-      await API.put(`/orders/${orderId}/status`, { orderStatus: newStatus });
-      fetchOrders();
+      const { data } = await API.put(`/orders/${orderId}/status`, { orderStatus: newStatus });
+      
+      // Immediately update the local state with the returned order
+      if (data.success && data.order) {
+        setOrders(prevOrders => 
+          prevOrders.map(order => 
+            order._id === orderId ? data.order : order
+          )
+        );
+        console.log(`Order ${orderId} status updated to ${newStatus}, amount: ₹${data.order.totalAmount}`);
+      }
     } catch (error) {
       console.error('Failed to update order status:', error);
+      // Refresh orders to ensure we have latest data
+      fetchOrders();
     }
   };
 
@@ -107,7 +118,7 @@ const AdminOrders = () => {
   const filteredOrders = filterOrders();
 
   const totalOrders = orders.length;
-  const totalSales = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+  const totalSales = orders.reduce((sum, o) => sum + (o.totalAmount || o.totalPrice || 0), 0);
   const pendingOrders = orders.filter(o => o.orderStatus === 'pending').length;
 
   if (loading) {
@@ -228,7 +239,7 @@ const AdminOrders = () => {
                         {order.user?.name}
                       </span>
                       <span className="meta-item highlight">
-                        ₹{order.totalPrice.toLocaleString()}
+                        ₹{(order.totalAmount || order.totalPrice || 0).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -305,19 +316,11 @@ const AdminOrders = () => {
                       <div className="summary-box">
                         <div className="summary-row">
                           <span>Items Total:</span>
-                          <span>₹{order.itemsPrice?.toLocaleString() || '0'}</span>
-                        </div>
-                        <div className="summary-row">
-                          <span>Shipping:</span>
-                          <span>₹{order.shippingPrice?.toLocaleString() || '0'}</span>
-                        </div>
-                        <div className="summary-row">
-                          <span>Tax:</span>
-                          <span>₹{order.taxPrice?.toLocaleString() || '0'}</span>
+                          <span>₹{order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString()}</span>
                         </div>
                         <div className="summary-row total">
                           <span>Total Amount:</span>
-                          <span>₹{order.totalPrice?.toLocaleString() || '0'}</span>
+                          <span>₹{order.totalAmount?.toLocaleString() || order.totalPrice?.toLocaleString() || '0'}</span>
                         </div>
                       </div>
                     </div>

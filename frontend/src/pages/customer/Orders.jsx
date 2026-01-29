@@ -132,20 +132,12 @@ const Orders = () => {
 
                   <div className="order-summary">
                     <div className="summary-row">
-                      <span>Items Price:</span>
-                      <span>₹{order.itemsPrice.toLocaleString()}</span>
-                    </div>
-                    <div className="summary-row">
-                      <span>Shipping:</span>
-                      <span>₹{order.shippingPrice.toLocaleString()}</span>
-                    </div>
-                    <div className="summary-row">
-                      <span>Tax:</span>
-                      <span>₹{order.taxPrice.toLocaleString()}</span>
+                      <span>Items Total:</span>
+                      <span>₹{(order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)).toLocaleString()}</span>
                     </div>
                     <div className="summary-total">
-                      <span>Total:</span>
-                      <span>₹{order.totalPrice.toLocaleString()}</span>
+                      <span>Total Amount:</span>
+                      <span>₹{order.totalAmount?.toLocaleString() || order.totalPrice?.toLocaleString()}</span>
                     </div>
                   </div>
 

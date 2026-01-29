@@ -295,27 +295,9 @@ const UserReports = () => {
               <div className="detail-section">
                 <h4>Amount Summary</h4>
                 <div className="detail-row">
-                  <span className="label">Subtotal:</span>
-                  <span className="value">₹{selectedReport.subtotal?.toFixed(2) || '0.00'}</span>
+                  <span className="label">Items Total:</span>
+                  <span className="value">₹{(selectedReport.items?.reduce((sum, item) => sum + (item.itemTotal || 0), 0) || selectedReport.totalAmount)?.toFixed(2) || '0.00'}</span>
                 </div>
-                {selectedReport.taxAmount > 0 && (
-                  <div className="detail-row">
-                    <span className="label">Tax:</span>
-                    <span className="value">₹{selectedReport.taxAmount?.toFixed(2) || '0.00'}</span>
-                  </div>
-                )}
-                {selectedReport.shippingCost > 0 && (
-                  <div className="detail-row">
-                    <span className="label">Shipping:</span>
-                    <span className="value">₹{selectedReport.shippingCost?.toFixed(2) || '0.00'}</span>
-                  </div>
-                )}
-                {selectedReport.discountAmount > 0 && (
-                  <div className="detail-row">
-                    <span className="label">Discount:</span>
-                    <span className="value">-₹{selectedReport.discountAmount?.toFixed(2) || '0.00'}</span>
-                  </div>
-                )}
                 <div className="detail-row total">
                   <span className="label">Total Amount:</span>
                   <span className="value">₹{selectedReport.totalAmount?.toFixed(2) || '0.00'}</span>

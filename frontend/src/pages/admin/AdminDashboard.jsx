@@ -319,7 +319,7 @@ const AdminDashboard = () => {
                   </div>
                   <p className="order-customer">{order.user?.name}</p>
                   <div className="order-footer-mini">
-                    <span className="order-total">₹{order.totalPrice.toLocaleString()}</span>
+                    <span className="order-total">₹{(order.totalAmount || order.totalPrice || 0).toLocaleString()}</span>
                     <span className="order-date">{new Date(order.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>

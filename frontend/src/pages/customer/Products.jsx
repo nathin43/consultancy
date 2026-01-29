@@ -15,6 +15,7 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     category: searchParams.get('category') || 'all',
@@ -24,26 +25,33 @@ const Products = () => {
     sort: 'newest'
   });
 
+  // Fetch categories once on mount
   useEffect(() => {
-    fetchCategories();
+    const fetchCategoriesOnMount = async () => {
+      try {
+        const { data } = await API.get('/products/categories');
+        if (data.categories) {
+          setCategories(data.categories);
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+        // Categories optional - continue anyway
+      }
+    };
+    
+    fetchCategoriesOnMount();
   }, []);
 
+  // Fetch products when filters change
   useEffect(() => {
     fetchProducts();
   }, [filters]);
 
-  const fetchCategories = async () => {
-    try {
-      const { data } = await API.get('/products/categories');
-      setCategories(data.categories);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      setError('');
+      
       const params = new URLSearchParams();
       
       if (filters.category !== 'all') params.append('category', filters.category);
@@ -54,9 +62,21 @@ const Products = () => {
       params.append('limit', '100');
 
       const { data } = await API.get(`/products?${params.toString()}`);
-      setProducts(data.products || []);
-    } catch (error) {
-      console.error('Error fetching products:', error);
+      
+      // Always ensure we have an array
+      const fetchedProducts = Array.isArray(data.products) ? data.products : [];
+      
+      setProducts(fetchedProducts);
+      
+      if (fetchedProducts.length === 0 && !filters.search && filters.category === 'all') {
+        setError('No products available at the moment');
+      }
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      // Show error message but don't log user out
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to load products. Please try again.';
+      setError(errorMsg);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -229,6 +249,27 @@ const Products = () => {
             <div className="loading-container">
               <div className="spinner"></div>
               <p className="loading-text">Loading products...</p>
+            </div>
+          ) : error && products.length === 0 ? (
+            <div className="error-container">
+              <svg className="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <h3>Unable to Load Products</h3>
+              <p>{error}</p>
+              <button 
+                className="retry-button"
+                onClick={() => fetchProducts()}
+              >
+                Try Again
+              </button>
+              {hasActiveFilters && (
+                <button className="clear-filters-btn" onClick={clearFilters}>
+                  Clear Filters
+                </button>
+              )}
             </div>
           ) : products.length === 0 ? (
             <div className="no-products">

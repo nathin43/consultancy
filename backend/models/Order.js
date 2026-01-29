@@ -97,22 +97,7 @@ const orderSchema = new mongoose.Schema({
     enum: ['pending', 'paid', 'failed'],
     default: 'pending'
   },
-  itemsPrice: {
-    type: Number,
-    required: true,
-    default: 0
-  },
-  shippingPrice: {
-    type: Number,
-    required: true,
-    default: 0
-  },
-  taxPrice: {
-    type: Number,
-    required: true,
-    default: 0
-  },
-  totalPrice: {
+  totalAmount: {
     type: Number,
     required: true,
     default: 0
