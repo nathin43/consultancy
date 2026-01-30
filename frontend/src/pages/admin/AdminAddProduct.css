@@ -47,6 +47,42 @@
   color: var(--text-primary);
 }
 
+.specifications-panel {
+  display: grid;
+  gap: 20px;
+  animation: specFadeSlide 0.35s ease;
+}
+
+.spec-group {
+  display: grid;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.spec-group.optional {
+  border-top: 1px dashed var(--border-color);
+  padding-top: 20px;
+}
+
+.spec-group-header {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+@keyframes specFadeSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .form-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

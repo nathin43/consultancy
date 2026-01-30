@@ -1,6 +1,7 @@
 const Report = require('../models/Report');
 const Order = require('../models/Order');
 const User = require('../models/User');
+const Review = require('../models/Review');
 
 /**
  * Report Controller
@@ -233,6 +234,362 @@ exports.getReportById = async (req, res) => {
     res.status(200).json({
       success: true,
       report
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const normalizePaymentMethod = (method) => {
+  if (!method) return 'N/A';
+  const normalized = method.toString().toLowerCase();
+  if (normalized.includes('cod')) return 'COD';
+  if (normalized.includes('upi')) return 'UPI';
+  if (normalized.includes('card')) return 'Card';
+  if (normalized.includes('cash')) return 'COD';
+  return method;
+};
+
+const normalizePaymentStatus = (status) => {
+  if (!status) return 'Pending';
+  const normalized = status.toString().toLowerCase();
+  if (normalized === 'paid' || normalized === 'completed') return 'Paid';
+  if (normalized === 'failed' || normalized === 'refunded') return 'Failed';
+  return 'Pending';
+};
+
+const normalizeOrderStatus = (status) => {
+  if (!status) return 'Pending';
+  const normalized = status.toString().toLowerCase();
+  if (normalized === 'delivered') return 'Delivered';
+  if (normalized === 'cancelled') return 'Cancelled';
+  return 'Pending';
+};
+
+const buildAddressLine = (address) => {
+  if (!address) return 'N/A';
+  const street = address.street || address.address;
+  const parts = [street, address.city, address.state, address.zipCode, address.country].filter(Boolean);
+  return parts.length ? parts.join(', ') : 'N/A';
+};
+
+const getAggregatedStatus = (statuses = []) => {
+  if (statuses.includes('Downloaded')) return 'Downloaded';
+  if (statuses.includes('Generated')) return 'Generated';
+  if (statuses.includes('Archived')) return 'Archived';
+  return 'Generated';
+};
+
+const buildReportData = (order, user, reportType = 'Order Report') => {
+  const reportItems = order.items.map(item => ({
+    product: item.product?._id || item.product,
+    productName: item.product?.name || item.name,
+    productPrice: item.price,
+    quantity: item.quantity,
+    itemTotal: item.price * item.quantity
+  }));
+
+  return {
+    user: user._id,
+    userName: user.name,
+    userEmail: user.email,
+    order: order._id,
+    orderNumber: order.orderNumber || `ORD-${order._id}`,
+    orderStatus: order.orderStatus,
+    orderDate: order.createdAt,
+    items: reportItems,
+    totalAmount: order.totalAmount || 0,
+    paymentMethod: order.paymentMethod || 'pending',
+    transactionId: order.transactionId || null,
+    paymentStatus: order.paymentStatus || 'pending',
+    paymentDate: order.updatedAt,
+    shippingAddress: order.shippingAddress || {},
+    reportType,
+    reportStatus: 'Generated'
+  };
+};
+
+/**
+ * Get customer-wise reports (Admin only)
+ * @route GET /api/reports/customers
+ * @access Private/Admin
+ */
+exports.getCustomerReports = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      searchUser,
+      reportType,
+      reportStatus,
+      startDate,
+      endDate,
+      paymentStatus,
+      orderStatus
+    } = req.query;
+
+    const filters = {};
+    if (searchUser) filters.userEmail = { $regex: searchUser, $options: 'i' };
+    if (reportType) filters.reportType = reportType;
+    if (reportStatus) filters.reportStatus = reportStatus;
+    if (paymentStatus) {
+      if (paymentStatus === 'paid') {
+        filters.paymentStatus = { $in: ['paid', 'completed'] };
+      } else if (paymentStatus === 'failed') {
+        filters.paymentStatus = { $in: ['failed', 'refunded'] };
+      } else {
+        filters.paymentStatus = paymentStatus;
+      }
+    }
+    if (orderStatus) filters.orderStatus = orderStatus;
+    if (startDate || endDate) {
+      filters.orderDate = {};
+      if (startDate) filters.orderDate.$gte = new Date(startDate);
+      if (endDate) filters.orderDate.$lte = new Date(endDate);
+    }
+
+    const reports = await Report.find(filters)
+      .populate('user', 'name email phone address createdAt')
+      .sort({ orderDate: -1 });
+
+    const grouped = new Map();
+    reports.forEach(report => {
+      const userId = report.user?._id?.toString() || report.user?.toString();
+      if (!userId) return;
+
+      if (!grouped.has(userId)) {
+        grouped.set(userId, {
+          customerId: userId,
+          customerDetails: {
+            name: report.user?.name || report.userName,
+            email: report.user?.email || report.userEmail,
+            phone: report.user?.phone || report.shippingAddress?.phone || 'N/A',
+            address: buildAddressLine(report.user?.address || report.shippingAddress),
+            accountCreatedAt: report.user?.createdAt || null
+          },
+          totalOrdersCount: 0,
+          totalAmountSpent: 0,
+          lastOrderDate: report.orderDate,
+          reportStatus: report.reportStatus || 'Generated',
+          downloadCount: 0,
+          reportGeneratedAt: report.reportGeneratedAt
+        });
+      }
+
+      const entry = grouped.get(userId);
+      entry.totalOrdersCount += 1;
+      entry.totalAmountSpent += report.totalAmount || 0;
+      entry.lastOrderDate = entry.lastOrderDate && entry.lastOrderDate > report.orderDate
+        ? entry.lastOrderDate
+        : report.orderDate;
+      entry.downloadCount += report.downloadCount || 0;
+      entry.reportGeneratedAt = entry.reportGeneratedAt && entry.reportGeneratedAt > report.reportGeneratedAt
+        ? entry.reportGeneratedAt
+        : report.reportGeneratedAt;
+      entry.reportStatus = getAggregatedStatus([entry.reportStatus, report.reportStatus]);
+    });
+
+    const customerReports = Array.from(grouped.values());
+    const totalReports = customerReports.length;
+    const totalPages = Math.ceil(totalReports / limit);
+    const startIndex = (page - 1) * limit;
+    const paginated = customerReports.slice(startIndex, startIndex + parseInt(limit));
+
+    res.status(200).json({
+      success: true,
+      reports: paginated,
+      totalReports,
+      totalPages,
+      currentPage: parseInt(page)
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get single customer report details (Admin only)
+ * @route GET /api/reports/customers/:customerId
+ * @access Private/Admin
+ */
+exports.getCustomerReportById = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+    const reports = await Report.find({ user: customerId })
+      .populate('user', 'name email phone address createdAt')
+      .sort({ orderDate: -1 });
+
+    if (!reports.length) {
+      return res.status(404).json({
+        success: false,
+        message: 'Customer report not found'
+      });
+    }
+
+    const user = reports[0].user;
+    const orders = reports.map(report => ({
+      orderId: report.order?._id || report.order,
+      orderNumber: report.orderNumber || 'N/A',
+      orderDate: report.orderDate,
+      orderStatus: normalizeOrderStatus(report.orderStatus),
+      products: report.items?.map(item => ({
+        name: item.productName,
+        quantity: item.quantity,
+        price: item.productPrice,
+        total: item.itemTotal
+      })) || [],
+      totalAmount: report.totalAmount || 0
+    }));
+
+    const payments = reports.map(report => ({
+      orderId: report.order?._id || report.order,
+      paymentMethod: normalizePaymentMethod(report.paymentMethod),
+      paymentStatus: normalizePaymentStatus(report.paymentStatus),
+      transactionId: report.transactionId,
+      paymentDate: report.paymentDate,
+      invoiceNumber: report.orderNumber ? `INV-${report.orderNumber}` : 'N/A'
+    }));
+
+    const reviews = await Review.find({ user: customerId })
+      .populate('product', 'name')
+      .sort({ createdAt: -1 });
+
+    const totalAmountSpent = reports.reduce((sum, report) => sum + (report.totalAmount || 0), 0);
+    const lastOrderDate = reports.reduce((latest, report) => {
+      if (!latest) return report.orderDate;
+      return latest > report.orderDate ? latest : report.orderDate;
+    }, null);
+    const reportStatus = getAggregatedStatus(reports.map(r => r.reportStatus));
+    const downloadCount = reports.reduce((sum, report) => sum + (report.downloadCount || 0), 0);
+    const reportGeneratedAt = reports.reduce((latest, report) => {
+      if (!latest) return report.reportGeneratedAt;
+      return latest > report.reportGeneratedAt ? latest : report.reportGeneratedAt;
+    }, null);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        customerId,
+        customerDetails: {
+          name: user?.name || reports[0].userName,
+          email: user?.email || reports[0].userEmail,
+          mobile: user?.phone || reports[0].shippingAddress?.phone || 'N/A',
+          address: buildAddressLine(user?.address || reports[0].shippingAddress),
+          accountCreatedAt: user?.createdAt || null,
+          totalOrdersCount: reports.length,
+          totalAmountSpent,
+          lastOrderDate
+        },
+        orders,
+        payments,
+        reviews: reviews.map(review => ({
+          productName: review.product?.name,
+          rating: review.rating,
+          comment: review.feedback,
+          reviewDate: review.createdAt
+        })),
+        feedback: [],
+        meta: {
+          generatedAt: reportGeneratedAt,
+          generatedBy: req.admin?.name || 'System',
+          status: reportStatus,
+          downloadCount
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Download customer report (Admin only)
+ * @route PUT /api/reports/customers/:customerId/download
+ * @access Private/Admin
+ */
+exports.downloadCustomerReport = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+    await Report.updateMany(
+      { user: customerId },
+      {
+        $inc: { downloadCount: 1 },
+        $set: { reportStatus: 'Downloaded', lastDownloadedAt: new Date() }
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Customer report download recorded'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Delete customer reports (Admin only)
+ * @route DELETE /api/reports/customers/:customerId
+ * @access Private/Admin
+ */
+exports.deleteCustomerReports = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+    await Report.deleteMany({ user: customerId });
+    res.status(200).json({
+      success: true,
+      message: 'Customer reports deleted'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Regenerate customer report (Admin only)
+ * @route POST /api/reports/customers/:customerId/regenerate
+ * @access Private/Admin
+ */
+exports.regenerateCustomerReport = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+    const user = await User.findById(customerId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const orders = await Order.find({ user: customerId }).populate('items.product');
+    await Report.deleteMany({ user: customerId });
+
+    const createdReports = [];
+    for (const order of orders) {
+      const reportData = buildReportData(order, user, 'Order Report');
+      const newReport = await Report.create(reportData);
+      createdReports.push(newReport);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Customer report regenerated',
+      count: createdReports.length
     });
   } catch (error) {
     res.status(500).json({

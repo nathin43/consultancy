@@ -113,14 +113,70 @@ const Home = () => {
   };
 
   const categories = [
-    { name: 'Wire & Cables', icon: '🔌', color: '#3b82f6' },
-    { name: 'Pipes', icon: '🔧', color: '#06b6d4' },
-    { name: 'Heater', icon: '🔥', color: '#8b5cf6' },
-    { name: 'Motors', icon: '⚙️', color: '#ec4899' },
-    { name: 'Fan', icon: '💨', color: '#10b981' },
-    { name: 'Lights', icon: '💡', color: '#f59e0b' },
-    { name: 'Switches', icon: '🔘', color: '#ef4444' },
-    { name: 'Tank', icon: '🚡', color: '#6366f1' }
+    {
+      name: 'Switches',
+      icon: '🔘',
+      color: '#2f6fe4',
+      colorRgb: '47, 111, 228',
+      colorAlt: '#22d3ee',
+      colorAltRgb: '34, 211, 238'
+    },
+    {
+      name: 'Lights',
+      icon: '💡',
+      color: '#d97706',
+      colorRgb: '217, 119, 6',
+      colorAlt: '#f59e0b',
+      colorAltRgb: '245, 158, 11'
+    },
+    {
+      name: 'Fans',
+      icon: '💨',
+      color: '#0f766e',
+      colorRgb: '15, 118, 110',
+      colorAlt: '#2dd4bf',
+      colorAltRgb: '45, 212, 191'
+    },
+    {
+      name: 'Motors',
+      icon: '⚙️',
+      color: '#6d28d9',
+      colorRgb: '109, 40, 217',
+      colorAlt: '#8b5cf6',
+      colorAltRgb: '139, 92, 246'
+    },
+    {
+      name: 'Pipes',
+      icon: '🔧',
+      color: '#059669',
+      colorRgb: '5, 150, 105',
+      colorAlt: '#34d399',
+      colorAltRgb: '52, 211, 153'
+    },
+    {
+      name: 'Wire & Cables',
+      icon: '🔌',
+      color: '#0ea5e9',
+      colorRgb: '14, 165, 233',
+      colorAlt: '#38bdf8',
+      colorAltRgb: '56, 189, 248'
+    },
+    {
+      name: 'Tank',
+      icon: '🚡',
+      color: '#64748b',
+      colorRgb: '100, 116, 139',
+      colorAlt: '#7aa2d6',
+      colorAltRgb: '122, 162, 214'
+    },
+    {
+      name: 'Heater',
+      icon: '🔥',
+      color: '#f97316',
+      colorRgb: '249, 115, 22',
+      colorAlt: '#f87171',
+      colorAltRgb: '248, 113, 113'
+    }
   ];
 
 
@@ -213,7 +269,15 @@ const Home = () => {
                   const nextCategory = categories[nextIndex];
                   return (
                     <>
-                      <div className="category-spotlight-card side left" style={{ '--accent': prevCategory.color }}>
+                      <div
+                        className="category-spotlight-card side left"
+                        style={{
+                          '--accent': prevCategory.color,
+                          '--accent-rgb': prevCategory.colorRgb,
+                          '--accent-alt': prevCategory.colorAlt,
+                          '--accent-alt-rgb': prevCategory.colorAltRgb
+                        }}
+                      >
                         <div className="category-icon-bubble">
                           <span className="category-outer-ring ring-one" aria-hidden="true"></span>
                           <span className="category-outer-ring ring-two" aria-hidden="true"></span>
@@ -236,7 +300,15 @@ const Home = () => {
                           </span>
                         </div>
                       </div>
-                      <div className="category-spotlight-card active" style={{ '--accent': activeCategory.color }}>
+                      <div
+                        className="category-spotlight-card active"
+                        style={{
+                          '--accent': activeCategory.color,
+                          '--accent-rgb': activeCategory.colorRgb,
+                          '--accent-alt': activeCategory.colorAlt,
+                          '--accent-alt-rgb': activeCategory.colorAltRgb
+                        }}
+                      >
                         <div className="category-icon-bubble">
                           <span className="category-outer-ring ring-one" aria-hidden="true"></span>
                           <span className="category-outer-ring ring-two" aria-hidden="true"></span>
@@ -259,7 +331,15 @@ const Home = () => {
                           </span>
                         </div>
                       </div>
-                      <div className="category-spotlight-card side right" style={{ '--accent': nextCategory.color }}>
+                      <div
+                        className="category-spotlight-card side right"
+                        style={{
+                          '--accent': nextCategory.color,
+                          '--accent-rgb': nextCategory.colorRgb,
+                          '--accent-alt': nextCategory.colorAlt,
+                          '--accent-alt-rgb': nextCategory.colorAltRgb
+                        }}
+                      >
                         <div className="category-icon-bubble">
                           <span className="category-outer-ring ring-one" aria-hidden="true"></span>
                           <span className="category-outer-ring ring-two" aria-hidden="true"></span>

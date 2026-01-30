@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
 import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
@@ -17,16 +18,25 @@ const AdminReports = () => {
   const [filters, setFilters] = useState({
     searchUser: '',
     reportType: '',
-    reportStatus: '',
+    paymentStatus: '',
+    orderStatus: '',
     startDate: '',
     endDate: ''
   });
   const [draftFilters, setDraftFilters] = useState({
     searchUser: '',
     reportType: '',
-    reportStatus: '',
+    paymentStatus: '',
+    orderStatus: '',
     startDate: '',
     endDate: ''
+  });
+  const [openSections, setOpenSections] = useState({
+    customer: true,
+    orders: true,
+    payments: false,
+    reviews: false,
+    meta: true
   });
   const [trendStats, setTrendStats] = useState({
     total: { current: 0, previous: 0 },
@@ -47,11 +57,12 @@ const AdminReports = () => {
       queryParams.append('page', pagination.currentPage);
       if (filters.searchUser) queryParams.append('searchUser', filters.searchUser);
       if (filters.reportType) queryParams.append('reportType', filters.reportType);
-      if (filters.reportStatus) queryParams.append('reportStatus', filters.reportStatus);
+      if (filters.paymentStatus) queryParams.append('paymentStatus', filters.paymentStatus);
+      if (filters.orderStatus) queryParams.append('orderStatus', filters.orderStatus);
       if (filters.startDate) queryParams.append('startDate', filters.startDate);
       if (filters.endDate) queryParams.append('endDate', filters.endDate);
 
-      const response = await api.get(`/reports?${queryParams.toString()}`);
+      const response = await api.get(`/reports/customers?${queryParams.toString()}`);
       if (response.data.success) {
         setReports(response.data.reports);
         setPagination({
@@ -110,7 +121,8 @@ const AdminReports = () => {
     const cleared = {
       searchUser: '',
       reportType: '',
-      reportStatus: '',
+      paymentStatus: '',
+      orderStatus: '',
       startDate: '',
       endDate: ''
     };
@@ -122,10 +134,17 @@ const AdminReports = () => {
   // View report details
   const handleViewDetails = async (reportId) => {
     try {
-      const response = await api.get(`/reports/${reportId}`);
+      const response = await api.get(`/reports/customers/${reportId}`);
       if (response.data.success) {
         setSelectedReport(response.data.data);
         setShowDetailModal(true);
+        setOpenSections({
+          customer: true,
+          orders: true,
+          payments: false,
+          reviews: false,
+          meta: true
+        });
       }
     } catch (error) {
       toast.error('Failed to fetch report details');
@@ -135,19 +154,58 @@ const AdminReports = () => {
   // Download report
   const handleDownloadReport = async (reportId) => {
     try {
-      const response = await api.put(`/reports/${reportId}/download`);
+      const response = await api.put(`/reports/customers/${reportId}/download`);
       if (response.data.success) {
         toast.success('Report downloaded successfully');
         // Refresh reports to show updated download count
         fetchReports();
+        if (selectedReport?.customerId === reportId) {
+          handleViewDetails(reportId);
+        }
       }
     } catch (error) {
       toast.error('Failed to download report');
     }
   };
 
+  const handleDeleteReport = async (reportId) => {
+    const confirmDelete = window.confirm('Delete all reports for this customer? This action cannot be undone.');
+    if (!confirmDelete) return;
+
+    try {
+      const response = await api.delete(`/reports/customers/${reportId}`);
+      if (response.data.success) {
+        toast.success('Customer reports deleted');
+        fetchReports();
+        if (selectedReport?.customerId === reportId) {
+          setShowDetailModal(false);
+          setSelectedReport(null);
+        }
+      }
+    } catch (error) {
+      toast.error('Failed to delete customer reports');
+    }
+  };
+
+  const handleRegenerateReport = async (reportId) => {
+    const confirmRegen = window.confirm('Regenerate reports for this customer? Existing reports will be replaced.');
+    if (!confirmRegen) return;
+
+    try {
+      const response = await api.post(`/reports/customers/${reportId}/regenerate`);
+      if (response.data.success) {
+        toast.success('Customer report regenerated');
+        fetchReports();
+        handleViewDetails(reportId);
+      }
+    } catch (error) {
+      toast.error('Failed to regenerate customer report');
+    }
+  };
+
   // Format date
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -155,6 +213,168 @@ const AdminReports = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const formatShortDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatCurrency = (amount) => `₹${Number(amount || 0).toFixed(2)}`;
+
+  const getOrderStatusClass = (status) => {
+    const normalized = (status || '').toLowerCase();
+    if (normalized === 'delivered') return 'status-success';
+    if (normalized === 'cancelled') return 'status-danger';
+    return 'status-warning';
+  };
+
+  const getPaymentStatusClass = (status) => {
+    const normalized = (status || '').toLowerCase();
+    if (normalized === 'paid' || normalized === 'completed') return 'status-success';
+    if (normalized === 'failed') return 'status-danger';
+    return 'status-warning';
+  };
+
+  const toggleSection = (key) => {
+    setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const buildCsv = (report) => {
+    const rows = [];
+    rows.push(['Customer Name', report.customerDetails?.name || '']);
+    rows.push(['Email', report.customerDetails?.email || '']);
+    rows.push(['Mobile', report.customerDetails?.mobile || '']);
+    rows.push(['Address', report.customerDetails?.address || '']);
+    rows.push(['Account Created Date', formatDate(report.customerDetails?.accountCreatedAt)]);
+    rows.push(['Total Orders', report.customerDetails?.totalOrdersCount || 0]);
+    rows.push(['Total Amount Spent', report.customerDetails?.totalAmountSpent || 0]);
+    rows.push([]);
+    rows.push(['Order Details']);
+    rows.push(['Order ID', 'Order Date', 'Order Status', 'Total Amount']);
+    report.orders?.forEach(order => {
+      rows.push([
+        order.orderNumber || order.orderId || '',
+        formatDate(order.orderDate),
+        order.orderStatus,
+        order.totalAmount
+      ]);
+    });
+    rows.push([]);
+    rows.push(['Payment Details']);
+    rows.push(['Payment Method', 'Payment Status', 'Transaction ID', 'Payment Date', 'Invoice Number']);
+    report.payments?.forEach(payment => {
+      rows.push([
+        payment.paymentMethod,
+        payment.paymentStatus,
+        payment.transactionId || '',
+        formatDate(payment.paymentDate),
+        payment.invoiceNumber
+      ]);
+    });
+    rows.push([]);
+    rows.push(['Reviews']);
+    rows.push(['Product', 'Rating', 'Comment', 'Review Date']);
+    report.reviews?.forEach(review => {
+      rows.push([
+        review.productName,
+        review.rating,
+        review.comment,
+        formatDate(review.reviewDate)
+      ]);
+    });
+    rows.push([]);
+    rows.push(['Report Meta']);
+    rows.push(['Generated At', formatDate(report.meta?.generatedAt)]);
+    rows.push(['Generated By', report.meta?.generatedBy || 'System']);
+    rows.push(['Report Status', report.meta?.status]);
+    rows.push(['Download Count', report.meta?.downloadCount || 0]);
+
+    return rows.map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  };
+
+  const handleExportExcel = (report) => {
+    const csvContent = buildCsv(report);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeName = (report.customerDetails?.name || 'customer').replace(/\s+/g, '-').toLowerCase();
+    link.href = url;
+    link.download = `customer-report-${safeName}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadPdf = (report) => {
+    const doc = new jsPDF();
+    let y = 12;
+    const addLine = (text) => {
+      doc.text(String(text || ''), 14, y);
+      y += 6;
+      if (y > 280) {
+        doc.addPage();
+        y = 12;
+      }
+    };
+
+    doc.setFontSize(16);
+    addLine('Customer Report');
+    doc.setFontSize(11);
+    addLine(`Customer: ${report.customerDetails?.name || 'N/A'}`);
+    addLine(`Email: ${report.customerDetails?.email || 'N/A'}`);
+    addLine(`Mobile: ${report.customerDetails?.mobile || 'N/A'}`);
+    addLine(`Address: ${report.customerDetails?.address || 'N/A'}`);
+    addLine(`Account Created: ${formatDate(report.customerDetails?.accountCreatedAt)}`);
+    addLine(`Total Orders: ${report.customerDetails?.totalOrdersCount || 0}`);
+    addLine(`Total Spent: ${formatCurrency(report.customerDetails?.totalAmountSpent)}`);
+    addLine('');
+
+    doc.setFontSize(12);
+    addLine('Order Details');
+    doc.setFontSize(10);
+    report.orders?.forEach(order => {
+      addLine(`Order: ${order.orderNumber || order.orderId} | ${formatDate(order.orderDate)} | ${order.orderStatus} | ${formatCurrency(order.totalAmount)}`);
+      order.products?.forEach(item => {
+        addLine(`  - ${item.name} x${item.quantity} @ ${formatCurrency(item.price)}`);
+      });
+    });
+    addLine('');
+
+    doc.setFontSize(12);
+    addLine('Payment Details');
+    doc.setFontSize(10);
+    report.payments?.forEach(payment => {
+      addLine(`Method: ${payment.paymentMethod} | Status: ${payment.paymentStatus} | Txn: ${payment.transactionId || 'N/A'}`);
+    });
+    addLine('');
+
+    doc.setFontSize(12);
+    addLine('Reviews');
+    doc.setFontSize(10);
+    if (report.reviews?.length) {
+      report.reviews.forEach(review => {
+        addLine(`${review.productName} | ${review.rating}★ | ${review.comment}`);
+      });
+    } else {
+      addLine('No reviews available');
+    }
+    addLine('');
+
+    doc.setFontSize(12);
+    addLine('Report Meta');
+    doc.setFontSize(10);
+    addLine(`Generated At: ${formatDate(report.meta?.generatedAt)}`);
+    addLine(`Generated By: ${report.meta?.generatedBy || 'System'}`);
+    addLine(`Status: ${report.meta?.status}`);
+    addLine(`Downloads: ${report.meta?.downloadCount || 0}`);
+
+    const safeName = (report.customerDetails?.name || 'customer').replace(/\s+/g, '-').toLowerCase();
+    doc.save(`customer-report-${safeName}.pdf`);
+    handleDownloadReport(report.customerId);
   };
 
   // Get status badge color
@@ -236,8 +456,6 @@ const AdminReports = () => {
     };
   };
 
-  const formatReportId = (id) => (id ? id.slice(-8).toUpperCase() : 'N/A');
-
   const hasActiveFilters = Object.values(draftFilters).some(Boolean);
 
   const totalTrend = getTrendMeta(trendStats.total.current, trendStats.total.previous);
@@ -250,8 +468,8 @@ const AdminReports = () => {
       <div className="admin-reports-container">
         {/* Header */}
         <div className="reports-header">
-          <h1>📊 Reports Management</h1>
-          <p>View, filter, and download all customer reports</p>
+          <h1>📊 Customer Reports</h1>
+          <p>View and manage customer-wise detailed reports</p>
         </div>
 
         {/* Stats Cards */}
@@ -310,11 +528,11 @@ const AdminReports = () => {
         {/* Filters */}
         <div className="reports-filters">
           <div className={`filter-group ${draftFilters.searchUser ? 'active' : ''}`}>
-            <label>Search User Email</label>
+            <label>Search Customer Email</label>
             <input
               type="text"
               name="searchUser"
-              placeholder="Enter user email..."
+              placeholder="Enter customer email..."
               value={draftFilters.searchUser}
               onChange={handleFilterChange}
               className="filter-input"
@@ -336,18 +554,33 @@ const AdminReports = () => {
             </select>
           </div>
 
-          <div className={`filter-group ${draftFilters.reportStatus ? 'active' : ''}`}>
-            <label>Report Status</label>
+          <div className={`filter-group ${draftFilters.paymentStatus ? 'active' : ''}`}>
+            <label>Payment Status</label>
             <select
-              name="reportStatus"
-              value={draftFilters.reportStatus}
+              name="paymentStatus"
+              value={draftFilters.paymentStatus}
               onChange={handleFilterChange}
               className="filter-select"
             >
-              <option value="">All Status</option>
-              <option value="Generated">Generated</option>
-              <option value="Downloaded">Downloaded</option>
-              <option value="Archived">Archived</option>
+              <option value="">All Payments</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="failed">Failed</option>
+            </select>
+          </div>
+
+          <div className={`filter-group ${draftFilters.orderStatus ? 'active' : ''}`}>
+            <label>Order Status</label>
+            <select
+              name="orderStatus"
+              value={draftFilters.orderStatus}
+              onChange={handleFilterChange}
+              className="filter-select"
+            >
+              <option value="">All Orders</option>
+              <option value="pending">Pending</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
             </select>
           </div>
 
@@ -402,13 +635,12 @@ const AdminReports = () => {
             <div className="loading-skeleton">
               {Array.from({ length: 6 }).map((_, index) => (
                 <div key={index} className="skeleton-row">
-                  <div className="skeleton-cell id"></div>
                   <div className="skeleton-cell user"></div>
-                  <div className="skeleton-cell type"></div>
-                  <div className="skeleton-cell order"></div>
+                  <div className="skeleton-cell user"></div>
                   <div className="skeleton-cell amount"></div>
-                  <div className="skeleton-cell status"></div>
+                  <div className="skeleton-cell amount"></div>
                   <div className="skeleton-cell date"></div>
+                  <div className="skeleton-cell status"></div>
                   <div className="skeleton-cell actions"></div>
                 </div>
               ))}
@@ -419,41 +651,34 @@ const AdminReports = () => {
                 <table className="reports-table">
                   <thead>
                     <tr>
-                      <th>Report ID</th>
-                      <th>User Name / Email</th>
-                      <th>Report Type</th>
-                      <th>Order ID</th>
+                      <th>Customer Name</th>
+                      <th>Email</th>
+                      <th>Total Orders</th>
                       <th>Total Amount</th>
-                      <th>Status</th>
-                      <th>Created Date</th>
+                      <th>Last Order Date</th>
+                      <th>Report Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {reports.map(report => (
                       <tr key={report._id} className="report-row">
-                        <td data-label="Report ID" className="report-id" title={report._id}>
-                          {formatReportId(report._id)}
+                        <td data-label="Customer" className="user-cell">
+                          <div className="user-name">{report.customerDetails?.name || 'Unknown Customer'}</div>
                         </td>
-                        <td data-label="User" className="user-cell">
-                          <div className="user-name">{report.userName || report.user?.name || 'Unknown User'}</div>
-                          <div className="user-email">{report.userEmail || report.user?.email || 'N/A'}</div>
+                        <td data-label="Email" className="user-email">
+                          {report.customerDetails?.email || 'N/A'}
                         </td>
-                        <td data-label="Report Type">
-                          <span
-                            className="badge type-badge"
-                            style={{ backgroundColor: getTypeColor(report.reportType) }}
-                          >
-                            {report.reportType}
-                          </span>
-                        </td>
-                        <td data-label="Order ID" className="order-id">
-                          {report.order?.orderNumber || report.orderNumber || 'N/A'}
+                        <td data-label="Total Orders" className="amount">
+                          {report.totalOrdersCount || 0}
                         </td>
                         <td data-label="Total Amount" className="amount">
-                          ₹{report.totalAmount?.toFixed(2) || '0.00'}
+                          {formatCurrency(report.totalAmountSpent)}
                         </td>
-                        <td data-label="Status">
+                        <td data-label="Last Order Date" className="date">
+                          {formatShortDate(report.lastOrderDate)}
+                        </td>
+                        <td data-label="Report Status">
                           <span
                             className="status-pill"
                             style={{ backgroundColor: getStatusColor(report.reportStatus) }}
@@ -461,12 +686,9 @@ const AdminReports = () => {
                             {report.reportStatus}
                           </span>
                         </td>
-                        <td data-label="Created Date" className="date">
-                          {formatDate(report.reportGeneratedAt)}
-                        </td>
                         <td data-label="Actions" className="actions">
                           <button
-                            onClick={() => handleViewDetails(report._id)}
+                            onClick={() => handleViewDetails(report.customerId)}
                             className="action-btn view-btn"
                             title="View Report"
                             aria-label="View report"
@@ -476,13 +698,23 @@ const AdminReports = () => {
                             </svg>
                           </button>
                           <button
-                            onClick={() => handleDownloadReport(report._id)}
+                            onClick={() => handleDownloadReport(report.customerId)}
                             className="action-btn download-btn"
                             title="Download Report"
                             aria-label="Download report"
                           >
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                               <path d="M12 3a1 1 0 0 1 1 1v9.59l2.3-2.29a1 1 0 1 1 1.4 1.42l-4.01 4a1 1 0 0 1-1.4 0l-4.01-4a1 1 0 1 1 1.4-1.42L11 13.59V4a1 1 0 0 1 1-1Zm-7 14a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z" fill="currentColor" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReport(report.customerId)}
+                            className="action-btn delete-btn"
+                            title="Delete Report"
+                            aria-label="Delete report"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M9 3h6a1 1 0 0 1 1 1v2h4a1 1 0 1 1 0 2h-1v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8H4a1 1 0 1 1 0-2h4V4a1 1 0 0 1 1-1Zm1 3h4V5h-4v1Zm-2 2v11h8V8H8Z" fill="currentColor" />
                             </svg>
                           </button>
                         </td>
@@ -527,7 +759,7 @@ const AdminReports = () => {
                   <path d="M92 26h8" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
                 </svg>
               </div>
-              <p>No reports available yet</p>
+              <p>No customer reports available yet</p>
               <small>Try changing filters or broaden the date range.</small>
             </div>
           )}
@@ -538,7 +770,7 @@ const AdminReports = () => {
           <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
             <div className="modal-content detail-modal" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>Report Details</h2>
+                <h2>Customer Report</h2>
                 <button
                   className="close-btn"
                   onClick={() => setShowDetailModal(false)}
@@ -548,110 +780,215 @@ const AdminReports = () => {
               </div>
 
               <div className="modal-body">
-                {/* User Info */}
-                <div className="detail-section">
-                  <h3>User Information</h3>
-                  <div className="detail-row">
-                    <span className="label">Name:</span>
-                    <span className="value">{selectedReport.user?.name}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">Email:</span>
-                    <span className="value">{selectedReport.user?.email}</span>
-                  </div>
-                </div>
-
-                {/* Order Info */}
-                <div className="detail-section">
-                  <h3>Order Information</h3>
-                  <div className="detail-row">
-                    <span className="label">Order Number:</span>
-                    <span className="value">{selectedReport.order?.orderNumber}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">Order Status:</span>
-                    <span className="value">{selectedReport.order?.orderStatus}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">Order Date:</span>
-                    <span className="value">{formatDate(selectedReport.order?.createdAt)}</span>
-                  </div>
-                </div>
-
-                {/* Items */}
-                <div className="detail-section">
-                  <h3>Items</h3>
-                  <div className="items-list">
-                    {selectedReport.items?.map((item, index) => (
-                      <div key={index} className="item">
-                        <span>{item.productName}</span>
-                        <span className="item-qty">Qty: {item.quantity}</span>
-                        <span className="item-price">₹{item.itemTotal?.toFixed(2)}</span>
+                <div className="report-accordion">
+                  <div className={`accordion-section ${openSections.customer ? 'open' : ''}`}>
+                    <button type="button" className="accordion-header" onClick={() => toggleSection('customer')}>
+                      <span>👤 Customer Details</span>
+                      <span className="accordion-toggle">{openSections.customer ? '−' : '+'}</span>
+                    </button>
+                    {openSections.customer && (
+                      <div className="accordion-content">
+                        <div className="detail-row">
+                          <span className="label">Name:</span>
+                          <span className="value">{selectedReport.customerDetails?.name}</span>
+                        </div>
+                        <div className="detail-row">
+                          <span className="label">Email:</span>
+                          <span className="value">{selectedReport.customerDetails?.email}</span>
+                        </div>
+                        <div className="detail-row">
+                          <span className="label">Mobile:</span>
+                          <span className="value">{selectedReport.customerDetails?.mobile}</span>
+                        </div>
+                        <div className="detail-row">
+                          <span className="label">Address:</span>
+                          <span className="value">{selectedReport.customerDetails?.address}</span>
+                        </div>
+                        <div className="detail-row">
+                          <span className="label">Account Created:</span>
+                          <span className="value">{formatDate(selectedReport.customerDetails?.accountCreatedAt)}</span>
+                        </div>
+                        <div className="detail-row">
+                          <span className="label">Total Orders:</span>
+                          <span className="value">{selectedReport.customerDetails?.totalOrdersCount}</span>
+                        </div>
+                        <div className="detail-row total">
+                          <span className="label">Total Spent:</span>
+                          <span className="value">{formatCurrency(selectedReport.customerDetails?.totalAmountSpent)}</span>
+                        </div>
                       </div>
-                    ))}
+                    )}
                   </div>
-                </div>
 
-                {/* Amount Summary */}
-                <div className="detail-section">
-                  <h3>Amount Summary</h3>
-                  <div className="detail-row">
-                    <span className="label">Items Total:</span>
-                    <span className="value">₹{(selectedReport.items?.reduce((sum, item) => sum + (item.itemTotal || 0), 0) || selectedReport.totalAmount)?.toFixed(2) || '0.00'}</span>
+                  <div className={`accordion-section ${openSections.orders ? 'open' : ''}`}>
+                    <button type="button" className="accordion-header" onClick={() => toggleSection('orders')}>
+                      <span>🧾 Order Details</span>
+                      <span className="accordion-toggle">{openSections.orders ? '−' : '+'}</span>
+                    </button>
+                    {openSections.orders && (
+                      <div className="accordion-content">
+                        {selectedReport.orders?.length ? (
+                          selectedReport.orders.map(order => (
+                            <div key={order.orderId || order.orderNumber} className="order-card">
+                              <div className="order-header">
+                                <div>
+                                  <div className="order-title">Order {order.orderNumber || order.orderId}</div>
+                                  <div className="order-subtitle">{formatDate(order.orderDate)}</div>
+                                </div>
+                                <span className={`status-badge ${getOrderStatusClass(order.orderStatus)}`}>
+                                  {order.orderStatus}
+                                </span>
+                              </div>
+                              <div className="order-items">
+                                {order.products?.map((item, idx) => (
+                                  <div key={idx} className="item">
+                                    <span>{item.name}</span>
+                                    <span className="item-qty">Qty: {item.quantity}</span>
+                                    <span className="item-price">{formatCurrency(item.total)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="detail-row total">
+                                <span className="label">Order Total:</span>
+                                <span className="value">{formatCurrency(order.totalAmount)}</span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="empty-subtext">No orders available.</div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="detail-row total">
-                    <span className="label">Total Amount:</span>
-                    <span className="value">₹{selectedReport.totalAmount?.toFixed(2) || '0.00'}</span>
-                  </div>
-                </div>
 
-                {/* Payment Info */}
-                <div className="detail-section">
-                  <h3>Payment Information</h3>
-                  <div className="detail-row">
-                    <span className="label">Payment Method:</span>
-                    <span className="value">{selectedReport.paymentMethod}</span>
+                  <div className={`accordion-section ${openSections.payments ? 'open' : ''}`}>
+                    <button type="button" className="accordion-header" onClick={() => toggleSection('payments')}>
+                      <span>💳 Payment Details</span>
+                      <span className="accordion-toggle">{openSections.payments ? '−' : '+'}</span>
+                    </button>
+                    {openSections.payments && (
+                      <div className="accordion-content">
+                        {selectedReport.payments?.length ? (
+                          selectedReport.payments.map((payment, idx) => (
+                            <div key={idx} className="detail-card">
+                              <div className="detail-row">
+                                <span className="label">Method:</span>
+                                <span className="value">{payment.paymentMethod}</span>
+                              </div>
+                              <div className="detail-row">
+                                <span className="label">Status:</span>
+                                <span className={`status-badge ${getPaymentStatusClass(payment.paymentStatus)}`}>
+                                  {payment.paymentStatus}
+                                </span>
+                              </div>
+                              <div className="detail-row">
+                                <span className="label">Transaction ID:</span>
+                                <span className="value">{payment.transactionId || 'N/A'}</span>
+                              </div>
+                              <div className="detail-row">
+                                <span className="label">Payment Date:</span>
+                                <span className="value">{formatDate(payment.paymentDate)}</span>
+                              </div>
+                              <div className="detail-row">
+                                <span className="label">Invoice Number:</span>
+                                <span className="value">{payment.invoiceNumber}</span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="empty-subtext">No payment details available.</div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="detail-row">
-                    <span className="label">Payment Status:</span>
-                    <span className="value">{selectedReport.paymentStatus}</span>
-                  </div>
-                  {selectedReport.transactionId && (
-                    <div className="detail-row">
-                      <span className="label">Transaction ID:</span>
-                      <span className="value">{selectedReport.transactionId}</span>
-                    </div>
-                  )}
-                </div>
 
-                {/* Report Info */}
-                <div className="detail-section">
-                  <h3>Report Information</h3>
-                  <div className="detail-row">
-                    <span className="label">Report Type:</span>
-                    <span className="value">{selectedReport.reportType}</span>
+                  <div className={`accordion-section ${openSections.reviews ? 'open' : ''}`}>
+                    <button type="button" className="accordion-header" onClick={() => toggleSection('reviews')}>
+                      <span>⭐ Feedback & Reviews</span>
+                      <span className="accordion-toggle">{openSections.reviews ? '−' : '+'}</span>
+                    </button>
+                    {openSections.reviews && (
+                      <div className="accordion-content">
+                        {selectedReport.reviews?.length ? (
+                          selectedReport.reviews.map((review, idx) => (
+                            <div key={idx} className="detail-card">
+                              <div className="detail-row">
+                                <span className="label">Product:</span>
+                                <span className="value">{review.productName}</span>
+                              </div>
+                              <div className="detail-row">
+                                <span className="label">Rating:</span>
+                                <span className="value">{review.rating} ★</span>
+                              </div>
+                              <div className="detail-row">
+                                <span className="label">Comment:</span>
+                                <span className="value">{review.comment}</span>
+                              </div>
+                              <div className="detail-row">
+                                <span className="label">Review Date:</span>
+                                <span className="value">{formatDate(review.reviewDate)}</span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="empty-subtext">No reviews or feedback available.</div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="detail-row">
-                    <span className="label">Report Status:</span>
-                    <span className="value">{selectedReport.reportStatus}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">Generated At:</span>
-                    <span className="value">{formatDate(selectedReport.reportGeneratedAt)}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="label">Downloads:</span>
-                    <span className="value">{selectedReport.downloadCount || 0}</span>
+
+                  <div className={`accordion-section ${openSections.meta ? 'open' : ''}`}>
+                    <button type="button" className="accordion-header" onClick={() => toggleSection('meta')}>
+                      <span>📌 Report Meta Info</span>
+                      <span className="accordion-toggle">{openSections.meta ? '−' : '+'}</span>
+                    </button>
+                    {openSections.meta && (
+                      <div className="accordion-content">
+                        <div className="detail-row">
+                          <span className="label">Generated At:</span>
+                          <span className="value">{formatDate(selectedReport.meta?.generatedAt)}</span>
+                        </div>
+                        <div className="detail-row">
+                          <span className="label">Generated By:</span>
+                          <span className="value">{selectedReport.meta?.generatedBy}</span>
+                        </div>
+                        <div className="detail-row">
+                          <span className="label">Report Status:</span>
+                          <span
+                            className="status-badge"
+                            style={{ backgroundColor: getStatusColor(selectedReport.meta?.status) }}
+                          >
+                            {selectedReport.meta?.status}
+                          </span>
+                        </div>
+                        <div className="detail-row">
+                          <span className="label">Download Count:</span>
+                          <span className="value">{selectedReport.meta?.downloadCount || 0}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
               <div className="modal-footer">
                 <button
-                  onClick={() => handleDownloadReport(selectedReport._id)}
-                  className="action-btn download-btn"
+                  onClick={() => handleDownloadPdf(selectedReport)}
+                  className="modal-action-btn primary"
                 >
-                  ⬇️ Download Report
+                  ⬇️ Download PDF
+                </button>
+                <button
+                  onClick={() => handleExportExcel(selectedReport)}
+                  className="modal-action-btn"
+                >
+                  📄 Export Excel
+                </button>
+                <button
+                  onClick={() => handleRegenerateReport(selectedReport.customerId)}
+                  className="modal-action-btn"
+                >
+                  ♻️ Regenerate
                 </button>
                 <button
                   onClick={() => setShowDetailModal(false)}

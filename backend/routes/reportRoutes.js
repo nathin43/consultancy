@@ -7,7 +7,12 @@ const {
   getReportById,
   downloadReport,
   generateReportForOrder,
-  getReportStats
+  getReportStats,
+  getCustomerReports,
+  getCustomerReportById,
+  downloadCustomerReport,
+  deleteCustomerReports,
+  regenerateCustomerReport
 } = require('../controllers/reportController');
 const { protect, adminProtect } = require('../middleware/auth');
 
@@ -35,6 +40,11 @@ router.post('/create', createReport);
 // Admin routes - all protected with adminProtect
 router.get('/stats/dashboard', adminProtect, getReportStats);
 router.get('/', adminProtect, getAllReports);
+router.get('/customers', adminProtect, getCustomerReports);
+router.get('/customers/:customerId', adminProtect, getCustomerReportById);
+router.put('/customers/:customerId/download', adminProtect, downloadCustomerReport);
+router.delete('/customers/:customerId', adminProtect, deleteCustomerReports);
+router.post('/customers/:customerId/regenerate', adminProtect, regenerateCustomerReport);
 
 // User and Admin routes - protect with user JWT auth
 // Access control is handled inside each controller
