@@ -19,6 +19,8 @@ const Home = () => {
   const [autoPlayEnabled, setAutoPlayEnabled] = useState(true);
   const [activeModal, setActiveModal] = useState(null);
   const autoPlayTimerRef = useRef(null);
+  const touchStartRef = useRef({ x: 0, y: 0 });
+  const touchDeltaRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     // Auto-rotate categories every 3 seconds
@@ -121,6 +123,7 @@ const Home = () => {
     { name: 'Tank', icon: '🚡', color: '#6366f1' }
   ];
 
+
   // Get thumbnail display count
   const THUMBNAIL_DISPLAY_COUNT = 6;
   const totalProducts = products.length;
@@ -155,6 +158,31 @@ const Home = () => {
     return displayedThumbs.findIndex(p => p._id === activeProduct._id);
   };
 
+  const handleCategoryTouchStart = (event) => {
+    const touch = event.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    touchDeltaRef.current = { x: 0, y: 0 };
+  };
+
+  const handleCategoryTouchMove = (event) => {
+    const touch = event.touches[0];
+    touchDeltaRef.current = {
+      x: touch.clientX - touchStartRef.current.x,
+      y: touch.clientY - touchStartRef.current.y
+    };
+  };
+
+  const handleCategoryTouchEnd = () => {
+    const { x, y } = touchDeltaRef.current;
+    if (Math.abs(x) > 40 && Math.abs(x) > Math.abs(y)) {
+      if (x < 0) {
+        setCurrentCategoryIndex((prev) => (prev + 1) % categories.length);
+      } else {
+        setCurrentCategoryIndex((prev) => (prev - 1 + categories.length) % categories.length);
+      }
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -170,41 +198,124 @@ const Home = () => {
           </div>
 
           <div className="hero-image-container">
-            <div className="category-image-wrapper">
-              <div className="category-image-display">
-                <span className="category-icon-large" style={{ color: categories[currentCategoryIndex].color, fontSize: '120px' }}>
-                  {categories[currentCategoryIndex].icon}
-                </span>
-                <h3>{categories[currentCategoryIndex].name}</h3>
+            <div
+              className="category-spotlight"
+              onTouchStart={handleCategoryTouchStart}
+              onTouchMove={handleCategoryTouchMove}
+              onTouchEnd={handleCategoryTouchEnd}
+            >
+              <div className="category-spotlight-stage" aria-live="polite">
+                {(() => {
+                  const prevIndex = (currentCategoryIndex - 1 + categories.length) % categories.length;
+                  const nextIndex = (currentCategoryIndex + 1) % categories.length;
+                  const prevCategory = categories[prevIndex];
+                  const activeCategory = categories[currentCategoryIndex];
+                  const nextCategory = categories[nextIndex];
+                  return (
+                    <>
+                      <div className="category-spotlight-card side left" style={{ '--accent': prevCategory.color }}>
+                        <div className="category-icon-bubble">
+                          <span className="category-outer-ring ring-one" aria-hidden="true"></span>
+                          <span className="category-outer-ring ring-two" aria-hidden="true"></span>
+                          <span className="category-orbit" aria-hidden="true">
+                            <span className="category-orbit-dot dot-one"></span>
+                            <span className="category-orbit-dot dot-two"></span>
+                            <span className="category-orbit-dot dot-three"></span>
+                            <span className="category-orbit-dot dot-four"></span>
+                            <span className="category-orbit-dot dot-five"></span>
+                            <span className="category-orbit-dot dot-six"></span>
+                          </span>
+                          <span className="category-orbit inner" aria-hidden="true">
+                            <span className="category-orbit-dot dot-seven"></span>
+                            <span className="category-orbit-dot dot-eight"></span>
+                            <span className="category-orbit-dot dot-nine"></span>
+                            <span className="category-orbit-dot dot-ten"></span>
+                          </span>
+                          <span className="category-spotlight-image category-spotlight-text">
+                            {prevCategory.name}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="category-spotlight-card active" style={{ '--accent': activeCategory.color }}>
+                        <div className="category-icon-bubble">
+                          <span className="category-outer-ring ring-one" aria-hidden="true"></span>
+                          <span className="category-outer-ring ring-two" aria-hidden="true"></span>
+                          <span className="category-orbit" aria-hidden="true">
+                            <span className="category-orbit-dot dot-one"></span>
+                            <span className="category-orbit-dot dot-two"></span>
+                            <span className="category-orbit-dot dot-three"></span>
+                            <span className="category-orbit-dot dot-four"></span>
+                            <span className="category-orbit-dot dot-five"></span>
+                            <span className="category-orbit-dot dot-six"></span>
+                          </span>
+                          <span className="category-orbit inner" aria-hidden="true">
+                            <span className="category-orbit-dot dot-seven"></span>
+                            <span className="category-orbit-dot dot-eight"></span>
+                            <span className="category-orbit-dot dot-nine"></span>
+                            <span className="category-orbit-dot dot-ten"></span>
+                          </span>
+                          <span className="category-spotlight-image category-spotlight-text">
+                            {activeCategory.name}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="category-spotlight-card side right" style={{ '--accent': nextCategory.color }}>
+                        <div className="category-icon-bubble">
+                          <span className="category-outer-ring ring-one" aria-hidden="true"></span>
+                          <span className="category-outer-ring ring-two" aria-hidden="true"></span>
+                          <span className="category-orbit" aria-hidden="true">
+                            <span className="category-orbit-dot dot-one"></span>
+                            <span className="category-orbit-dot dot-two"></span>
+                            <span className="category-orbit-dot dot-three"></span>
+                            <span className="category-orbit-dot dot-four"></span>
+                            <span className="category-orbit-dot dot-five"></span>
+                            <span className="category-orbit-dot dot-six"></span>
+                          </span>
+                          <span className="category-orbit inner" aria-hidden="true">
+                            <span className="category-orbit-dot dot-seven"></span>
+                            <span className="category-orbit-dot dot-eight"></span>
+                            <span className="category-orbit-dot dot-nine"></span>
+                            <span className="category-orbit-dot dot-ten"></span>
+                          </span>
+                          <span className="category-spotlight-image category-spotlight-text">
+                            {nextCategory.name}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
-            </div>
 
-            <div className="category-controls">
-              <button 
-                className="category-btn prev"
-                onClick={() => setCurrentCategoryIndex((prev) => (prev - 1 + categories.length) % categories.length)}
-              >
-                ‹
-              </button>
-              <div className="category-dots-horizontal">
-                {categories.map((category, index) => (
-                  <button
-                    key={category.name}
-                    className={`dot-horizontal ${index === currentCategoryIndex ? 'active' : ''}`}
-                    onClick={() => setCurrentCategoryIndex(index)}
-                    style={{ 
-                      backgroundColor: index === currentCategoryIndex ? category.color : '#ddd'
-                    }}
-                    title={category.name}
-                  />
-                ))}
+              <div className="category-spotlight-controls">
+                <button
+                  className="category-nav-btn prev"
+                  onClick={() => setCurrentCategoryIndex((prev) => (prev - 1 + categories.length) % categories.length)}
+                  aria-label="Previous category"
+                >
+                  ‹
+                </button>
+
+                <div className="category-progress" aria-hidden="true">
+                  <div className="category-progress-track">
+                    <div
+                      className="category-progress-fill"
+                      style={{ width: `${((currentCategoryIndex + 1) / categories.length) * 100}%` }}
+                    ></div>
+                  </div>
+                  <span className="category-progress-text">
+                    {currentCategoryIndex + 1} / {categories.length}
+                  </span>
+                </div>
+
+                <button
+                  className="category-nav-btn next"
+                  onClick={() => setCurrentCategoryIndex((prev) => (prev + 1) % categories.length)}
+                  aria-label="Next category"
+                >
+                  ›
+                </button>
               </div>
-              <button 
-                className="category-btn next"
-                onClick={() => setCurrentCategoryIndex((prev) => (prev + 1) % categories.length)}
-              >
-                ›
-              </button>
             </div>
           </div>
         </div>
