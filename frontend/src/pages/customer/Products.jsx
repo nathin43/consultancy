@@ -286,7 +286,7 @@ const Products = () => {
               )}
             </div>
           ) : (
-            <>
+            <div className="products-grid-section">
               <div className="products-header">
                 <p className="products-count">{products.length} products found</p>
               </div>
@@ -295,7 +295,7 @@ const Products = () => {
                   <ProductCard key={product._id} product={product} />
                 ))}
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>

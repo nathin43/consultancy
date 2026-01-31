@@ -3,16 +3,16 @@
    =============================================== */
 
 :root {
-  --primary: #0066cc;
-  --primary-dark: #0052a3;
-  --accent: #00a8e8;
-  --bg-light: #f8f9fa;
-  --bg-white: #ffffff;
-  --text-dark: #1a1a1a;
-  --text-muted: #666666;
-  --border: #e0e0e0;
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --primary: #4279a3;
+  --primary-dark: #2d5a7b;
+  --accent: #22d3ee;
+  --bg-light: #0F2438;
+  --bg-white: rgba(15, 36, 56, 0.78);
+  --text-dark: #f8fafc;
+  --text-muted: #b6c6d6;
+  --border: rgba(66, 121, 163, 0.25);
+  --shadow-sm: 0 6px 18px rgba(2, 6, 23, 0.25);
+  --shadow-md: 0 12px 30px rgba(2, 6, 23, 0.35);
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -23,7 +23,7 @@
 .admin-layout {
   display: flex;
   min-height: 100vh;
-  background: var(--bg-light);
+  background: linear-gradient(135deg, #0F2438 0%, #142F47 100%);
 }
 
 /* ===============================================
@@ -40,9 +40,10 @@
   height: 100vh;
   overflow-y: auto;
   border-right: 1px solid var(--border);
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 2px 0 18px rgba(2, 6, 23, 0.35);
   z-index: 100;
   transition: width 0.3s ease;
+  backdrop-filter: blur(12px);
 }
 
 .admin-sidebar.collapsed {
@@ -70,7 +71,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.25);
+  box-shadow: 0 6px 16px rgba(66, 121, 163, 0.35);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
   color: inherit;

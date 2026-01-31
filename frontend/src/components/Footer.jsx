@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import LightbulbIcon from './LightbulbIcon';
 import './Footer.css';
@@ -7,6 +8,27 @@ import './Footer.css';
  * Site footer with links and information
  */
 const Footer = () => {
+  const powerEssentialsRef = useRef(null);
+  const [powerEssentialsVisible, setPowerEssentialsVisible] = useState(false);
+
+  useEffect(() => {
+    const heading = powerEssentialsRef.current;
+    if (!heading) return undefined;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setPowerEssentialsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 }
+    );
+
+    observer.observe(heading);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <footer className="footer">
       <div className="container">
@@ -20,21 +42,26 @@ const Footer = () => {
           </div>
 
           <div className="footer-section">
-            <h4>Quick Links</h4>
+            <h4>Explore</h4>
             <ul>
-              <li><Link to="/products">Products</Link></li>
-              <li><Link to="/cart">Cart</Link></li>
-              <li><Link to="/orders">Orders</Link></li>
-              <li><Link to="/profile">Profile</Link></li>
+              <li><Link to="/products">Shop Products</Link></li>
+              <li><Link to="/cart">My Cart</Link></li>
+              <li><Link to="/orders">My Orders</Link></li>
+              <li><Link to="/profile">My Profile</Link></li>
             </ul>
           </div>
 
           <div className="footer-section">
-            <h4>Categories</h4>
+            <h4
+              ref={powerEssentialsRef}
+              className={`footer-heading ${powerEssentialsVisible ? 'is-visible' : ''}`}
+            >
+              Power Essentials
+            </h4>
             <ul>
               <li><Link to="/products?category=Wire & Cables">Wire & Cables</Link></li>
               <li><Link to="/products?category=Pipes">Pipes</Link></li>
-              <li><Link to="/products?category=Heater">Heater</Link></li>
+              <li><Link to="/products?category=Heater">Heaters</Link></li>
               <li><Link to="/products?category=Motors">Motors</Link></li>
             </ul>
           </div>

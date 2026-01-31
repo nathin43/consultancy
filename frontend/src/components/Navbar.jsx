@@ -27,107 +27,19 @@ const Navbar = () => {
 
   return (
     <nav className="navbar">
-      <div className="main-header">
-        <div className="header-container">
-          
-          {/* LEFT - Logo */}
-          <div className="header-left">
-            <Link to="/" className="navbar-brand">
-              <LightbulbIcon size={28} color="#ffffff" />
-              <span className="brand-text">Mani Electrical</span>
-            </Link>
-          </div>
-
-          {/* RIGHT - Login */}
-          <div className="header-right">
-            {/* Login Button / Auth Dropdown */}
-            <div className="auth-dropdown-wrapper">
-              <button 
-                className={`login-btn ${dropdownOpen ? 'active' : ''}`}
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                title={isAuthenticated ? `Logged in as ${user?.name}` : "Login or Sign Up"}
-              >
-                <span className="user-icon">👤</span>
-                <span className="login-text">{isAuthenticated ? user?.name?.split(' ')[0] : 'Sign In'}</span>
-              </button>
-
-              {dropdownOpen && (
-                <div className="auth-dropdown-menu active">
-                  <div className="dropdown-header">
-                    <div className="user-greeting">{isAuthenticated ? 'Logged in as' : 'Account'}</div>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginTop: '4px' }}>
-                      {isAuthenticated ? user?.name : 'Guest'}
-                    </div>
-                  </div>
-                  <div className="dropdown-divider"></div>
-                  
-                  {isAuthenticated ? (
-                    <>
-                      <Link to="/orders" className="dropdown-item orders-item" onClick={() => setDropdownOpen(false)}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M9 11l3 3L22 4"></path>
-                          <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
-                        </svg>
-                        <span>My Orders</span>
-                      </Link>
-                      
-                      <Link to="/profile" className="dropdown-item settings-item" onClick={() => setDropdownOpen(false)}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="12" cy="12" r="3"></circle>
-                          <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24"></path>
-                        </svg>
-                        <span>Settings</span>
-                      </Link>
-                      
-                      <div className="dropdown-divider"></div>
-                      
-                      <button onClick={handleLogout} className="dropdown-item logout-item">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M10 3H6a2 2 0 00-2 2v14a2 2 0 002 2h4m7-4l4-4m0 0l-4-4m4 4H9"></path>
-                        </svg>
-                        <span>Logout</span>
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <Link to="/login" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4m-6-4l4 4m0 0l-4 4m4-4H3"></path>
-                        </svg>
-                        <span>Login</span>
-                      </Link>
-                      <Link to="/register" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
-                          <circle cx="10" cy="7" r="4"></circle>
-                          <path d="M17 11h6m-3-3v6"></path>
-                        </svg>
-                        <span>Sign Up</span>
-                      </Link>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
+      <div className="navbar-inner">
+        {/* LEFT - Logo */}
+        <div className="nav-left">
+          <Link to="/" className="navbar-brand">
+            <span className="logo-pill">
+              <LightbulbIcon size={30} color="#ffffff" />
+            </span>
+            <span className="brand-text">Mani Electrical</span>
+          </Link>
         </div>
-      </div>
 
-      <div className="navbar-menu-section">
-        <div className="navbar-menu-container">
-          <button
-            className={`menu-toggle ${menuOpen ? 'open' : ''}`}
-            type="button"
-            aria-label="Toggle navigation"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((prev) => !prev)}
-          >
-            <span className="menu-toggle-bar"></span>
-            <span className="menu-toggle-bar"></span>
-            <span className="menu-toggle-bar"></span>
-          </button>
-
+        {/* CENTER - Menu */}
+        <div className="nav-center">
           <ul className={`navbar-menu ${menuOpen ? 'open' : ''}`}>
             <li>
               <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
@@ -157,17 +69,108 @@ const Navbar = () => {
                 Contact
               </NavLink>
             </li>
-            <li>
-              <NavLink to="/cart" className={({ isActive }) => `nav-link cart-link ${isActive ? 'active' : ''}`}
-                onClick={() => setMenuOpen(false)}
-              >
-                🛒 Cart
-                {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
-              </NavLink>
-            </li>
           </ul>
         </div>
+
+        {/* RIGHT - Cart + Profile + Mobile Toggle */}
+        <div className="nav-right">
+          <Link to="/cart" className="cart-button" aria-label="View cart">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="9" cy="21" r="1"></circle>
+              <circle cx="20" cy="21" r="1"></circle>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+          </Link>
+
+          <div className="auth-dropdown-wrapper">
+            <button
+              className={`profile-chip ${dropdownOpen ? 'active' : ''}`}
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              title={isAuthenticated ? `Logged in as ${user?.name}` : 'Login or Sign Up'}
+            >
+              <span className="user-icon">👤</span>
+              <span className="login-text">{isAuthenticated ? user?.name?.split(' ')[0] : 'Sign In'}</span>
+            </button>
+
+            {dropdownOpen && (
+              <div className="auth-dropdown-menu active">
+                <div className="dropdown-header">
+                  <div className="user-greeting">{isAuthenticated ? 'Logged in as' : 'Account'}</div>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', marginTop: '4px' }}>
+                    {isAuthenticated ? user?.name : 'Guest'}
+                  </div>
+                </div>
+                <div className="dropdown-divider"></div>
+
+                {isAuthenticated ? (
+                  <>
+                    <Link to="/orders" className="dropdown-item orders-item" onClick={() => setDropdownOpen(false)}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 11l3 3L22 4"></path>
+                        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                      </svg>
+                      <span>My Orders</span>
+                    </Link>
+
+                    <Link to="/profile" className="dropdown-item settings-item" onClick={() => setDropdownOpen(false)}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24"></path>
+                      </svg>
+                      <span>Settings</span>
+                    </Link>
+
+                    <div className="dropdown-divider"></div>
+
+                    <button onClick={handleLogout} className="dropdown-item logout-item">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M10 3H6a2 2 0 00-2 2v14a2 2 0 002 2h4m7-4l4-4m0 0l-4-4m4 4H9"></path>
+                      </svg>
+                      <span>Logout</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4m-6-4l4 4m0 0l-4 4m4-4H3"></path>
+                      </svg>
+                      <span>Login</span>
+                    </Link>
+                    <Link to="/register" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
+                        <circle cx="10" cy="7" r="4"></circle>
+                        <path d="M17 11h6m-3-3v6"></path>
+                      </svg>
+                      <span>Sign Up</span>
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          <button
+            className={`menu-toggle ${menuOpen ? 'open' : ''}`}
+            type="button"
+            aria-label="Toggle navigation"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((prev) => !prev)}
+          >
+            <span className="menu-toggle-bar"></span>
+            <span className="menu-toggle-bar"></span>
+            <span className="menu-toggle-bar"></span>
+          </button>
+        </div>
       </div>
+
+      <div
+        className={`nav-overlay ${menuOpen ? 'open' : ''}`}
+        onClick={() => setMenuOpen(false)}
+        aria-hidden="true"
+      ></div>
     </nav>
   );
 };

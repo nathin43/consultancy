@@ -248,9 +248,12 @@ const Home = () => {
         <div className="container hero-container">
           <div className="hero-content">
             <span className="hero-label">WELCOME TO MANI ELECTRICAL</span>
-            <h1>BEST ELECTRICAL APPLIANCES EVER!</h1>
-            <p>Find everything you need for your electrical projects. High-quality products at unbeatable prices with fast delivery.</p>
-            <Link to="/products" className="btn-buy-product">Buy Products</Link>
+            <h1 className="hero-title">
+              <span className="hero-title-line line-1">BEST ELECTRICAL</span>
+              <span className="hero-title-line line-2">APPLIANCES EVER!</span>
+            </h1>
+            <p className="hero-description">Find everything you need for your electrical projects. High-quality products at unbeatable prices with fast delivery.</p>
+            <Link to="/products" className="btn-buy-product hero-cta">Buy Products</Link>
           </div>
 
           <div className="hero-image-container">
@@ -279,6 +282,7 @@ const Home = () => {
                         }}
                       >
                         <div className="category-icon-bubble">
+                          <span className="category-center-pulse" aria-hidden="true"></span>
                           <span className="category-outer-ring ring-one" aria-hidden="true"></span>
                           <span className="category-outer-ring ring-two" aria-hidden="true"></span>
                           <span className="category-orbit" aria-hidden="true">
@@ -310,6 +314,7 @@ const Home = () => {
                         }}
                       >
                         <div className="category-icon-bubble">
+                          <span className="category-center-pulse" aria-hidden="true"></span>
                           <span className="category-outer-ring ring-one" aria-hidden="true"></span>
                           <span className="category-outer-ring ring-two" aria-hidden="true"></span>
                           <span className="category-orbit" aria-hidden="true">
@@ -341,6 +346,7 @@ const Home = () => {
                         }}
                       >
                         <div className="category-icon-bubble">
+                          <span className="category-center-pulse" aria-hidden="true"></span>
                           <span className="category-outer-ring ring-one" aria-hidden="true"></span>
                           <span className="category-outer-ring ring-two" aria-hidden="true"></span>
                           <span className="category-orbit" aria-hidden="true">
@@ -380,7 +386,7 @@ const Home = () => {
                   <div className="category-progress-track">
                     <div
                       className="category-progress-fill"
-                      style={{ width: `${((currentCategoryIndex + 1) / categories.length) * 100}%` }}
+                      style={{ transform: `scaleX(${(currentCategoryIndex + 1) / categories.length})` }}
                     ></div>
                   </div>
                   <span className="category-progress-text">
