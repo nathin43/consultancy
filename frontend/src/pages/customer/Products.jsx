@@ -14,7 +14,7 @@ const Products = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -31,14 +31,14 @@ const Products = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       const { data } = await API.get('/products?limit=100');
-      
+
       const fetchedProducts = Array.isArray(data.products) ? data.products : [];
-      
+
       setProducts(fetchedProducts);
       setFilteredProducts(fetchedProducts);
-      
+
       if (fetchedProducts.length === 0) {
         setError('No products available at the moment');
       }
@@ -64,7 +64,7 @@ const Products = () => {
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(p => 
+      result = result.filter(p =>
         p.name?.toLowerCase().includes(query) ||
         p.brand?.toLowerCase().includes(query) ||
         p.category?.toLowerCase().includes(query)
@@ -138,8 +138,8 @@ const Products = () => {
           <div className="search-section">
             <div className="search-bar">
               <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="11" cy="11" r="8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="11" cy="11" r="8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               <input
                 type="text"
@@ -151,7 +151,7 @@ const Products = () => {
               {searchQuery && (
                 <button className="search-clear" onClick={() => setSearchQuery('')}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M18 6L6 18M6 6l12 12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M18 6L6 18M6 6l12 12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
               )}
@@ -164,7 +164,7 @@ const Products = () => {
               <div className="filters-row">
                 <div className="filter-group">
                   <label className="filter-label">Category</label>
-                  <select 
+                  <select
                     className="filter-select"
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
@@ -179,7 +179,7 @@ const Products = () => {
 
                 <div className="filter-group">
                   <label className="filter-label">Brand</label>
-                  <select 
+                  <select
                     className="filter-select"
                     value={selectedBrand}
                     onChange={(e) => setSelectedBrand(e.target.value)}
@@ -194,7 +194,7 @@ const Products = () => {
 
                 <div className="filter-group">
                   <label className="filter-label">Sort By</label>
-                  <select 
+                  <select
                     className="filter-select"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
@@ -226,7 +226,7 @@ const Products = () => {
                 {(searchQuery || selectedCategory !== 'all' || selectedBrand !== 'all' || showInStockOnly) && (
                   <button className="clear-filters-btn" onClick={clearFilters}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="roun d" />
                     </svg>
                     Clear Filters
                   </button>
@@ -244,13 +244,13 @@ const Products = () => {
           ) : error && products.length === 0 ? (
             <div className="error-container">
               <svg className="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="10" strokeWidth="2"/>
-                <line x1="12" y1="8" x2="12" y2="12" strokeWidth="2"/>
-                <line x1="12" y1="16" x2="12.01" y2="16" strokeWidth="2"/>
+                <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                <line x1="12" y1="8" x2="12" y2="12" strokeWidth="2" />
+                <line x1="12" y1="16" x2="12.01" y2="16" strokeWidth="2" />
               </svg>
               <h3>Unable to Load Products</h3>
               <p>{error}</p>
-              <button 
+              <button
                 className="retry-button"
                 onClick={() => fetchProducts()}
               >
@@ -260,8 +260,8 @@ const Products = () => {
           ) : filteredProducts.length === 0 ? (
             <div className="no-products">
               <svg className="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="10" strokeWidth="2"/>
-                <path d="M8 15h8M9 9h.01M15 9h.01" strokeWidth="2" strokeLinecap="round"/>
+                <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                <path d="M8 15h8M9 9h.01M15 9h.01" strokeWidth="2" strokeLinecap="round" />
               </svg>
               <h3>No Products Found</h3>
               <p>Try adjusting your search or filters</p>
