@@ -6,8 +6,12 @@ import { useToast } from '../hooks/useToast';
 import './ProductCard.css';
 
 /**
- * Product Card Component
- * Modern, clean, and professional product card display
+ * Premium E-Commerce Product Card Component
+ * Modern, clean, and professional design with advanced features
+ * - Rating stars display
+ * - Stock status indicators
+ * - Hover animations
+ * - Responsive design
  */
 const ProductCard = ({ product, hideAddToCart = false }) => {
   const navigate = useNavigate();
@@ -38,105 +42,148 @@ const ProductCard = ({ product, hideAddToCart = false }) => {
 
   // Format price for display
   const formatPrice = (price) => {
-    return `₹${price?.toLocaleString() || '0'}`;
+    return `₹${price?.toLocaleString('en-IN') || '0'}`;
+  };
+
+  // Render star rating
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(<span key={i} className="star filled">★</span>);
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(<span key={i} className="star half">★</span>);
+      } else {
+        stars.push(<span key={i} className="star empty">★</span>);
+      }
+    }
+    return stars;
   };
 
   const cartItem = cart?.items?.find((item) => item.product?._id === product._id);
   const isInCart = Boolean(cartItem);
   const isOutOfStock = !product?.stock || product.stock <= 0;
+  const averageRating = product.ratings?.average || 0;
+  const ratingCount = product.ratings?.count || 0;
 
   return (
-    <div className="product-card">
-      {/* Category Badge - Overlaid */}
-      <div className="category-badge">
-        {product.category || 'ELECTRICAL'}
-      </div>
+    <div className="product-card-premium">
+      {/* Stock Badge - Top Left */}
+      {isOutOfStock ? (
+        <div className="stock-badge out-of-stock">
+          <span className="badge-dot"></span>
+          Out of Stock
+        </div>
+      ) : product.stock < 10 ? (
+        <div className="stock-badge low-stock">
+          <span className="badge-dot"></span>
+          Only {product.stock} left
+        </div>
+      ) : (
+        <div className="stock-badge in-stock">
+          <span className="badge-dot"></span>
+          In Stock
+        </div>
+      )}
 
-      {/* Image Section - Premium with gradient background */}
-      <Link to={`/product/${product._id}`} className="product-image-wrapper">
-        <div className="product-image">
+      {/* Product Image Section */}
+      <Link to={`/product/${product._id}`} className="product-image-link">
+        <div className="product-image-container">
           <img 
             src={product.image} 
             alt={product.name}
+            className="product-image"
             onError={(e) => {
-              e.target.src = 'https://via.placeholder.com/300x300?text=Product';
+              e.target.src = 'https://via.placeholder.com/400x400?text=Product+Image';
             }}
           />
         </div>
       </Link>
 
-      {/* Details Section */}
-      <div className="product-details">
-        {/* Product Name - Bold and prominent */}
-        <Link to={`/product/${product._id}`} className="product-name-link">
-          <h3 className="product-name">{product.name}</h3>
-        </Link>
-
-        {/* Brand/Subtitle */}
-        <div className="product-subtitle">{product.brand}</div>
-
-        {/* Rating */}
-        {product.ratings && product.ratings.count > 0 && (
-          <div className="rating-section">
-            <span className="star-icon">★</span>
-            <span className="rating-value">{product.ratings.average?.toFixed(1) || '0'}</span>
-            <span className="rating-count">({product.ratings.count})</span>
+      {/* Product Details Section */}
+      <div className="product-info">
+        {/* Category Badge */}
+        {product.category && (
+          <div className="category-label">
+            {product.category.toUpperCase()}
           </div>
         )}
 
-        {/* Price and Stock Section - Inline Layout */}
-        <div className="price-stock-section">
-          <div className="price-container">
-            {product.priceType === 'range' ? (
-              <>
-                <span className="price-label">from</span>
-                <span className="price-value">
-                  {formatPrice(product.priceMin)}
-                </span>
-              </>
-            ) : (
-              <span className="price-value">
-                {formatPrice(product.price)}
-              </span>
-            )}
-          </div>
+        {/* Product Name */}
+        <Link to={`/product/${product._id}`} className="product-title-link">
+          <h3 className="product-title">{product.name}</h3>
+        </Link>
 
-          {/* Stock Badge - Premium pill style */}
-          {product.stock > 0 ? (
-            <div className="stock-badge-premium in-stock">
-              In Stock
+        {/* Brand */}
+        {product.brand && (
+          <p className="product-brand">by {product.brand}</p>
+        )}
+
+        {/* Rating Section */}
+        {ratingCount > 0 && (
+          <div className="rating-container">
+            <div className="stars-display">
+              {renderStars(averageRating)}
+            </div>
+            <span className="rating-text">
+              {averageRating.toFixed(1)} <span className="rating-reviews">({ratingCount} reviews)</span>
+            </span>
+          </div>
+        )}
+
+        {/* Price Section */}
+        <div className="price-section">
+          {product.priceType === 'range' ? (
+            <div className="price-range">
+              <span className="price-from">Starting from</span>
+              <span className="price-main">{formatPrice(product.priceMin)}</span>
             </div>
           ) : (
-            <div className="stock-badge-premium out-of-stock">
-              Out of Stock
+            <div className="price-single">
+              <span className="price-main">{formatPrice(product.price)}</span>
             </div>
           )}
         </div>
 
-        <div className="product-actions">
+        {/* Action Buttons */}
+        <div className="product-actions-premium">
           {!hideAddToCart && (
             <button
               type="button"
-              className={`add-to-cart-btn ${isInCart ? 'added' : ''}`}
+              className={`btn-add-to-cart ${isInCart ? 'in-cart' : ''} ${isOutOfStock ? 'disabled' : ''}`}
               onClick={handleAddToCart}
               disabled={isAdding || isOutOfStock}
             >
               {isAdding ? (
-                <span className="btn-spinner" aria-label="Adding to cart"></span>
+                <>
+                  <span className="btn-loading"></span>
+                  <span>Adding...</span>
+                </>
               ) : (
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M7 4h-2l-1 2h2l3.6 7.59-1.35 2.45A1 1 0 0 0 9.1 18h9.9v-2H9.42a.25.25 0 0 1-.23-.37L10 14h7.45a1 1 0 0 0 .9-.55l3.24-6.52A1 1 0 0 0 20.7 5H7.42L7 4zm3 15a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
-                </svg>
+                <>
+                  <svg className="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <span>
+                    {isOutOfStock ? 'Out of Stock' : isInCart ? 'Added to Cart' : 'Add to Cart'}
+                  </span>
+                </>
               )}
-              <span>
-                {isOutOfStock ? 'Out of Stock' : isInCart ? 'Added' : 'Add to Cart'}
-              </span>
             </button>
           )}
 
-          {/* View Details Button - Full Width Premium */}
-          <Link to={`/product/${product._id}`} className="view-details-btn">
-            View Details
+          <Link 
+            to={`/product/${product._id}`} 
+            className="btn-view-details"
+          >
+            <svg className="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            <span>View Details</span>
           </Link>
         </div>
       </div>
