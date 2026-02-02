@@ -1,10 +1,147 @@
+/* ==========================================
+   PRODUCTS PAGE - PREMIUM E-COMMERCE DESIGN
+   ========================================== */
+
 .products-page {
-  --primary-blue: #4279a3;
-  --primary-blue-dark: #2d5a7b;
-  padding: 50px 0;
+  padding: 40px 0 80px;
   min-height: 100vh;
   background: #f8fafc;
 }
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Page Title */
+.page-title {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  text-align: center;
+  color: #1f2937;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  letter-spacing: -0.5px;
+}
+
+/* Products Grid Section */
+.products-grid-section {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.products-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding: 0 4px;
+}
+
+.products-count {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Products Placeholder - Clean centered message */
+.products-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  padding: 60px 20px;
+}
+
+.placeholder-content {
+  text-align: center;
+  max-width: 500px;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.placeholder-icon {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 32px;
+  color: #4279a3;
+  opacity: 0.4;
+  stroke-width: 1.5;
+}
+
+.placeholder-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 16px;
+  font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.placeholder-text {
+  font-size: 18px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 24px;
+  font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
+}
+
+.placeholder-note {
+  display: inline-block;
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #4279a3 0%, #2d5a7b 100%);
+  color: #ffffff;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 16px rgba(66, 121, 163, 0.25);
+  font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
+}
+
+/* Responsive placeholder */
+@media (max-width: 768px) {
+  .placeholder-icon {
+    width: 90px;
+    height: 90px;
+    margin-bottom: 24px;
+  }
+
+  .placeholder-title {
+    font-size: 28px;
+  }
+
+  .placeholder-text {
+    font-size: 16px;
+  }
+
+  .placeholder-note {
+    padding: 10px 24px;
+    font-size: 13px;
+  }
+}
+
+/* Keep original page styles for potential future use */
 
 .page-title {
   font-size: 42px;
@@ -305,33 +442,21 @@
   transform: scale(0.98);
 }
 
-.products-grid-section {
-  background: #ffffff;
-  border-radius: 18px;
-  padding: 24px;
-  border: 1px solid #e6eaf0;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
-}
-
 .products-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid #eef2f7;
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .products-count {
   margin: 0;
   color: #0f172a;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 16px;
   font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
 }
 
 .loading-container {
@@ -438,10 +563,9 @@
 
 .grid.grid-4 {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 26px;
-  margin-top: 8px;
-  align-items: stretch;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-top: 20px;
 }
 
 @media (max-width: 1400px) {
@@ -549,12 +673,7 @@
   }
 
   .products-header {
-    margin-bottom: 18px;
-  }
-
-  .products-grid-section {
-    padding: 20px;
-    border-radius: 16px;
+    margin-bottom: 20px;
   }
 }
 
@@ -580,11 +699,6 @@
   .grid.grid-4 {
     grid-template-columns: 1fr;
     gap: 14px;
-  }
-
-  .products-grid-section {
-    padding: 16px;
-    border-radius: 14px;
   }
 
   .search-form {

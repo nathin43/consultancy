@@ -6,7 +6,7 @@ import './AdminProducts.css';
 
 /**
  * Admin Products Dashboard
- * Modern, high-efficiency product management
+ * Modern, professional product management interface
  */
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -15,19 +15,31 @@ const AdminProducts = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [selectedProducts, setSelectedProducts] = useState(new Set());
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const fetchProducts = async () => {
     try {
       const { data } = await API.get('/products?limit=100');
-      setProducts(data.products);
+      setProducts(data.products || []);
     } catch (error) {
       console.error('Error fetching products:', error);
+      setProducts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data } = await API.get('/products/categories');
+      setCategories(data.categories || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
     }
   };
 
@@ -42,6 +54,7 @@ const AdminProducts = () => {
       setSelectedProducts(new Set());
     } catch (error) {
       console.error('Failed to delete product:', error);
+      alert('Failed to delete product');
     }
   };
 
@@ -52,6 +65,7 @@ const AdminProducts = () => {
       fetchProducts();
     } catch (error) {
       console.error('Failed to update product status:', error);
+      alert('Failed to update status');
     }
   };
 
@@ -85,6 +99,7 @@ const AdminProducts = () => {
       setSelectedProducts(new Set());
     } catch (error) {
       console.error('Failed to delete products:', error);
+      alert('Failed to delete selected products');
     }
   };
 
@@ -99,6 +114,7 @@ const AdminProducts = () => {
       setSelectedProducts(new Set());
     } catch (error) {
       console.error('Failed to update product status:', error);
+      alert('Failed to update product status');
     }
   };
 
@@ -125,9 +141,7 @@ const AdminProducts = () => {
       }
     });
 
-  const categories = [...new Set(products.map(p => p.category))];
-
-  // Analytics
+  // Analytics calculations
   const totalProducts = products.length;
   const activeProducts = products.filter(p => p.status === 'active').length;
   const outOfStock = products.filter(p => p.stock === 0).length;

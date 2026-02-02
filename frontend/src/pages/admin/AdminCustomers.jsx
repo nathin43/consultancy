@@ -13,6 +13,7 @@ const AdminCustomers = () => {
   const [customerOrders, setCustomerOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('newest'); // newest, oldest, name
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -80,11 +81,22 @@ const AdminCustomers = () => {
     );
   }
 
-  // Filter customers based on search query
-  const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter and sort customers
+  const filteredCustomers = customers
+    .filter(customer =>
+      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.email.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortBy === 'newest') {
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      } else if (sortBy === 'oldest') {
+        return new Date(a.createdAt) - new Date(b.createdAt);
+      } else if (sortBy === 'name') {
+        return a.name.localeCompare(b.name);
+      }
+      return 0;
+    });
 
   // Pagination
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
@@ -111,22 +123,29 @@ const AdminCustomers = () => {
   return (
     <AdminLayout>
       <div className="admin-customers">
-        {/* Header Section */}
+        {/* Modern Header Section */}
         <div className="customers-header">
-          <div className="header-top">
-            <div>
-              <h1>Customers</h1>
-              <p className="header-subtitle">Manage and view all customers</p>
-            </div>
-            <div className="customers-badge">
-              <span className="badge-label">Total Customers</span>
-              <span className="badge-value">{customers.length}</span>
+          <div className="header-gradient">
+            <div className="header-content">
+              <div className="header-text">
+                <h1>Customers</h1>
+                <p className="header-subtitle">Manage and view all registered customers</p>
+              </div>
+              <div className="stats-card">
+                <div className="stats-icon">
+                  <span className="icon-emoji">👥</span>
+                </div>
+                <div className="stats-info">
+                  <div className="stats-label">Total Customers</div>
+                  <div className="stats-value">{customers.length}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Search Section */}
-        <div className="customers-search">
+        {/* Modern Search & Filter Toolbar */}
+        <div className="customers-toolbar">
           <div className="search-container">
             <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"></circle>
@@ -134,7 +153,7 @@ const AdminCustomers = () => {
             </svg>
             <input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder="Search customers by name or email..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -143,11 +162,23 @@ const AdminCustomers = () => {
               className="search-input"
             />
           </div>
-          {searchQuery && (
-            <span className="search-result-count">
-              {filteredCustomers.length} result{filteredCustomers.length !== 1 ? 's' : ''}
-            </span>
-          )}
+          
+          <div className="toolbar-actions">
+            <select 
+              className="filter-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="name">Name (A-Z)</option>
+            </select>
+            
+            <div className="customer-count">
+              <span className="count-number">{filteredCustomers.length}</span>
+              <span className="count-label">Customers</span>
+            </div>
+          </div>
         </div>
 
         {/* Table Card */}

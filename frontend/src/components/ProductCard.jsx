@@ -75,13 +75,6 @@ const ProductCard = ({ product, hideAddToCart = false }) => {
         {/* Brand/Subtitle */}
         <div className="product-subtitle">{product.brand}</div>
 
-        {/* Short Description */}
-        {(product.shortDescription || product.description) && (
-          <div className="product-description">
-            {product.shortDescription || product.description}
-          </div>
-        )}
-
         {/* Rating */}
         {product.ratings && product.ratings.count > 0 && (
           <div className="rating-section">
