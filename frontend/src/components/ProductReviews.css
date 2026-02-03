@@ -1,10 +1,10 @@
 .product-reviews-section {
   background: white;
-  border-radius: 18px;
-  padding: 32px;
-  margin-top: 32px;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-  border: 1px solid rgba(66, 121, 163, 0.12);
+  border-radius: 20px;
+  padding: 40px;
+  margin-top: 40px;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 .reviews-header {
@@ -18,53 +18,81 @@
 .reviews-header h2 {
   font-size: 24px;
   font-weight: 700;
-  margin-bottom: 6px;
-  color: var(--text-primary);
+  margin-bottom: 8px;
+  color: #111827;
+  /* Dark charcoal */
 }
 
 .reviews-subtitle {
-  color: var(--text-secondary);
-  font-size: 14px;
+  color: #64748b;
+  /* Muted dark gray */
+  font-size: 15px;
+  font-weight: 400;
 }
 
 .write-review-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #4279a3 0%, #2d5a7b 100%);
-  box-shadow: 0 10px 22px rgba(66, 121, 163, 0.25);
+  justify-content: center;
+  height: 46px;
+  /* Fixed height 44-46px */
+  padding: 0 24px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+  /* Teal/Cyan -> Indigo */
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+  text-decoration: none;
 }
 
+.write-review-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+  filter: brightness(1.05);
+  /* Subtle shift */
+}
+
+/* Remove icon if present in JSX, but hide via CSS largely just in case */
 .write-review-btn .btn-icon {
-  font-size: 16px;
+  display: none;
 }
 
 /* Review Summary */
 .review-summary {
   display: grid;
-  grid-template-columns: 220px 1fr;
-  gap: 24px;
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--border-color);
+  grid-template-columns: 240px 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid #f1f5f9;
+  /* Low opacity divider */
+  align-items: center;
 }
 
 .average-rating {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: #f8fafc;
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid #e2e8f0;
+  /* Very light gray */
+  border-radius: 20px;
+  padding: 30px;
+  border: none;
 }
 
 .rating-number {
-  font-size: 48px;
-  font-weight: 700;
-  color: #4279a3;
+  font-size: 56px;
+  font-weight: 800;
+  color: #111827;
+  /* Dark black */
+  line-height: 1;
+  letter-spacing: -2px;
 }
 
 .rating-stars {
@@ -73,42 +101,50 @@
 }
 
 .star {
-  font-size: 20px;
-  color: #ddd;
+  font-size: 22px;
+  color: #e2e8f0;
+  /* Muted gray for empty */
   cursor: default;
 }
 
 .star.filled {
-  color: #fbbf24;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  color: #f59e0b;
+  /* Amber */
+  /* Removed strong text shadow for cleaner look */
 }
 
 .rating-count {
   font-size: 14px;
-  color: var(--text-secondary);
+  color: #64748b;
+  /* Dark gray */
+  font-weight: 500;
+  margin-top: 4px;
 }
 
 .rating-meta {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  color: var(--text-secondary);
-  font-size: 14px;
+  justify-content: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .rating-meta .rating-label {
-  color: var(--text-primary);
+  color: #111827;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 18px;
+  margin-bottom: 4px;
 }
 
 /* Review Form Container */
 .review-form-container {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 32px;
-  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 32px;
+  margin-bottom: 40px;
+  border: none;
 }
 
 .btn-lg {
@@ -125,6 +161,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -132,59 +169,79 @@
 }
 
 .review-form h3 {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 28px;
+  color: #111827;
+  /* Dark charcoal */
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 /* Form Groups */
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
 }
 
 .form-group label {
   display: block;
   font-weight: 600;
-  margin-bottom: 8px;
-  color: var(--text-primary);
+  margin-bottom: 10px;
+  color: #374151;
+  /* Dark gray */
   font-size: 14px;
+  letter-spacing: 0.2px;
 }
 
 .form-input,
 .form-textarea {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 14px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
   font-family: inherit;
+  color: #111827;
+  /* Dark text */
+  background: #fafafa;
   transition: all 0.3s ease;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: #64748b;
+  /* Dark placeholder */
 }
 
 .form-input:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: #4279a3;
-  box-shadow: 0 0 0 3px rgba(66, 121, 163, 0.12);
+  border-color: #6366f1;
+  /* Indigo accent */
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  background: white;
 }
 
 .form-input.error,
 .form-textarea.error {
   border-color: #ef4444;
-  background-color: #fee2e2;
+  background-color: #fef2f2;
 }
 
 .form-textarea {
   resize: vertical;
-  min-height: 120px;
+  min-height: 140px;
 }
 
 .char-count {
   display: block;
   font-size: 12px;
-  color: var(--text-secondary);
-  margin-top: 4px;
+  color: #64748b;
+  margin-top: 8px;
   text-align: right;
 }
 
@@ -210,7 +267,8 @@
 .rating-label {
   display: inline-block;
   font-size: 14px;
-  color: var(--text-secondary);
+  color: #64748b;
+  /* Muted dark gray */
   font-weight: 500;
 }
 
@@ -225,28 +283,65 @@
 /* Form Actions */
 .form-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 24px;
+  gap: 16px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
 }
 
 .form-actions .btn {
   flex: 1;
-  padding: 10px 20px;
+  height: 46px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Submit Review Button */
+.form-actions .btn-success {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  /* Blue -> Indigo */
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+
+.form-actions .btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+  filter: brightness(1.05);
+}
+
+.form-actions .btn-secondary {
+  background: white;
+  color: #374151;
+  border: 1.5px solid #e2e8f0;
+}
+
+.form-actions .btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
 /* Login Prompt */
 .login-prompt {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border-radius: 12px;
-  padding: 24px;
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 40px;
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 40px;
 }
 
 .login-prompt p {
   font-size: 16px;
-  color: var(--text-secondary);
-  margin-bottom: 16px;
+  color: #475569;
+  margin-bottom: 20px;
+  font-weight: 500;
 }
 
 /* Reviews List */
@@ -424,9 +519,33 @@
   margin-bottom: 10px;
 }
 
+/* Empty State */
+.no-reviews {
+  text-align: center;
+  padding: 60px 40px;
+  color: #64748b;
+  background: #f8fafc;
+  /* Very light gray */
+  border-radius: 20px;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.no-reviews-icon {
+  font-size: 40px;
+  opacity: 0.5;
+  margin-bottom: 0;
+}
+
 .no-reviews p {
   font-size: 16px;
-  margin-bottom: 16px;
+  color: #475569;
+  font-weight: 500;
+  max-width: 300px;
+  line-height: 1.5;
 }
 
 .loading {

@@ -163,7 +163,7 @@ const Cart = () => {
                       const productId = product._id;
                       const isSelected = selectedItems.has(productId);
                       const isUpdating = updatingItems.has(productId);
-                      
+
                       return (
                         <div key={item._id || product._id} className={`cart-item-card ${isSelected ? 'selected' : ''} ${isUpdating ? 'updating' : ''}`}>
                           <label className="select-checkbox">
@@ -176,15 +176,15 @@ const Cart = () => {
                           </label>
 
                           <div className="item-media">
-                            <img 
-                              src={product.image} 
+                            <img
+                              src={product.image}
                               alt={product.name || 'Product'}
                               onError={(e) => {
                                 e.target.src = 'https://via.placeholder.com/140x140?text=Product';
                               }}
                             />
                           </div>
-                          
+
                           <div className="cart-item-info">
                             <Link to={`/product/${product._id}`}>
                               <h3>{product.name || 'Unknown Product'}</h3>
@@ -227,10 +227,6 @@ const Cart = () => {
                                 <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM7 9h2v9H7V9zm-1 13h12a2 2 0 0 0 2-2V9H4v11a2 2 0 0 0 2 2z" />
                               </svg>
                             </button>
-
-                            <div className="item-updating" aria-live="polite">
-                              Updating...
-                            </div>
                           </div>
                         </div>
                       );
@@ -260,8 +256,8 @@ const Cart = () => {
                       </span>
                     </div>
 
-                    <button 
-                      onClick={handleCheckout} 
+                    <button
+                      onClick={handleCheckout}
                       className="btn btn-primary btn-block"
                       disabled={selectedCount === 0}
                     >

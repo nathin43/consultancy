@@ -1,13 +1,15 @@
 .profile-page {
   padding: 40px 0;
   min-height: 100vh;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  background: linear-gradient(180deg, #F1F5F9 0%, #E2E8F0 100%);
 }
 
 .profile-page h1 {
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 32px;
+  color: #111827;
+  /* Dark charcoal */
 }
 
 .profile-tabs {
@@ -24,19 +26,21 @@
   border-bottom: 3px solid transparent;
   font-size: 16px;
   font-weight: 600;
-  color: #666;
+  color: #64748b;
+  /* Muted dark gray */
   cursor: pointer;
   transition: all 0.3s ease;
   margin-bottom: -2px;
 }
 
 .tab-button.active {
-  color: var(--primary-color);
-  border-bottom-color: var(--primary-color);
+  color: #3b82f6;
+  /* Blue */
+  border-bottom-color: #3b82f6;
 }
 
 .tab-button:hover {
-  color: var(--primary-color);
+  color: #3b82f6;
 }
 
 .profile-grid {
@@ -65,6 +69,8 @@
 .card-header h2 {
   font-size: 20px;
   font-weight: 700;
+  color: #111827;
+  /* Dark text */
 }
 
 .card-body {
@@ -76,7 +82,9 @@
   font-weight: 700;
   margin: 20px 0 16px;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid #e2e8f0;
+  color: #111827;
+  /* Dark text */
 }
 
 .form-row {
@@ -116,12 +124,14 @@
 .info-label {
   font-weight: 600;
   min-width: 120px;
-  color: var(--text-secondary);
+  color: #64748b;
+  /* Muted gray */
 }
 
 .info-value {
   flex: 1;
-  color: var(--text-primary);
+  color: #111827;
+  /* Dark text */
 }
 
 /* Danger Zone */

@@ -426,6 +426,56 @@
 }
 
 /* ========================================
+   CANCELLATION POLICY NOTICE
+   ======================================== */
+.checkout-policy-notice {
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #fbbf24;
+  border-radius: 12px;
+}
+
+.checkout-policy-notice .policy-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.checkout-policy-notice .policy-icon {
+  font-size: 18px;
+}
+
+.checkout-policy-notice .policy-header strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.checkout-policy-notice p {
+  font-size: 13px;
+  color: #78350f;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+.checkout-policy-notice p strong {
+  color: #92400e;
+}
+
+.checkout-policy-notice .policy-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: #78350f;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+/* ========================================
    RESPONSIVE
    ======================================== */
 @media (max-width: 1024px) {
@@ -448,5 +498,13 @@
   .form-row {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .checkout-policy-notice {
+    padding: 16px;
+  }
+
+  .checkout-policy-notice .policy-contact {
+    font-size: 11px;
   }
 }

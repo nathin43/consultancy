@@ -130,108 +130,156 @@ const Products = () => {
         <div className="container">
           {/* Page Header */}
           <div className="page-header">
-            <h1 className="page-title">Mani Electrical Products</h1>
-            <p className="page-subtitle">Quality electrical solutions for your home and business</p>
+            <h1 className="page-title">Our Products</h1>
+            <p className="page-subtitle">Discover quality electrical solutions for every need</p>
           </div>
 
-          {/* Search Bar */}
+          {/* Premium Search Bar */}
           <div className="search-section">
-            <div className="search-bar">
-              <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="11" cy="11" r="8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Search products by name, brand, or category..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button className="search-clear" onClick={() => setSearchQuery('')}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M18 6L6 18M6 6l12 12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <div className="search-wrapper">
+              <div className="search-bar">
+                <div className="search-icon-wrapper">
+                  <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="11" cy="11" r="8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M21 21l-4.35-4.35" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
+                </div>
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Search products, brands, categories..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button className="search-clear" onClick={() => setSearchQuery('')}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M18 6L6 18M6 6l12 12" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                )}
+                <button className="search-btn">
+                  Search
                 </button>
-              )}
+              </div>
             </div>
           </div>
 
-          {/* Filters and Sort */}
+          {/* Premium Filter Panel */}
           {!loading && products.length > 0 && (
-            <div className="filters-section">
-              <div className="filters-row">
-                <div className="filter-group">
-                  <label className="filter-label">Category</label>
-                  <select
-                    className="filter-select"
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                  >
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>
-                        {cat === 'all' ? 'All Categories' : cat}
-                      </option>
-                    ))}
-                  </select>
+            <div className="filters-panel">
+              <div className="filters-header">
+                <div className="filters-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+                  </svg>
+                  <span>Filters</span>
                 </div>
-
-                <div className="filter-group">
-                  <label className="filter-label">Brand</label>
-                  <select
-                    className="filter-select"
-                    value={selectedBrand}
-                    onChange={(e) => setSelectedBrand(e.target.value)}
-                  >
-                    {brands.map(brand => (
-                      <option key={brand} value={brand}>
-                        {brand === 'all' ? 'All Brands' : brand}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="filter-group">
-                  <label className="filter-label">Sort By</label>
-                  <select
-                    className="filter-select"
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                  >
-                    <option value="latest">Latest Products</option>
-                    <option value="popularity">Most Popular</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                    <option value="name">Name: A to Z</option>
-                  </select>
-                </div>
-
-                <div className="filter-group checkbox-group">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={showInStockOnly}
-                      onChange={(e) => setShowInStockOnly(e.target.checked)}
-                    />
-                    <span>In Stock Only</span>
-                  </label>
+                <div className="results-badge">
+                  <span className="results-number">{filteredProducts.length}</span>
+                  <span className="results-text">{filteredProducts.length === 1 ? 'product' : 'products'}</span>
                 </div>
               </div>
 
-              <div className="filters-actions">
-                <div className="results-count">
-                  {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found
-                </div>
-                {(searchQuery || selectedCategory !== 'all' || selectedBrand !== 'all' || showInStockOnly) && (
-                  <button className="clear-filters-btn" onClick={clearFilters}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="roun d" />
+              <div className="filters-content">
+                <div className="filter-card">
+                  <div className="filter-card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M4 4h4v4H4zM14 4h4v4h-4zM4 14h4v4H4zM14 14h4v4h-4z" />
                     </svg>
-                    Clear Filters
-                  </button>
-                )}
+                  </div>
+                  <div className="filter-card-content">
+                    <label className="filter-label">Category</label>
+                    <select
+                      className="filter-select"
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                    >
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>
+                          {cat === 'all' ? 'All Categories' : cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="filter-card">
+                  <div className="filter-card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
+                      <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                  </div>
+                  <div className="filter-card-content">
+                    <label className="filter-label">Brand</label>
+                    <select
+                      className="filter-select"
+                      value={selectedBrand}
+                      onChange={(e) => setSelectedBrand(e.target.value)}
+                    >
+                      {brands.map(brand => (
+                        <option key={brand} value={brand}>
+                          {brand === 'all' ? 'All Brands' : brand}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="filter-card">
+                  <div className="filter-card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 6h18M6 12h12M9 18h6" />
+                    </svg>
+                  </div>
+                  <div className="filter-card-content">
+                    <label className="filter-label">Sort By</label>
+                    <select
+                      className="filter-select"
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                    >
+                      <option value="latest">Latest Products</option>
+                      <option value="popularity">Most Popular</option>
+                      <option value="price-low">Price: Low to High</option>
+                      <option value="price-high">Price: High to Low</option>
+                      <option value="name">Name: A to Z</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="filter-card toggle-card">
+                  <div className="filter-card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                  </div>
+                  <div className="filter-card-content toggle-content">
+                    <label className="filter-label">In Stock Only</label>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={showInStockOnly}
+                        onChange={(e) => setShowInStockOnly(e.target.checked)}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
               </div>
+
+              {(searchQuery || selectedCategory !== 'all' || selectedBrand !== 'all' || showInStockOnly) && (
+                <div className="filters-footer">
+                  <button className="clear-filters-btn" onClick={clearFilters}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M15 9l-6 6M9 9l6 6" />
+                    </svg>
+                    Reset All Filters
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

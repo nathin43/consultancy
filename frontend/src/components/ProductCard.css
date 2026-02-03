@@ -1,200 +1,172 @@
 /* ==========================================
    MANI ELECTRICAL - PRODUCT CARD
-   Modern Premium Design
+   Premium Glassmorphism & Gradient Design
    ========================================== */
 
 :root {
   --card-bg: #FFFFFF;
-  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  /* Soft light gray shadow */
-  --card-shadow-hover: 0 12px 28px rgba(0, 0, 0, 0.1);
-  --primary-blue: #0D6EFD;
-  /* Bright blue for price & highlights */
-  --primary-gradient: linear-gradient(135deg, #0D6EFD 0%, #0056b3 100%);
-  --navy-text: #0a192f;
-  --navy-added: #0f172a;
-  --text-gray: #6c757d;
-  --bg-category: #E7F1FF;
-  /* Light blue bg */
-  --text-category: #0D6EFD;
-  /* Dark blue text */
-  --stock-bg: #D1E7DD;
-  /* Light green */
-  --stock-text: #0F5132;
-  /* Dark green */
+  --card-radius: 20px;
+  --shadow-soft: 0 12px 36px -8px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 24px 48px -12px rgba(99, 102, 241, 0.12);
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  /* Indigo to Violet */
+  --gradient-hover: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+  --gradient-border: linear-gradient(135deg, #6366F1, #8B5CF6);
+  /* Indigo to Pink */
+
+  /* Text Colors */
+  --text-dark: #1e293b;
+  --text-muted: #64748b;
+  --text-price: #0f172a;
+
+  /* Accents */
+  --stock-bg: rgba(226, 232, 240, 0.6);
+  --stock-text: #334155;
 }
 
 /* ========================================
-   CARD CONTAINER
+   CARD BASE
    ======================================== */
 .product-card-premium {
   position: relative;
   background: var(--card-bg);
-  border-radius: 16px;
-  /* 14-16px radius */
-  box-shadow: var(--card-shadow);
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  /* Smooth ease */
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-soft);
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 500px;
+  padding-bottom: 24px;
+  /* Added breathing room at bottom */
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.03);
-  /* Extremely subtle border */
+  border: 1px solid rgba(241, 245, 249, 0.8);
 }
 
 .product-card-premium:hover {
-  transform: translateY(-8px);
-  /* Lift */
-  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-8px) scale(1.005);
+  box-shadow: var(--shadow-hover);
+  border-color: rgba(99, 102, 241, 0.1);
 }
 
 /* ========================================
-   BADGES (Category + Stock)
+   BADGES
    ======================================== */
-
-/* Stock Pill - Top Left */
 .stock-badge {
   position: absolute;
   top: 16px;
   left: 16px;
   z-index: 10;
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 12px;
-  border-radius: 50px;
+  padding: 6px 14px;
+  border-radius: 30px;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  background: var(--stock-bg);
+  background: rgba(255, 255, 255, 0.9);
   color: var(--stock-text);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  font-family: 'Inter', sans-serif;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(0, 0, 0, 0.02);
 }
 
 .stock-badge.out-of-stock {
-  background: #f8d7da;
-  color: #842029;
-}
-
-.stock-badge.low-stock {
-  background: #fff3cd;
-  color: #664d03;
-}
-
-.badge-dot {
-  display: none;
-  /* Minimal look often omits the dot or keeps it very small */
+  background: rgba(254, 226, 226, 0.9);
+  color: #DC2626;
 }
 
 /* ========================================
-   IMAGE SECTION
+   IMAGE AREA
    ======================================== */
 .product-image-link {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #ffffff;
-  height: 250px;
-  /* Balanced height */
-  padding: 30px;
-  position: relative;
-  overflow: hidden;
-}
-
-.product-image-container {
+  height: 260px;
   width: 100%;
-  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 32px;
+  background: radial-gradient(circle at center, #F8FAFC 0%, #FFFFFF 70%);
+  overflow: hidden;
 }
 
 .product-image {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  transition: transform 0.5s ease;
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.08));
 }
 
 .product-card-premium:hover .product-image {
-  transform: scale(1.08);
-  /* Subtle zoom */
+  transform: scale(1.15) translateY(-5px);
 }
 
 /* ========================================
-   INFO SECTION
+   CONTENT AREA
    ======================================== */
 .product-info {
-  padding: 24px;
+  padding: 24px 32px;
+  /* Increased horizontal padding */
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  background: #ffffff;
-  gap: 8px;
+  gap: 12px;
+  /* Increased vertical gap */
+  background: white;
 }
 
-/* Category Tag - Pill */
+/* Category */
 .category-label {
-  display: inline-block;
   align-self: flex-start;
-  padding: 5px 12px;
-  background: var(--bg-category);
-  color: var(--text-category);
-  border-radius: 50px;
   font-size: 11px;
-  font-weight: 600;
-  text-transform: capitalize;
-  letter-spacing: 0.3px;
-  font-family: 'Poppins', sans-serif;
-  margin-bottom: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6366F1;
+  /* Indigo accent */
+  background: rgba(99, 102, 241, 0.08);
+  /* Light Indigo bg */
+  padding: 4px 10px;
+  border-radius: 6px;
 }
 
-/* Product Name */
+/* Title */
 .product-title-link {
   text-decoration: none;
-  color: inherit;
 }
 
 .product-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
-  /* Bold */
-  color: var(--navy-text);
+  color: var(--text-dark);
   margin: 0;
   line-height: 1.5;
+  /* Improved readability */
+  font-family: 'Poppins', sans-serif;
+
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
-  /* Fix lint warning */
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-family: 'Poppins', sans-serif;
   transition: color 0.2s;
 }
 
-.product-title-link:hover .product-title {
-  color: var(--primary-blue);
+.product-card-premium:hover .product-title {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
 }
 
-/* Brand Name */
-.product-brand {
-  font-size: 13px;
-  color: var(--text-gray);
-  /* Light gray */
-  margin: 0;
-  font-weight: 500;
-  font-family: 'Inter', sans-serif;
-}
-
-/* Rating Area */
+/* Rating */
 .rating-container {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 4px;
+  margin-top: -2px;
 }
 
 .star {
@@ -202,153 +174,151 @@
 }
 
 .star.filled {
-  color: #FFC107;
-}
-
-.star.empty {
-  color: #e4e5e9;
+  color: #f59e0b;
 }
 
 .rating-text {
   font-size: 12px;
-  color: var(--text-gray);
-  font-weight: 500;
+  color: var(--text-muted);
 }
 
 /* Price */
 .price-section {
   margin-top: auto;
-  /* Push to bottom of flex container */
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding-top: 14px;
 }
 
 .price-main {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--primary-blue);
-  /* Bright blue */
-  font-family: 'Inter', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-price);
+  letter-spacing: -0.02em;
 }
 
 /* ========================================
-   ACTION BUTTONS
+   BUTTONS (Sleek & Modern)
    ======================================== */
 .product-actions-premium {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-top: 16px;
+  /* Increased spacing from details */
 }
 
-/* Add to Cart - Primary */
+/* Primary Button: Add to Cart */
 .btn-add-to-cart {
   width: 100%;
-  padding: 12px 20px;
-  background: var(--primary-gradient);
-  color: #ffffff;
+  height: 46px;
+  /* Medium height */
+  padding: 0 24px;
+  background: var(--gradient-primary);
+  color: white;
   border: none;
-  border-radius: 8px;
-  /* Rounded corners */
-  font-size: 14px;
+  border-radius: 14px;
+  /* Soft rounded corners */
+  font-size: 15px;
   font-weight: 600;
+  letter-spacing: 0.01em;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-family: 'Inter', sans-serif;
+
   transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(13, 110, 253, 0.2);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.25);
+  position: relative;
+  overflow: hidden;
 }
 
 .btn-add-to-cart:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(13, 110, 253, 0.3);
+  background: var(--gradient-hover);
+  transform: scale(1.02);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
 }
 
-.btn-add-to-cart:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-/* Added State */
+/* Active State: Added to Cart */
 .btn-add-to-cart.in-cart {
-  background: var(--navy-added);
-  /* Dark Navy */
-  box-shadow: none;
+  background: linear-gradient(135deg, #4338CA 0%, #6D28D9 100%);
+  /* Slightly darker */
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.btn-add-to-cart.in-cart:hover:not(:disabled) {
-  background: #000000;
-}
-
-/* Secondary Button - View Details */
+/* Secondary Button: View Details */
 .btn-view-details {
   width: 100%;
-  padding: 10px 20px;
-  background: var(--primary-blue);
-  /* Solid Blue */
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  /* Slightly smaller */
-  font-weight: 600;
-  text-align: center;
-  text-decoration: none;
+  height: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  font-family: 'Inter', sans-serif;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 14px;
+  background: white;
+  position: relative;
+
+  /* Gradient Border Trick */
+  border: 1.5px solid transparent;
+  background-image: linear-gradient(white, white), var(--gradient-border);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: none;
+
+  /* Text Color Gradient Match */
+  color: #6366F1;
   transition: all 0.3s ease;
 }
 
 .btn-view-details:hover {
-  background: #0b5ed7;
-  /* Darker blue on hover */
+  /* Filling with gradient on hover */
+  background: var(--gradient-primary);
+  border-color: transparent;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
 }
 
+/* Icons removed */
 .btn-icon {
-  width: 18px;
-  height: 18px;
+  display: none;
 }
 
-/* Disabled */
-.btn-add-to-cart:disabled {
-  background: #e9ecef;
-  color: #adb5bd;
-  cursor: not-allowed;
+/* Added State */
+.btn-add-to-cart.in-cart {
+  background: #0F172A;
+  /* Solid Dark Navy */
   box-shadow: none;
+}
+
+.btn-add-to-cart:disabled {
+  background: #cbd5e1;
+  transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 /* ========================================
    RESPONSIVE
    ======================================== */
 @media (max-width: 1024px) {
-
-  /* Tablet: 2 per row handled by grid CSS, adjusting sizes here */
-  .product-image-link {
-    height: 220px;
-  }
-
   .product-info {
     padding: 20px;
   }
 
-  .product-title {
-    font-size: 15px;
+  .product-image-link {
+    height: 220px;
   }
 }
 
-@media (max-width: 768px) {
-
-  /* Mobile */
+@media (max-width: 480px) {
   .product-card-premium {
-    min-height: auto;
+    border-radius: 16px;
   }
 
   .product-image-link {
     height: 200px;
+    padding: 20px;
   }
 
   .product-info {
@@ -356,20 +326,12 @@
   }
 
   .product-title {
-    font-size: 15px;
+    font-size: 16px;
   }
 
-  .price-main {
-    font-size: 18px;
-  }
-
-  .btn-add-to-cart {
-    padding: 10px;
-    font-size: 13px;
-  }
-
+  .btn-add-to-cart,
   .btn-view-details {
-    padding: 10px;
+    height: 44px;
     font-size: 13px;
   }
 }

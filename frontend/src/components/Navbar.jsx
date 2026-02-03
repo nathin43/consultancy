@@ -75,12 +75,16 @@ const Navbar = () => {
         {/* RIGHT - Cart + Profile + Mobile Toggle */}
         <div className="nav-right">
           <Link to="/cart" className="cart-button" aria-label="View cart">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="9" cy="21" r="1"></circle>
-              <circle cx="20" cy="21" r="1"></circle>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            <svg className="cart-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <path d="M16 10a4 4 0 0 1-8 0"></path>
             </svg>
-            {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+            {cartCount > 0 && (
+              <span className="cart-badge" key={cartCount}>
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
           </Link>
 
           <div className="auth-dropdown-wrapper">
@@ -89,8 +93,18 @@ const Navbar = () => {
               onClick={() => setDropdownOpen(!dropdownOpen)}
               title={isAuthenticated ? `Logged in as ${user?.name}` : 'Login or Sign Up'}
             >
-              <span className="user-icon">👤</span>
-              <span className="login-text">{isAuthenticated ? user?.name?.split(' ')[0] : 'Sign In'}</span>
+              <span className="avatar-circle">
+                {isAuthenticated && user?.name ? user.name.charAt(0).toUpperCase() : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                )}
+              </span>
+              <span className="profile-name">{isAuthenticated ? user?.name?.split(' ')[0] : 'Sign In'}</span>
+              <svg className="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
             </button>
 
             {dropdownOpen && (

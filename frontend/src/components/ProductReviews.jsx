@@ -220,7 +220,6 @@ const ProductReviews = ({ productId }) => {
             onClick={() => setShowForm(true)}
             disabled={!canReview && !editingReviewId}
           >
-            <span className="btn-icon">✍️</span>
             {editingReviewId ? 'Edit Review' : 'Write a Review'}
           </button>
         )}

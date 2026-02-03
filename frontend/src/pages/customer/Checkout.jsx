@@ -20,10 +20,10 @@ const Checkout = () => {
   const { cart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
   const { success, error: showError } = useToast();
-  
+
   // Get selected items from navigation state
   const selectedItemIds = location.state?.selectedItems || [];
-  
+
   const [formData, setFormData] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
@@ -46,7 +46,7 @@ const Checkout = () => {
     upiId: '',
     upiProvider: 'gpay'
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -58,7 +58,7 @@ const Checkout = () => {
   }, []);
 
   // Filter selected items from cart
-  const selectedItems = cart.items.filter(item => 
+  const selectedItems = cart.items.filter(item =>
     selectedItemIds.includes(item.product._id)
   );
 
@@ -224,7 +224,7 @@ const Checkout = () => {
               <form onSubmit={handleSubmit}>
                 <div className="form-section">
                   <h2>Shipping Address</h2>
-                  
+
                   <div className="form-group">
                     <label>Full Name *</label>
                     <input
@@ -298,7 +298,7 @@ const Checkout = () => {
 
                 <div className="form-section">
                   <h2>Payment Method</h2>
-                  
+
                   <div className="payment-methods">
                     {['Cash on Delivery', 'Credit Card', 'Debit Card', 'UPI'].map(method => (
                       <label key={method} className="payment-option">
@@ -487,7 +487,7 @@ const Checkout = () => {
                   {/* UPI Payment Methods */}
                   {formData.paymentMethod === 'UPI' && (
                     <div className="payment-details upi-details">
-                      <UPIPayment 
+                      <UPIPayment
                         upiId={formData.upiId}
                         onUpiIdChange={(value) => setFormData({ ...formData, upiId: value })}
                         selectedUpiProvider={formData.upiProvider}
@@ -516,8 +516,8 @@ const Checkout = () => {
               <div className="summary-items">
                 {selectedItems.map(item => (
                   <div key={item._id} className="summary-item">
-                    <img 
-                      src={item.product.image} 
+                    <img
+                      src={item.product.image}
                       alt={item.product.name}
                       onError={(e) => {
                         e.target.src = 'https://via.placeholder.com/80x80?text=Product';
@@ -539,10 +539,26 @@ const Checkout = () => {
                   <span>Subtotal ({selectedItems.length} items)</span>
                   <span>₹{subtotal.toLocaleString()}</span>
                 </div>
-                
+
                 <div className="summary-total">
                   <span>Total (No GST/Shipping)</span>
                   <span>₹{total.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Cancellation Policy Notice */}
+              <div className="checkout-policy-notice">
+                <div className="policy-header">
+                  <span className="policy-icon">ℹ️</span>
+                  <strong>Cancellation Policy</strong>
+                </div>
+                <p>
+                  Orders can be cancelled online within <strong>24 hours</strong> of placing the order.
+                  After 24 hours, please contact our support team for cancellation requests.
+                </p>
+                <div className="policy-contact">
+                  <span>📞 +91-9095399271</span>
+                  <span>✉️ manielectricalshop@gmail.com</span>
                 </div>
               </div>
             </div>
