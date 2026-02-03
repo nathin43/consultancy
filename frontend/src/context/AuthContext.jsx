@@ -71,11 +71,11 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const { data } = await API.post('/auth/login', { email, password });
-      
+
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
-      
+
       return { success: true, message: data.message };
     } catch (error) {
       return {
@@ -107,11 +107,11 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const { data } = await API.post('/auth/register', userData);
-      
+
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
-      
+
       return { success: true, message: data.message };
     } catch (error) {
       return {
@@ -142,11 +142,11 @@ export const AuthProvider = ({ children }) => {
   const adminLogin = async (email, password) => {
     try {
       const { data } = await API.post('/auth/admin/login', { email, password });
-      
+
       localStorage.setItem('adminToken', data.token);
       localStorage.setItem('admin', JSON.stringify(data.admin));
       setAdmin(data.admin);
-      
+
       return { success: true, message: data.message };
     } catch (error) {
       console.error('Admin login error:', error);
@@ -176,11 +176,11 @@ export const AuthProvider = ({ children }) => {
   const loginWithGoogle = async (credential) => {
     try {
       const { data } = await API.post('/auth/google', { credential });
-      
+
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
-      
+
       return { success: true, message: data.message };
     } catch (error) {
       return {

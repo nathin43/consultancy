@@ -48,7 +48,7 @@ const AdminLogin = () => {
       // Clear any old tokens first
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      
+
       const result = await adminLogin(formData.email, formData.password);
 
       if (result.success) {

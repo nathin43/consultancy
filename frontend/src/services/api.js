@@ -30,7 +30,7 @@ const API = axios.create({
 API.interceptors.request.use((config) => {
   // Determine which token to use based on the route
   let token = null;
-  
+
   if (config.url.includes('/admin') || config.url.includes('/admin-management')) {
     // Admin routes - use admin token
     token = localStorage.getItem('adminToken');
@@ -38,12 +38,12 @@ API.interceptors.request.use((config) => {
     // User routes or public routes - use user token
     token = localStorage.getItem('token');
   }
-  
+
   // If no appropriate token found, try the other one as fallback
   if (!token) {
     token = localStorage.getItem('adminToken') || localStorage.getItem('token');
   }
-  
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -59,13 +59,13 @@ API.interceptors.response.use(
   },
   (error) => {
     console.log('API Error:', error.response?.status, error.response?.data?.message || error.message);
-    
+
     // ONLY clear tokens on explicit authentication failures on LOGIN/MANAGEMENT routes
     // Do NOT clear tokens on any other route (orders, products, etc.)
     if (error.response?.status === 401) {
       const url = error.config?.url || '';
       const message = error.response?.data?.message || '';
-      
+
       // Only logout admin if trying to access admin login or management pages
       // NOT on order/product/general API calls
       if (url.includes('/auth/admin/login')) {
@@ -85,7 +85,7 @@ API.interceptors.response.use(
       }
       // For all other routes (orders, products, etc.), do NOT clear tokens
     }
-    
+
     return Promise.reject(error);
   }
 );

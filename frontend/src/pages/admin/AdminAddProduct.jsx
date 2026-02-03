@@ -26,70 +26,114 @@ const AdminAddProduct = () => {
   const [error, setError] = useState('');
 
   const specificationConfig = {
-    Tank: {
+    'Fan': {
+      icon: '🌀',
       required: [
-        { key: 'capacityLiters', label: 'Capacity (Liters)', type: 'number', placeholder: 'e.g., 100' },
-        { key: 'material', label: 'Material', type: 'select', options: ['Plastic', 'Steel'] },
-        { key: 'layers', label: 'Number of Layers', type: 'select', options: ['3', '5'] },
-        { key: 'height', label: 'Height', type: 'text', placeholder: 'e.g., 1.2m' },
-        { key: 'diameter', label: 'Diameter', type: 'text', placeholder: 'e.g., 900mm' },
-        { key: 'color', label: 'Color', type: 'text', placeholder: 'e.g., Black' }
-      ],
-      optional: [{ key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 5 Years' }]
-    },
-    Switches: {
-      required: [
-        { key: 'switchType', label: 'Switch Type', type: 'select', options: ['Modular', 'Non-Modular'] },
-        { key: 'currentRating', label: 'Current Rating', type: 'select', options: ['6A', '10A', '16A'] },
-        { key: 'voltage', label: 'Voltage', type: 'text', placeholder: 'e.g., 220-240V' },
-        { key: 'color', label: 'Color', type: 'text', placeholder: 'e.g., White' },
-        { key: 'plateIncluded', label: 'Plate Included', type: 'select', options: ['Yes', 'No'] }
-      ],
-      optional: [{ key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 2 Years' }]
-    },
-    'Wire & Cables': {
-      required: [
-        { key: 'wireType', label: 'Wire Type', type: 'select', options: ['Single Core', 'Multi Core'] },
-        { key: 'gauge', label: 'Gauge (sq mm)', type: 'text', placeholder: 'e.g., 1.5 sq mm' },
-        { key: 'length', label: 'Length (meters)', type: 'number', placeholder: 'e.g., 100' },
-        { key: 'insulationType', label: 'Insulation Type', type: 'select', options: ['PVC', 'XLPE'] },
-        { key: 'voltageRating', label: 'Voltage Rating', type: 'text', placeholder: 'e.g., 1100V' },
-        { key: 'isiCertified', label: 'ISI Certified', type: 'select', options: ['Yes', 'No'] }
-      ],
-      optional: [{ key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 1 Year' }]
-    },
-    Motors: {
-      required: [
-        { key: 'powerHp', label: 'Power (HP)', type: 'text', placeholder: 'e.g., 1 HP' },
-        { key: 'phase', label: 'Phase', type: 'select', options: ['Single', 'Three'] },
-        { key: 'voltage', label: 'Voltage', type: 'text', placeholder: 'e.g., 220V' },
-        { key: 'rpm', label: 'RPM', type: 'number', placeholder: 'e.g., 1440' },
-        { key: 'motorType', label: 'Motor Type', type: 'text', placeholder: 'e.g., Induction' },
-        { key: 'bodyMaterial', label: 'Body Material', type: 'text', placeholder: 'e.g., Cast Iron' }
-      ],
-      optional: [{ key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 1 Year' }]
-    },
-    Fans: {
-      required: [
-        { key: 'fanType', label: 'Fan Type', type: 'select', options: ['Ceiling', 'Wall', 'Table'] },
-        { key: 'sweepSize', label: 'Sweep Size (mm)', type: 'number', placeholder: 'e.g., 1200' },
+        { key: 'bladeSize', label: 'Blade Size (inches)', type: 'number', placeholder: 'e.g., 48' },
+        { key: 'sweep', label: 'Sweep (mm)', type: 'number', placeholder: 'e.g., 1200' },
         { key: 'speedRpm', label: 'Speed (RPM)', type: 'number', placeholder: 'e.g., 350' },
         { key: 'powerConsumption', label: 'Power Consumption (W)', type: 'number', placeholder: 'e.g., 75' },
+        { key: 'mountType', label: 'Mount Type', type: 'select', options: ['Ceiling', 'Wall', 'Table', 'Pedestal', 'Exhaust'] }
+      ],
+      optional: [
+        { key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 2 Years' }
+      ]
+    },
+    'Motors': {
+      icon: '⚙️',
+      required: [
+        { key: 'powerHp', label: 'Power (HP)', type: 'text', placeholder: 'e.g., 1 HP' },
+        { key: 'voltage', label: 'Voltage', type: 'text', placeholder: 'e.g., 220V' },
+        { key: 'phase', label: 'Phase', type: 'select', options: ['Single Phase', 'Three Phase'] },
+        { key: 'rpm', label: 'RPM', type: 'number', placeholder: 'e.g., 1440' },
+        { key: 'insulationClass', label: 'Insulation Class', type: 'select', options: ['Class A', 'Class B', 'Class F', 'Class H'] }
+      ],
+      optional: [
+        { key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 1 Year' }
+      ]
+    },
+    'Wire & Cables': {
+      icon: '🔌',
+      required: [
+        { key: 'coreType', label: 'Core Type', type: 'select', options: ['Single Core', 'Multi Core', 'Flexible', 'Armoured'] },
+        { key: 'wireGauge', label: 'Wire Gauge (sq mm)', type: 'text', placeholder: 'e.g., 1.5 sq mm' },
+        { key: 'length', label: 'Length (meters)', type: 'number', placeholder: 'e.g., 100' },
+        { key: 'conductorMaterial', label: 'Conductor Material', type: 'select', options: ['Copper', 'Aluminum', 'Copper Clad Aluminum'] },
+        { key: 'insulationType', label: 'Insulation Type', type: 'select', options: ['PVC', 'XLPE', 'Rubber', 'FRLS'] }
+      ],
+      optional: [
+        { key: 'voltageRating', label: 'Voltage Rating', type: 'text', placeholder: 'e.g., 1100V' },
+        { key: 'isiCertified', label: 'ISI Certified', type: 'select', options: ['Yes', 'No'] }
+      ]
+    },
+    'Heater': {
+      icon: '🔥',
+      required: [
+        { key: 'powerWatt', label: 'Power (Watt)', type: 'number', placeholder: 'e.g., 2000' },
+        { key: 'temperatureRange', label: 'Temperature Range', type: 'text', placeholder: 'e.g., 25-75°C' },
+        { key: 'safetyFeatures', label: 'Safety Features', type: 'textarea', placeholder: 'e.g., Auto Cut-off, Thermostat, Pressure Relief Valve' }
+      ],
+      optional: [
+        { key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 2 Years' },
+        { key: 'capacityLiters', label: 'Capacity (Liters)', type: 'number', placeholder: 'e.g., 25' }
+      ]
+    },
+    'Pipes': {
+      icon: '🚰',
+      required: [
+        { key: 'diameter', label: 'Diameter (mm / inch)', type: 'text', placeholder: 'e.g., 25mm or 1 inch' },
+        { key: 'length', label: 'Length (meters / feet)', type: 'text', placeholder: 'e.g., 3m or 10ft' },
+        { key: 'material', label: 'Material', type: 'select', options: ['PVC', 'CPVC', 'UPVC', 'GI', 'PPR', 'HDPE'] },
+        { key: 'pressureRating', label: 'Pressure Rating', type: 'select', options: ['Low Pressure', 'Medium Pressure', 'High Pressure', 'SDR 11', 'SDR 13.5'] }
+      ],
+      optional: [
+        { key: 'usageType', label: 'Usage Type', type: 'select', options: ['Water Supply', 'Drainage', 'Sewage', 'Irrigation'] },
+        { key: 'isiCertified', label: 'ISI Certified', type: 'select', options: ['Yes', 'No'] }
+      ]
+    },
+    // Keep existing configs for other categories
+    'Tank': {
+      icon: '🛢️',
+      required: [
+        { key: 'capacityLiters', label: 'Capacity (Liters)', type: 'number', placeholder: 'e.g., 100' },
+        { key: 'material', label: 'Material', type: 'select', options: ['Plastic', 'Steel', 'Fiber'] },
+        { key: 'layers', label: 'Number of Layers', type: 'select', options: ['3', '4', '5'] },
+        { key: 'height', label: 'Height', type: 'text', placeholder: 'e.g., 1.2m' },
+        { key: 'diameter', label: 'Diameter', type: 'text', placeholder: 'e.g., 900mm' }
+      ],
+      optional: [
+        { key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 5 Years' },
+        { key: 'color', label: 'Color', type: 'text', placeholder: 'e.g., Black' }
+      ]
+    },
+    'Switches': {
+      icon: '💡',
+      required: [
+        { key: 'switchType', label: 'Switch Type', type: 'select', options: ['Modular', 'Non-Modular', 'Dimmer', 'Touch'] },
+        { key: 'currentRating', label: 'Current Rating', type: 'select', options: ['6A', '10A', '16A', '20A'] },
+        { key: 'voltage', label: 'Voltage', type: 'text', placeholder: 'e.g., 220-240V' },
         { key: 'color', label: 'Color', type: 'text', placeholder: 'e.g., White' }
       ],
-      optional: [{ key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 2 Years' }]
+      optional: [
+        { key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 2 Years' },
+        { key: 'plateIncluded', label: 'Plate Included', type: 'select', options: ['Yes', 'No'] }
+      ]
     },
-    Lights: {
+    'Lights': {
+      icon: '💡',
       required: [
-        { key: 'lightType', label: 'Light Type', type: 'select', options: ['LED', 'Tube', 'Bulb'] },
+        { key: 'lightType', label: 'Light Type', type: 'select', options: ['LED', 'Tube Light', 'Bulb', 'Panel Light', 'Street Light'] },
         { key: 'wattage', label: 'Wattage (W)', type: 'number', placeholder: 'e.g., 12' },
-        { key: 'colorTemperature', label: 'Color Temperature', type: 'select', options: ['Warm', 'Cool', 'Daylight'] },
-        { key: 'lumens', label: 'Lumens', type: 'number', placeholder: 'e.g., 800' },
-        { key: 'voltage', label: 'Voltage', type: 'text', placeholder: 'e.g., 220V' }
+        { key: 'colorTemperature', label: 'Color Temperature', type: 'select', options: ['Warm White (3000K)', 'Cool White (4000K)', 'Daylight (6500K)'] },
+        { key: 'lumens', label: 'Lumens', type: 'number', placeholder: 'e.g., 800' }
       ],
-      optional: [{ key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 1 Year' }]
+      optional: [
+        { key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 1 Year' },
+        { key: 'voltage', label: 'Voltage', type: 'text', placeholder: 'e.g., 220V' }
+      ]
     },
-    Heater: {
+    'Water Heater': {
+      icon: '🚿',
       required: [
         { key: 'capacityLiters', label: 'Capacity (Liters)', type: 'number', placeholder: 'e.g., 25' },
         { key: 'powerWatt', label: 'Power (Watt)', type: 'number', placeholder: 'e.g., 2000' },
@@ -97,26 +141,39 @@ const AdminAddProduct = () => {
         { key: 'heatingElementType', label: 'Heating Element Type', type: 'text', placeholder: 'e.g., Copper' },
         { key: 'innerTankMaterial', label: 'Inner Tank Material', type: 'text', placeholder: 'e.g., Stainless Steel' }
       ],
-      optional: [{ key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 2 Years' }]
+      optional: [
+        { key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 2 Years' }
+      ]
     },
-    Pipes: {
-      required: [
-        { key: 'pipeType', label: 'Pipe Type', type: 'select', options: ['PVC', 'CPVC', 'UPVC', 'GI'] },
-        { key: 'diameter', label: 'Diameter (mm / inch)', type: 'text', placeholder: 'e.g., 25mm' },
-        { key: 'length', label: 'Length (meters / feet)', type: 'text', placeholder: 'e.g., 3m' },
-        { key: 'pressureRating', label: 'Pressure Rating', type: 'text', placeholder: 'e.g., High' },
-        { key: 'usageType', label: 'Usage Type', type: 'select', options: ['Water', 'Drainage'] },
-        { key: 'color', label: 'Color', type: 'text', placeholder: 'e.g., White' },
-        { key: 'isiCertified', label: 'ISI Certified', type: 'select', options: ['Yes', 'No'] }
-      ],
-      optional: [{ key: 'warranty', label: 'Warranty (if applicable)', type: 'text', placeholder: 'e.g., 1 Year' }]
+    'Other': {
+      icon: '📦',
+      required: [],
+      optional: [
+        { key: 'specifications', label: 'Specifications', type: 'textarea', placeholder: 'Enter product specifications...' }
+      ]
     }
   };
 
   const getCategoryKey = (category) => {
-    if (category === 'Fan') return 'Fans';
-    if (category === 'Water Heater') return 'Heater';
-    return category;
+    // Direct mapping for categories that match config keys
+    const categoryMap = {
+      'Fan': 'Fan',
+      'Motor': 'Motors',
+      'Motors': 'Motors',
+      'Wire & Cables': 'Wire & Cables',
+      'Heater': 'Heater',
+      'Water Heater': 'Water Heater',
+      'Pipe': 'Pipes',
+      'Pipes': 'Pipes',
+      'Tank': 'Tank',
+      'Switch': 'Switches',
+      'Switches': 'Switches',
+      'Light': 'Lights',
+      'Lights': 'Lights',
+      'Other': 'Other'
+    };
+
+    return categoryMap[category] || category;
   };
 
   const handleChange = (e) => {
@@ -125,7 +182,7 @@ const AdminAddProduct = () => {
       setFormData(prev => ({
         ...prev,
         category: value,
-        specifications: {}
+        specifications: {} // Reset specifications when category changes
       }));
       return;
     }
@@ -163,7 +220,7 @@ const AdminAddProduct = () => {
       data.append('category', formData.category);
       data.append('brand', formData.brand);
       data.append('stock', formData.stock);
-      
+
       if (image) {
         data.append('image', image);
       }
@@ -175,7 +232,7 @@ const AdminAddProduct = () => {
         }
         return acc;
       }, {});
-      
+
       data.append('specifications', JSON.stringify(specifications));
 
       await API.post('/products', data, {
@@ -202,7 +259,8 @@ const AdminAddProduct = () => {
       name: field.key,
       value,
       onChange: (e) => handleSpecChange(field.key, e.target.value),
-      required: isRequired
+      required: isRequired,
+      placeholder: field.placeholder
     };
 
     if (field.type === 'select') {
@@ -216,10 +274,18 @@ const AdminAddProduct = () => {
       );
     }
 
+    if (field.type === 'textarea') {
+      return (
+        <textarea
+          {...commonProps}
+          rows={4}
+        />
+      );
+    }
+
     return (
       <input
         type={field.type || 'text'}
-        placeholder={field.placeholder}
         {...commonProps}
       />
     );

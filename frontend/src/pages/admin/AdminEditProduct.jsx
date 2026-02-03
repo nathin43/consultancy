@@ -5,23 +5,21 @@ import API from '../../services/api';
 import '../admin/AdminAddProduct.css';
 
 /**
- * Admin Edit Product Page
+ * Admin Edit Product Page - with Dynamic Specifications
  */
 const AdminEditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const categories = ['Wire & Cables', 'Fan', 'Pipes', 'Motors', 'Heater', 'Lights', 'Switches', 'Tank', 'Water Heater', 'Other'];
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
-    category: 'TV',
+    category: categories[0],
     brand: '',
     stock: '',
-    power: '',
-    voltage: '',
-    warranty: '',
-    color: '',
-    dimensions: ''
+    specifications: {}
   });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState('');
@@ -29,7 +27,155 @@ const AdminEditProduct = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const categories = ['Wire & Cables', 'Fan', 'Pipes', 'Motors', 'Heater', 'Lights', 'Switches', 'Tank', 'Water Heater', 'Other'];
+  // Same specification config as AdminAddProduct
+  const specificationConfig = {
+    'Fan': {
+      icon: '🌀',
+      required: [
+        { key: 'bladeSize', label: 'Blade Size (inches)', type: 'number', placeholder: 'e.g., 48' },
+        { key: 'sweep', label: 'Sweep (mm)', type: 'number', placeholder: 'e.g., 1200' },
+        { key: 'speedRpm', label: 'Speed (RPM)', type: 'number', placeholder: 'e.g., 350' },
+        { key: 'powerConsumption', label: 'Power Consumption (W)', type: 'number', placeholder: 'e.g., 75' },
+        { key: 'mountType', label: 'Mount Type', type: 'select', options: ['Ceiling', 'Wall', 'Table', 'Pedestal', 'Exhaust'] }
+      ],
+      optional: [
+        { key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 2 Years' }
+      ]
+    },
+    'Motors': {
+      icon: '⚙️',
+      required: [
+        { key: 'powerHp', label: 'Power (HP)', type: 'text', placeholder: 'e.g., 1 HP' },
+        { key: 'voltage', label: 'Voltage', type: 'text', placeholder: 'e.g., 220V' },
+        { key: 'phase', label: 'Phase', type: 'select', options: ['Single Phase', 'Three Phase'] },
+        { key: 'rpm', label: 'RPM', type: 'number', placeholder: 'e.g., 1440' },
+        { key: 'insulationClass', label: 'Insulation Class', type: 'select', options: ['Class A', 'Class B', 'Class F', 'Class H'] }
+      ],
+      optional: [
+        { key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 1 Year' }
+      ]
+    },
+    'Wire & Cables': {
+      icon: '🔌',
+      required: [
+        { key: 'coreType', label: 'Core Type', type: 'select', options: ['Single Core', 'Multi Core', 'Flexible', 'Armoured'] },
+        { key: 'wireGauge', label: 'Wire Gauge (sq mm)', type: 'text', placeholder: 'e.g., 1.5 sq mm' },
+        { key: 'length', label: 'Length (meters)', type: 'number', placeholder: 'e.g., 100' },
+        { key: 'conductorMaterial', label: 'Conductor Material', type: 'select', options: ['Copper', 'Aluminum', 'Copper Clad Aluminum'] },
+        { key: 'insulationType', label: 'Insulation Type', type: 'select', options: ['PVC', 'XLPE', 'Rubber', 'FRLS'] }
+      ],
+      optional: [
+        { key: 'voltageRating', label: 'Voltage Rating', type: 'text', placeholder: 'e.g., 1100V' },
+        { key: 'isiCertified', label: 'ISI Certified', type: 'select', options: ['Yes', 'No'] }
+      ]
+    },
+    'Heater': {
+      icon: '🔥',
+      required: [
+        { key: 'powerWatt', label: 'Power (Watt)', type: 'number', placeholder: 'e.g., 2000' },
+        { key: 'temperatureRange', label: 'Temperature Range', type: 'text', placeholder: 'e.g., 25-75°C' },
+        { key: 'safetyFeatures', label: 'Safety Features', type: 'textarea', placeholder: 'e.g., Auto Cut-off, Thermostat, Pressure Relief Valve' }
+      ],
+      optional: [
+        { key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 2 Years' },
+        { key: 'capacityLiters', label: 'Capacity (Liters)', type: 'number', placeholder: 'e.g., 25' }
+      ]
+    },
+    'Pipes': {
+      icon: '🚰',
+      required: [
+        { key: 'diameter', label: 'Diameter (mm / inch)', type: 'text', placeholder: 'e.g., 25mm or 1 inch' },
+        { key: 'length', label: 'Length (meters / feet)', type: 'text', placeholder: 'e.g., 3m or 10ft' },
+        { key: 'material', label: 'Material', type: 'select', options: ['PVC', 'CPVC', 'UPVC', 'GI', 'PPR', 'HDPE'] },
+        { key: 'pressureRating', label: 'Pressure Rating', type: 'select', options: ['Low Pressure', 'Medium Pressure', 'High Pressure', 'SDR 11', 'SDR 13.5'] }
+      ],
+      optional: [
+        { key: 'usageType', label: 'Usage Type', type: 'select', options: ['Water Supply', 'Drainage', 'Sewage', 'Irrigation'] },
+        { key: 'isiCertified', label: 'ISI Certified', type: 'select', options: ['Yes', 'No'] }
+      ]
+    },
+    'Tank': {
+      icon: '🛢️',
+      required: [
+        { key: 'capacityLiters', label: 'Capacity (Liters)', type: 'number', placeholder: 'e.g., 100' },
+        { key: 'material', label: 'Material', type: 'select', options: ['Plastic', 'Steel', 'Fiber'] },
+        { key: 'layers', label: 'Number of Layers', type: 'select', options: ['3', '4', '5'] },
+        { key: 'height', label: 'Height', type: 'text', placeholder: 'e.g., 1.2m' },
+        { key: 'diameter', label: 'Diameter', type: 'text', placeholder: 'e.g., 900mm' }
+      ],
+      optional: [
+        { key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 5 Years' },
+        { key: 'color', label: 'Color', type: 'text', placeholder: 'e.g., Black' }
+      ]
+    },
+    'Switches': {
+      icon: '💡',
+      required: [
+        { key: 'switchType', label: 'Switch Type', type: 'select', options: ['Modular', 'Non-Modular', 'Dimmer', 'Touch'] },
+        { key: 'currentRating', label: 'Current Rating', type: 'select', options: ['6A', '10A', '16A', '20A'] },
+        { key: 'voltage', label: 'Voltage', type: 'text', placeholder: 'e.g., 220-240V' },
+        { key: 'color', label: 'Color', type: 'text', placeholder: 'e.g., White' }
+      ],
+      optional: [
+        { key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 2 Years' },
+        { key: 'plateIncluded', label: 'Plate Included', type: 'select', options: ['Yes', 'No'] }
+      ]
+    },
+    'Lights': {
+      icon: '💡',
+      required: [
+        { key: 'lightType', label: 'Light Type', type: 'select', options: ['LED', 'Tube Light', 'Bulb', 'Panel Light', 'Street Light'] },
+        { key: 'wattage', label: 'Wattage (W)', type: 'number', placeholder: 'e.g., 12' },
+        { key: 'colorTemperature', label: 'Color Temperature', type: 'select', options: ['Warm White (3000K)', 'Cool White (4000K)', 'Daylight (6500K)'] },
+        { key: 'lumens', label: 'Lumens', type: 'number', placeholder: 'e.g., 800' }
+      ],
+      optional: [
+        { key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 1 Year' },
+        { key: 'voltage', label: 'Voltage', type: 'text', placeholder: 'e.g., 220V' }
+      ]
+    },
+    'Water Heater': {
+      icon: '🚿',
+      required: [
+        { key: 'capacityLiters', label: 'Capacity (Liters)', type: 'number', placeholder: 'e.g., 25' },
+        { key: 'powerWatt', label: 'Power (Watt)', type: 'number', placeholder: 'e.g., 2000' },
+        { key: 'voltage', label: 'Voltage', type: 'text', placeholder: 'e.g., 220V' },
+        { key: 'heatingElementType', label: 'Heating Element Type', type: 'text', placeholder: 'e.g., Copper' },
+        { key: 'innerTankMaterial', label: 'Inner Tank Material', type: 'text', placeholder: 'e.g., Stainless Steel' }
+      ],
+      optional: [
+        { key: 'warranty', label: 'Warranty', type: 'text', placeholder: 'e.g., 2 Years' }
+      ]
+    },
+    'Other': {
+      icon: '📦',
+      required: [],
+      optional: [
+        { key: 'specifications', label: 'Specifications', type: 'textarea', placeholder: 'Enter product specifications...' }
+      ]
+    }
+  };
+
+  const getCategoryKey = (category) => {
+    const categoryMap = {
+      'Fan': 'Fan',
+      'Motor': 'Motors',
+      'Motors': 'Motors',
+      'Wire & Cables': 'Wire & Cables',
+      'Heater': 'Heater',
+      'Water Heater': 'Water Heater',
+      'Pipe': 'Pipes',
+      'Pipes': 'Pipes',
+      'Tank': 'Tank',
+      'Switch': 'Switches',
+      'Switches': 'Switches',
+      'Light': 'Lights',
+      'Lights': 'Lights',
+      'Other': 'Other'
+    };
+
+    return categoryMap[category] || category;
+  };
 
   useEffect(() => {
     fetchProduct();
@@ -39,32 +185,46 @@ const AdminEditProduct = () => {
     try {
       const { data } = await API.get(`/products/${id}`);
       const product = data.product;
-      
+
       setFormData({
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        category: product.category,
-        brand: product.brand,
-        stock: product.stock,
-        power: product.specifications?.power || '',
-        voltage: product.specifications?.voltage || '',
-        warranty: product.specifications?.warranty || '',
-        color: product.specifications?.color || '',
-        dimensions: product.specifications?.dimensions || ''
+        name: product.name || '',
+        description: product.description || '',
+        price: product.price || '',
+        category: product.category || categories[0],
+        brand: product.brand || '',
+        stock: product.stock || '',
+        specifications: product.specifications || {}
       });
-      
-      setPreview(product.image);
-    } catch (error) {
-      alert('Product not found');
-      navigate('/admin/products');
+      setPreview(product.image || '');
+    } catch (err) {
+      setError('Product not found');
+      setTimeout(() => navigate('/admin/products'), 2000);
     } finally {
       setLoading(false);
     }
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'category') {
+      setFormData(prev => ({
+        ...prev,
+        category: value,
+        specifications: {} // Reset specifications when category changes
+      }));
+      return;
+    }
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSpecChange = (key, value) => {
+    setFormData(prev => ({
+      ...prev,
+      specifications: {
+        ...prev.specifications,
+        [key]: value
+      }
+    }));
   };
 
   const handleImageChange = (e) => {
@@ -88,18 +248,19 @@ const AdminEditProduct = () => {
       data.append('category', formData.category);
       data.append('brand', formData.brand);
       data.append('stock', formData.stock);
-      
+
       if (image) {
         data.append('image', image);
       }
 
-      const specifications = {};
-      if (formData.power) specifications.power = formData.power;
-      if (formData.voltage) specifications.voltage = formData.voltage;
-      if (formData.warranty) specifications.warranty = formData.warranty;
-      if (formData.color) specifications.color = formData.color;
-      if (formData.dimensions) specifications.dimensions = formData.dimensions;
-      
+      // Specifications
+      const specifications = Object.entries(formData.specifications).reduce((acc, [key, value]) => {
+        if (value !== '' && value !== null && value !== undefined) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {});
+
       data.append('specifications', JSON.stringify(specifications));
 
       await API.put(`/products/${id}`, data, {
@@ -117,10 +278,53 @@ const AdminEditProduct = () => {
     }
   };
 
+  const activeCategoryKey = getCategoryKey(formData.category);
+  const activeSpecConfig = specificationConfig[activeCategoryKey] || { required: [], optional: [] };
+
+  const renderSpecField = (field, isRequired) => {
+    const value = formData.specifications[field.key] || '';
+    const commonProps = {
+      name: field.key,
+      value,
+      onChange: (e) => handleSpecChange(field.key, e.target.value),
+      required: isRequired,
+      placeholder: field.placeholder
+    };
+
+    if (field.type === 'select') {
+      return (
+        <select {...commonProps}>
+          <option value="">Select {field.label}</option>
+          {field.options.map(option => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+      );
+    }
+
+    if (field.type === 'textarea') {
+      return (
+        <textarea
+          {...commonProps}
+          rows={4}
+        />
+      );
+    }
+
+    return (
+      <input
+        type={field.type || 'text'}
+        {...commonProps}
+      />
+    );
+  };
+
   if (loading) {
     return (
       <AdminLayout>
-        <div className="spinner"></div>
+        <div className="admin-add-product">
+          <p>Loading product...</p>
+        </div>
       </AdminLayout>
     );
   }
@@ -136,6 +340,7 @@ const AdminEditProduct = () => {
 
         <form onSubmit={handleSubmit} className="product-form">
           <div className="form-grid">
+            {/* Basic Information */}
             <div className="form-section">
               <h2>Basic Information</h2>
 
@@ -147,6 +352,7 @@ const AdminEditProduct = () => {
                   value={formData.name}
                   onChange={handleChange}
                   required
+                  placeholder="Enter product name"
                 />
               </div>
 
@@ -158,6 +364,7 @@ const AdminEditProduct = () => {
                   onChange={handleChange}
                   required
                   rows={4}
+                  placeholder="Enter product description"
                 />
               </div>
 
@@ -171,6 +378,7 @@ const AdminEditProduct = () => {
                     onChange={handleChange}
                     required
                     min="0"
+                    placeholder="0"
                   />
                 </div>
 
@@ -183,6 +391,7 @@ const AdminEditProduct = () => {
                     onChange={handleChange}
                     required
                     min="0"
+                    placeholder="0"
                   />
                 </div>
               </div>
@@ -210,65 +419,52 @@ const AdminEditProduct = () => {
                     value={formData.brand}
                     onChange={handleChange}
                     required
+                    placeholder="Enter brand name"
                   />
                 </div>
               </div>
             </div>
 
+            {/* Specifications */}
             <div className="form-section">
-              <h2>Specifications (Optional)</h2>
+              <h2>{activeCategoryKey} Specifications</h2>
 
-              <div className="form-group">
-                <label>Power</label>
-                <input
-                  type="text"
-                  name="power"
-                  value={formData.power}
-                  onChange={handleChange}
-                />
-              </div>
+              <div key={activeCategoryKey} className="specifications-panel">
+                {activeSpecConfig.required.length === 0 && activeSpecConfig.optional.length === 0 ? (
+                  <p className="text-muted">No specifications for this category.</p>
+                ) : (
+                  <>
+                    <div className="spec-group">
+                      <div className="spec-group-header">Required</div>
+                      <div className="form-row">
+                        {activeSpecConfig.required.map(field => (
+                          <div className="form-group" key={field.key}>
+                            <label>{field.label} *</label>
+                            {renderSpecField(field, true)}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-              <div className="form-group">
-                <label>Voltage</label>
-                <input
-                  type="text"
-                  name="voltage"
-                  value={formData.voltage}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Warranty</label>
-                <input
-                  type="text"
-                  name="warranty"
-                  value={formData.warranty}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Color</label>
-                <input
-                  type="text"
-                  name="color"
-                  value={formData.color}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Dimensions</label>
-                <input
-                  type="text"
-                  name="dimensions"
-                  value={formData.dimensions}
-                  onChange={handleChange}
-                />
+                    {activeSpecConfig.optional.length > 0 && (
+                      <div className="spec-group optional">
+                        <div className="spec-group-header">Optional</div>
+                        <div className="form-row">
+                          {activeSpecConfig.optional.map(field => (
+                            <div className="form-group" key={field.key}>
+                              <label>{field.label}</label>
+                              {renderSpecField(field, false)}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 
+            {/* Product Image */}
             <div className="form-section">
               <h2>Product Image</h2>
 
@@ -279,7 +475,7 @@ const AdminEditProduct = () => {
                   accept="image/*"
                   onChange={handleImageChange}
                 />
-                <small className="text-muted">Leave empty to keep current image</small>
+                <small className="text-muted">Leave empty to keep existing image. Recommended: 800x800px, max 5MB</small>
               </div>
 
               {preview && (
@@ -298,6 +494,7 @@ const AdminEditProduct = () => {
               type="button"
               onClick={() => navigate(-1)}
               className="btn btn-secondary"
+              disabled={submitting}
             >
               Cancel
             </button>

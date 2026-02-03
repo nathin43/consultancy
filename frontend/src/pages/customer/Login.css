@@ -23,6 +23,7 @@
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -235,7 +236,7 @@
   width: 100%;
 }
 
-.oauth-button-container > div {
+.oauth-button-container>div {
   width: 100% !important;
 }
 
@@ -324,6 +325,7 @@
     opacity: 0;
     transform: translateY(-8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

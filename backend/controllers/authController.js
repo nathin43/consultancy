@@ -158,7 +158,7 @@ exports.adminLogin = async (req, res) => {
 
     // Set role based on email - manielectricals@gmail.com is MAIN_ADMIN
     let adminRole = admin.email === 'manielectricals@gmail.com' ? 'MAIN_ADMIN' : 'SUB_ADMIN';
-    
+
     // Update role in database if needed
     if (admin.role !== adminRole) {
       admin.role = adminRole;
@@ -218,7 +218,7 @@ exports.logout = async (req, res) => {
   try {
     // Just clear the session/token on backend
     // Cart data is preserved in database for when user logs back in
-    
+
     res.status(200).json({
       success: true,
       message: 'Logged out successfully'

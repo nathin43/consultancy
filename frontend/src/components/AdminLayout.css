@@ -228,6 +228,7 @@
     width: 0;
     opacity: 0;
   }
+
   to {
     width: 4px;
     opacity: 1;
@@ -272,10 +273,13 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.6;
     transform: scale(1.2);
@@ -333,7 +337,7 @@
   transition: margin-left 0.3s ease;
 }
 
-.admin-sidebar.collapsed ~ .admin-content {
+.admin-sidebar.collapsed~.admin-content {
   margin-left: 80px;
 }
 
@@ -441,6 +445,7 @@
     opacity: 0;
     transform: translateY(-12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -494,8 +499,56 @@
 .admin-main {
   flex: 1;
   padding: 28px 32px;
-  background: var(--bg-light);
+  background: #F9FAFB;
   overflow-y: auto;
+}
+
+/* ===============================================
+   ADMIN FORM GLOBAL STYLES - DARK TEXT
+   =============================================== */
+
+/* Override global dark-themed form inputs for admin */
+.admin-main input,
+.admin-main select,
+.admin-main textarea {
+  background: #FFFFFF !important;
+  color: #000000 !important;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 10px;
+}
+
+.admin-main input::placeholder,
+.admin-main textarea::placeholder {
+  color: #4B5563 !important;
+  opacity: 1;
+}
+
+.admin-main input:focus,
+.admin-main select:focus,
+.admin-main textarea:focus {
+  border-color: #1e40af !important;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.12);
+  transform: none;
+}
+
+.admin-main label {
+  color: #1F2937 !important;
+  font-weight: 600;
+}
+
+.admin-main h1,
+.admin-main h2,
+.admin-main h3,
+.admin-main h4 {
+  color: #0F0F0F !important;
+}
+
+.admin-main p {
+  color: #374151;
+}
+
+.admin-main .text-muted {
+  color: #4B5563 !important;
 }
 
 /* ===============================================
@@ -539,7 +592,7 @@
     margin-left: 240px;
   }
 
-  .admin-sidebar.collapsed ~ .admin-content {
+  .admin-sidebar.collapsed~.admin-content {
     margin-left: 70px;
   }
 
