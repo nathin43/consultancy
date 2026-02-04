@@ -429,44 +429,58 @@ const Home = () => {
             <div className="featured-carousel-wrapper">
               {/* Main Featured Card */}
               <div className="featured-card-main">
-                <Link to={`/product/${products[currentProductIndex]._id}`} className="featured-card-link">
-                  <div className="featured-image-wrapper">
-                    <img 
-                      src={products[currentProductIndex].image} 
-                      alt={products[currentProductIndex].name} 
-                      className="featured-image"
-                      onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/400x400?text=Product';
-                      }}
-                    />
-                    <div className="featured-image-overlay"></div>
+                <div className="featured-image-wrapper">
+                  <img 
+                    src={products[currentProductIndex].image} 
+                    alt={products[currentProductIndex].name} 
+                    className="featured-image"
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/400x400?text=Product';
+                    }}
+                  />
+                </div>
+
+                <div className="featured-card-content">
+                  <div className="featured-header">
+                    <span className="featured-category-badge">
+                      {products[currentProductIndex].category?.toUpperCase()}
+                    </span>
+                    {products[currentProductIndex].stock > 0 && (
+                      <span className="featured-stock-badge">
+                        <svg className="stock-icon" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                        </svg>
+                        In Stock
+                      </span>
+                    )}
                   </div>
 
-                  <div className="featured-card-content">
-                    <span className="featured-category-badge">
-                      {products[currentProductIndex].category}
-                    </span>
-                    <h3 className="featured-product-name">
-                      {products[currentProductIndex].name}
-                    </h3>
-                    <p className="featured-product-desc">
-                      Premium quality electrical component
-                    </p>
-                    <div className="featured-product-meta">
+                  <h3 className="featured-product-name">
+                    {products[currentProductIndex].name}
+                  </h3>
+
+                  <p className="featured-product-desc">
+                    Premium quality electrical component for residential and commercial applications
+                  </p>
+
+                  <div className="featured-product-footer">
+                    <div className="featured-price-wrapper">
+                      <span className="featured-price-label">Price</span>
                       <span className="featured-price">
                         ₹{products[currentProductIndex].price?.toLocaleString()}
                       </span>
-                      {products[currentProductIndex].stock > 0 && (
-                        <span className="featured-stock-badge in-stock">In Stock</span>
-                      )}
                     </div>
-                  </div>
-                </Link>
 
-                <div className="featured-card-actions">
-                  <Link to={`/product/${products[currentProductIndex]._id}`} className="featured-btn-secondary">
-                    View Details
-                  </Link>
+                    <Link 
+                      to={`/product/${products[currentProductIndex]._id}`} 
+                      className="featured-btn-primary"
+                    >
+                      <span>View Details</span>
+                      <svg className="btn-arrow" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+                      </svg>
+                    </Link>
+                  </div>
                 </div>
               </div>
 

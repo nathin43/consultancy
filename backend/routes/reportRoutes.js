@@ -14,6 +14,7 @@ const {
   deleteCustomerReports,
   regenerateCustomerReport
 } = require('../controllers/reportController');
+const { getUsersForReports, exportUsersExcel } = require('../controllers/reportControllerNew');
 const { protect, adminProtect } = require('../middleware/auth');
 
 /**
@@ -39,6 +40,8 @@ router.post('/create', createReport);
 
 // Admin routes - all protected with adminProtect
 router.get('/stats/dashboard', adminProtect, getReportStats);
+router.get('/users', adminProtect, getUsersForReports);
+router.get('/export/excel', adminProtect, exportUsersExcel);
 router.get('/', adminProtect, getAllReports);
 router.get('/customers', adminProtect, getCustomerReports);
 router.get('/customers/:customerId', adminProtect, getCustomerReportById);

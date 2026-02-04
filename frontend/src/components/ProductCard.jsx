@@ -71,24 +71,6 @@ const ProductCard = ({ product, hideAddToCart = false }) => {
 
   return (
     <div className="product-card-premium">
-      {/* Stock Badge - Top Left */}
-      {isOutOfStock ? (
-        <div className="stock-badge out-of-stock">
-          <span className="badge-dot"></span>
-          Out of Stock
-        </div>
-      ) : product.stock < 10 ? (
-        <div className="stock-badge low-stock">
-          <span className="badge-dot"></span>
-          Only {product.stock} left
-        </div>
-      ) : (
-        <div className="stock-badge in-stock">
-          <span className="badge-dot"></span>
-          In Stock
-        </div>
-      )}
-
       {/* Product Image Section */}
       <Link to={`/product/${product._id}`} className="product-image-link">
         <div className="product-image-container">
@@ -100,18 +82,17 @@ const ProductCard = ({ product, hideAddToCart = false }) => {
               e.target.src = 'https://via.placeholder.com/400x400?text=Product+Image';
             }}
           />
+          {/* Category Badge - Top Left Corner */}
+          {product.category && (
+            <div className="category-badge-overlay">
+              {product.category.toUpperCase()}
+            </div>
+          )}
         </div>
       </Link>
 
       {/* Product Details Section */}
       <div className="product-info">
-        {/* Category Badge */}
-        {product.category && (
-          <div className="category-label">
-            {product.category.toUpperCase()}
-          </div>
-        )}
-
         {/* Product Name */}
         <Link to={`/product/${product._id}`} className="product-title-link">
           <h3 className="product-title">{product.name}</h3>
@@ -134,16 +115,26 @@ const ProductCard = ({ product, hideAddToCart = false }) => {
           </div>
         )}
 
-        {/* Price Section */}
-        <div className="price-section">
-          {product.priceType === 'range' ? (
-            <div className="price-range">
-              <span className="price-from">Starting from</span>
-              <span className="price-main">{formatPrice(product.priceMin)}</span>
-            </div>
-          ) : (
-            <div className="price-single">
-              <span className="price-main">{formatPrice(product.price)}</span>
+        {/* Price and Stock Section */}
+        <div className="price-stock-wrapper">
+          <div className="price-section">
+            {product.priceType === 'range' ? (
+              <div className="price-display">
+                <span className="price-label">Starting from</span>
+                <span className="price-amount">{formatPrice(product.priceMin)}</span>
+              </div>
+            ) : (
+              <div className="price-display">
+                <span className="price-amount">{formatPrice(product.price)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Stock Badge - Pill with Dot */}
+          {!isOutOfStock && (
+            <div className="stock-indicator">
+              <span className="stock-dot"></span>
+              <span className="stock-text">In Stock</span>
             </div>
           )}
         </div>
@@ -153,14 +144,31 @@ const ProductCard = ({ product, hideAddToCart = false }) => {
           {!hideAddToCart && (
             <button
               type="button"
-              className={`btn-add-to-cart ${isInCart ? 'in-cart' : ''} ${isOutOfStock ? 'disabled' : ''}`}
+              className={`btn-add-to-cart ${isInCart ? 'added-state' : ''} ${isOutOfStock ? 'disabled-state' : ''}`}
               onClick={handleAddToCart}
               disabled={isAdding || isOutOfStock}
             >
               {isAdding ? (
-                'Adding...'
+                <>
+                  <span className="btn-spinner"></span>
+                  Adding...
+                </>
+              ) : isOutOfStock ? (
+                'Out of Stock'
+              ) : isInCart ? (
+                <>
+                  <svg className="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                  </svg>
+                  Added to Cart
+                </>
               ) : (
-                isOutOfStock ? 'Out of Stock' : isInCart ? 'Added to Cart' : 'Add to Cart'
+                <>
+                  <svg className="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
+                  </svg>
+                  Add to Cart
+                </>
               )}
             </button>
           )}
@@ -169,7 +177,10 @@ const ProductCard = ({ product, hideAddToCart = false }) => {
             to={`/product/${product._id}`}
             className="btn-view-details"
           >
-            View Details
+            <span>View Details</span>
+            <svg className="btn-arrow" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/>
+            </svg>
           </Link>
         </div>
       </div>

@@ -26,6 +26,7 @@ import AdminOrders from './pages/admin/AdminOrders';
 import AdminCustomers from './pages/admin/AdminCustomers';
 import AdminManagement from './pages/admin/AdminManagement';
 import AdminReports from './pages/admin/AdminReports';
+import UserReportDetail from './pages/admin/UserReportDetailNew';
 
 // Components
 import PrivateRoute from './components/PrivateRoute';
@@ -69,6 +70,7 @@ function App() {
         <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
         <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />
         <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
+        <Route path="/admin/reports/user/:userId" element={<AdminRoute><UserReportDetail /></AdminRoute>} />
         <Route path="/admin/admin-management" element={<MainAdminRoute><AdminManagement /></MainAdminRoute>} />
       </Routes>
     </>
