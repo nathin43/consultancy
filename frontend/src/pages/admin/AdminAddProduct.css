@@ -364,6 +364,7 @@ small.text-muted {
    =========================================== */
 .form-actions {
   display: flex;
+  align-items: center;
   gap: 16px;
   padding-top: 32px;
   border-top: 2px solid var(--admin-border-section);
