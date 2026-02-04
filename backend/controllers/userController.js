@@ -99,3 +99,31 @@ exports.updatePassword = async (req, res) => {
     });
   }
 };
+
+/**
+ * Get user by ID (Admin only)
+ * @route GET /api/users/:userId
+ * @access Private/Admin
+ */
+exports.getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

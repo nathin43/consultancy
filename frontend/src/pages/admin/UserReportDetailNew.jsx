@@ -33,7 +33,7 @@ const UserReportDetail = () => {
   const fetchUserData = async () => {
     try {
       const { data } = await api.get(`/api/users/${userId}`);
-      setUserData(data);
+      setUserData(data.user || data);
     } catch (err) {
       showError('Failed to fetch user data');
       console.error(err);
@@ -68,7 +68,7 @@ const UserReportDetail = () => {
   const fetchOrders = async () => {
     try {
       const { data } = await api.get(`/api/orders/user/${userId}`);
-      setOrders(data);
+      setOrders(data.orders || data || []);
     } catch (error) {
       console.error(error);
       setOrders([]);
@@ -78,7 +78,7 @@ const UserReportDetail = () => {
   const fetchPayments = async () => {
     try {
       const { data } = await api.get(`/api/payments/user/${userId}`);
-      setPayments(data);
+      setPayments(data.payments || data || []);
     } catch (error) {
       console.error(error);
       setPayments([]);
@@ -88,7 +88,7 @@ const UserReportDetail = () => {
   const fetchInvoices = async () => {
     try {
       const { data } = await api.get(`/api/invoices/user/${userId}`);
-      setInvoices(data);
+      setInvoices(data.invoices || data || []);
     } catch (error) {
       console.error(error);
       setInvoices([]);
@@ -98,7 +98,7 @@ const UserReportDetail = () => {
   const fetchReviews = async () => {
     try {
       const { data } = await api.get(`/api/reviews/user/${userId}`);
-      setReviews(data);
+      setReviews(data.reviews || data || []);
     } catch (error) {
       console.error(error);
       setReviews([]);

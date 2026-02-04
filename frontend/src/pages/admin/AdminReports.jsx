@@ -308,13 +308,13 @@ const AdminReports = () => {
                         </td>
                         <td>{user.email}</td>
                         <td>
-                          <span className={`status-badge ${user.isActive ? 'active' : 'blocked'}`}>
-                            {user.isActive ? 'Active' : 'Blocked'}
+                          <span className={`status-badge ${user.status === 'active' ? 'active' : 'blocked'}`}>
+                            {user.status === 'active' ? 'Active' : 'Blocked'}
                           </span>
                         </td>
-                        <td className="text-center">{user.orderStats?.totalOrders || 0}</td>
-                        <td className="amount">{formatCurrency(user.orderStats?.totalSpent || 0)}</td>
-                        <td>{formatDate(user.orderStats?.lastOrderDate)}</td>
+                        <td className="text-center">{user.totalOrders || 0}</td>
+                        <td className="amount">{formatCurrency(user.totalAmountSpent || 0)}</td>
+                        <td>{formatDate(user.lastOrder)}</td>
                         <td>
                           <button 
                             className="btn-view-report"

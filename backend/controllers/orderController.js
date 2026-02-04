@@ -322,3 +322,27 @@ exports.cancelOrder = async (req, res) => {
     });
   }
 };
+
+/**
+ * Get orders by user ID (Admin only)
+ * @route GET /api/orders/user/:userId
+ * @access Private/Admin
+ */
+exports.getOrdersByUserId = async (req, res) => {
+  try {
+    const orders = await Order.find({ user: req.params.userId })
+      .populate('items.product', 'name image')
+      .sort('-createdAt');
+
+    res.status(200).json({
+      success: true,
+      count: orders.length,
+      orders
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

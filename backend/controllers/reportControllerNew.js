@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Order = require('../models/Order');
+const Review = require('../models/Review');
 
 /**
  * Get all users with their report data for admin reports page
@@ -118,6 +119,100 @@ exports.exportUsersExcel = async (req, res) => {
       success: true,
       message: 'Excel export functionality - To be implemented with exceljs library'
     });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get payments by user ID (Admin only) - Stub
+ * 
+ * @route GET /api/payments/user/:userId
+ * @access Private/Admin
+ */
+exports.getPaymentsByUserId = async (req, res) => {
+  try {
+    // Payments extracted from orders
+    const orders = await Order.find({ user: req.params.userId })
+      .select('_id orderNumber createdAt paymentMethod totalAmount paymentStatus paymentDetails')
+      .sort('-createdAt');
+
+    const payments = orders.map(order => ({
+      _id: order._id,
+      orderId: order._id,
+      createdAt: order.createdAt,
+      method: order.paymentMethod || 'N/A',
+      amount: order.totalAmount,
+      status: order.paymentStatus || 'pending',
+      refundAmount: null
+    }));
+
+    res.status(200).json(payments);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get invoices by user ID (Admin only) - Stub
+ * 
+ * @route GET /api/invoices/user/:userId
+ * @access Private/Admin
+ */
+exports.getInvoicesByUserId = async (req, res) => {
+  try {
+    // Invoices extracted from orders
+    const orders = await Order.find({ user: req.params.userId })
+      .select('_id orderNumber createdAt totalAmount')
+      .sort('-createdAt');
+
+    const invoices = orders.map((order, index) => ({
+      _id: order._id,
+      invoiceNumber: order.orderNumber || `INV-${order._id.toString().slice(-8)}`,
+      orderId: order._id,
+      date: order.createdAt,
+      tax: (order.totalAmount * 0.18).toFixed(2), // 18% GST
+      amount: order.totalAmount
+    }));
+
+    res.status(200).json(invoices);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get reviews by user ID (Admin only)
+ * 
+ * @route GET /api/reviews/user/:userId
+ * @access Private/Admin
+ */
+exports.getReviewsByUserId = async (req, res) => {
+  try {
+    const reviews = await Review.find({ user: req.params.userId })
+      .populate('product', 'name')
+      .sort('-createdAt');
+
+    const formattedReviews = reviews.map(review => ({
+      _id: review._id,
+      productName: review.product?.name || 'Unknown Product',
+      product: review.product,
+      rating: review.rating,
+      comment: review.comment,
+      createdAt: review.createdAt,
+      status: review.status || 'pending'
+    }));
+
+    res.status(200).json(formattedReviews);
   } catch (error) {
     res.status(500).json({
       success: false,

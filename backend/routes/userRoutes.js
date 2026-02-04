@@ -3,19 +3,22 @@ const router = express.Router();
 const {
   getProfile,
   updateProfile,
-  updatePassword
+  updatePassword,
+  getUserById
 } = require('../controllers/userController');
-const { protect } = require('../middleware/auth');
+const { protect, adminProtect } = require('../middleware/auth');
 
 /**
  * User Routes
- * All routes require authentication
+ * Customer routes require protect, admin routes require adminProtect
  */
 
-router.use(protect); // Apply authentication to all user routes
+// Admin route to get user by ID (must come first, before protect middleware)
+router.get('/:userId', adminProtect, getUserById);
 
-router.get('/profile', getProfile);
-router.put('/profile', updateProfile);
-router.put('/password', updatePassword);
+// Customer routes (require authentication)
+router.get('/profile', protect, getProfile);
+router.put('/profile', protect, updateProfile);
+router.put('/password', protect, updatePassword);
 
 module.exports = router;
