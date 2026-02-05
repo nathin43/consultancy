@@ -3,67 +3,157 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 
 /**
- * Get admin dashboard statistics
+ * Get admin dashboard statistics with real-time data
  * @route GET /api/admin/dashboard
  * @access Private/Admin
  */
 exports.getDashboard = async (req, res) => {
   try {
-    // Total products
-    const totalProducts = await Product.countDocuments();
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const prevWeekStart = new Date(startOfWeek);
+    prevWeekStart.setDate(prevWeekStart.getDate() - 7);
+
+    // ========== SALES METRICS ==========
+    // Total sales from delivered orders only
+    const deliveredOrders = await Order.find({ orderStatus: 'delivered' });
+    const totalSales = deliveredOrders.reduce((sum, order) => sum + (order.totalAmount || order.totalPrice || 0), 0);
     
-    // Total orders
+    // Current week sales
+    const currentWeekSales = await Order.aggregate([
+      {
+        $match: {
+          orderStatus: 'delivered',
+          createdAt: { $gte: startOfWeek }
+        }
+      },
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+    ]);
+    
+    // Previous week sales
+    const prevWeekSales = await Order.aggregate([
+      {
+        $match: {
+          orderStatus: 'delivered',
+          createdAt: { $gte: prevWeekStart, $lt: startOfWeek }
+        }
+      },
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+    ]);
+    
+    const currentSales = currentWeekSales[0]?.total || 0;
+    const prevSales = prevWeekSales[0]?.total || 0;
+    const salesGrowth = prevSales > 0 ? ((currentSales - prevSales) / prevSales * 100).toFixed(1) : 0;
+
+    // ========== ORDERS METRICS ==========
     const totalOrders = await Order.countDocuments();
-    
-    // Total customers
-    const totalCustomers = await User.countDocuments();
-    
-    // Total sales
-    const orders = await Order.find({ orderStatus: { $ne: 'cancelled' } });
-    const totalSales = orders.reduce((sum, order) => sum + order.totalPrice, 0);
-    
-    // Pending orders
+    const todayOrders = await Order.countDocuments({
+      createdAt: { $gte: startOfToday }
+    });
     const pendingOrders = await Order.countDocuments({ orderStatus: 'pending' });
-    
-    // Out of stock products
+    const shippedOrders = await Order.countDocuments({ orderStatus: 'shipped' });
+    const deliveredOrdersCount = await Order.countDocuments({ orderStatus: 'delivered' });
+    const cancelledOrders = await Order.countDocuments({ orderStatus: 'cancelled' });
+
+    // ========== PRODUCTS METRICS ==========
+    const totalProducts = await Product.countDocuments();
+    const activeProducts = await Product.countDocuments({ stock: { $gt: 0 } });
     const outOfStock = await Product.countDocuments({ stock: 0 });
-    
-    // Recent orders
+    const lowStockItems = await Product.countDocuments({ stock: { $gt: 0, $lte: 10 } });
+
+    // ========== USERS METRICS ==========
+    const totalUsers = await User.countDocuments();
+    const newUsersToday = await User.countDocuments({
+      createdAt: { $gte: startOfToday }
+    });
+
+    // ========== SALES TREND DATA (Last 7 days) ==========
+    const salesTrendData = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const endOfDay = new Date(startOfDay.getTime() + 24*60*60*1000);
+      
+      const dailySales = await Order.aggregate([
+        {
+          $match: {
+            orderStatus: 'delivered',
+            createdAt: { $gte: startOfDay, $lt: endOfDay }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            revenue: { $sum: '$totalAmount' },
+            orders: { $sum: 1 }
+          }
+        }
+      ]);
+      
+      salesTrendData.push({
+        date: startOfDay.toISOString().split('T')[0],
+        day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()],
+        revenue: dailySales[0]?.revenue || 0,
+        orders: dailySales[0]?.orders || 0
+      });
+    }
+
+    // ========== RECENT ORDERS ==========
     const recentOrders = await Order.find()
       .populate('user', 'name email')
       .sort('-createdAt')
       .limit(5);
-    
-    // Sales by category
+
+    // ========== AVERAGE RATING ==========
     const products = await Product.find();
-    const categorySales = {};
-    
-    for (let order of orders) {
-      for (let item of order.items) {
-        const product = products.find(p => p._id.toString() === item.product.toString());
-        if (product) {
-          if (!categorySales[product.category]) {
-            categorySales[product.category] = 0;
-          }
-          categorySales[product.category] += item.price * item.quantity;
-        }
-      }
-    }
+    const avgRating = products.length > 0
+      ? (products.reduce((sum, p) => sum + (p.ratings?.average || 0), 0) / products.length).toFixed(1)
+      : 0;
 
     res.status(200).json({
       success: true,
       stats: {
-        totalProducts,
-        totalOrders,
-        totalCustomers,
+        // Sales
         totalSales,
+        salesGrowth: parseFloat(salesGrowth),
+        currentWeekSales: currentSales,
+        
+        // Orders
+        totalOrders,
+        todayOrders,
         pendingOrders,
-        outOfStock
+        shippedOrders,
+        deliveredOrders: deliveredOrdersCount,
+        cancelledOrders,
+        
+        // Products
+        totalProducts,
+        activeProducts,
+        outOfStock,
+        lowStockItems,
+        
+        // Users
+        totalUsers,
+        newUsersToday,
+        
+        // Other
+        avgRating: parseFloat(avgRating)
+      },
+      salesTrendData,
+      orderDistribution: {
+        delivered: deliveredOrdersCount,
+        shipped: shippedOrders,
+        pending: pendingOrders,
+        cancelled: cancelledOrders
       },
       recentOrders,
-      categorySales
+      lastUpdated: new Date().toISOString()
     });
   } catch (error) {
+    console.error('Dashboard Error:', error);
     res.status(500).json({
       success: false,
       message: error.message

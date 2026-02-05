@@ -324,29 +324,47 @@
 }
 
 /* ==========================================
-   ADD TO CART - INDIGO → SKY BLUE GRADIENT
+   ADD TO CART - PREMIUM SOFT BLUE → PURPLE GRADIENT
+   Compact, minimal, modern pill design with micro-interactions
    ========================================== */
 .btn-add-to-cart {
-  background: linear-gradient(135deg, #6366f1 0%, #3b82f6 50%, #0ea5e9 100%);
+  /* Soft blue-to-purple gradient */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #ffffff;
+  
+  /* Subtle shadow for depth */
   box-shadow: 
-    0 4px 16px rgba(99, 102, 241, 0.3),
-    0 2px 8px rgba(99, 102, 241, 0.15);
+    0 4px 12px rgba(102, 126, 234, 0.25),
+    0 2px 6px rgba(118, 75, 162, 0.15);
+  
+  /* Perfect pill shape */
   border: none;
-  border-radius: 100px;
+  border-radius: 50px;
+  
+  /* Compact size with minimal spacing */
+  padding: 11px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  
+  /* Smooth micro-interactions foundation */
+  transition: all 0.25s ease-in-out;
+  
+  /* Clean background with premium feel */
+  backdrop-filter: blur(4px);
 }
 
-/* Button Icons */
+/* Button Icons - Small, minimal cart icon */
 .btn-icon {
-  width: 18px;
-  height: 18px;
-  transition: transform 0.3s ease;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.25s ease-in-out, opacity 0.25s ease-in-out;
 }
 
 /* Spinner for loading state */
 .btn-spinner {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: #ffffff;
   border-radius: 50%;
@@ -359,7 +377,22 @@
   }
 }
 
-/* Shimmer Effect on Hover */
+/* Ripple effect on click - creates premium pulse */
+.btn-add-to-cart::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Shimmer Effect on Hover - subtle light sweep */
 .btn-add-to-cart::before {
   content: '';
   position: absolute;
@@ -369,51 +402,78 @@
   height: 100%;
   background: linear-gradient(90deg,
     transparent,
-    rgba(255, 255, 255, 0.25),
+    rgba(255, 255, 255, 0.2),
     transparent);
-  transition: left 0.6s ease-out;
+  transition: left 0.5s ease-out;
 }
 
 .btn-add-to-cart:hover::before {
   left: 100%;
 }
 
-/* Hover: Smooth Scale + Gradient Shift + Soft Glow */
+/* HOVER STATE - Scale 1.05, gradient shift, deeper shadow */
 .btn-add-to-cart:hover:not(:disabled) {
-  transform: scale(1.06);
-  background: linear-gradient(135deg, #4f46e5 0%, #2563eb 50%, #0284c7 100%);
+  transform: scale(1.05);
+  
+  /* Gradient shifts to deeper, richer tones */
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  
+  /* Deeper, more prominent shadow */
   box-shadow: 
-    0 6px 20px rgba(99, 102, 241, 0.35),
-    0 2px 12px rgba(99, 102, 241, 0.2),
-    0 0 24px rgba(99, 102, 241, 0.15);
-  animation: none;
+    0 8px 20px rgba(102, 126, 234, 0.35),
+    0 4px 12px rgba(118, 75, 162, 0.25),
+    0 0 16px rgba(102, 126, 234, 0.15);
 }
 
-/* Active: Micro Press with Ripple */
+/* ACTIVE STATE - Quick press-down with ripple pulse */
 .btn-add-to-cart:active:not(:disabled) {
-  transform: scale(0.94);
+  transform: scale(0.96);
+  
   box-shadow: 
-    0 2px 8px rgba(99, 102, 241, 0.3),
-    0 0 12px rgba(99, 102, 241, 0.15);
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    0 3px 10px rgba(102, 126, 234, 0.3),
+    0 1px 4px rgba(118, 75, 162, 0.2);
+  
+  /* Fast transition for instant feedback */
+  transition: all 0.15s ease-in-out;
+}
+
+/* Ripple animation trigger on click */
+.btn-add-to-cart:active:not(:disabled)::after {
+  animation: ripplePulse 0.5s ease-out;
+}
+
+@keyframes ripplePulse {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.6;
+  }
+  100% {
+    width: 200%;
+    height: 200%;
+    opacity: 0;
+  }
 }
 
 /* ==========================================
-   ADDED TO CART STATE - MUTED EMERALD
+   ADDED TO CART STATE - SUCCESS WITH CHECKMARK ANIMATION
+   Icon animates into checkmark with elegant bounce
    ========================================== */
 .btn-add-to-cart.added-state {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: #ffffff;
   box-shadow: 
-    0 4px 16px rgba(16, 185, 129, 0.3),
-    0 2px 8px rgba(16, 185, 129, 0.15);
-  animation: successPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), colorMorph 0.6s ease-out;
+    0 4px 14px rgba(16, 185, 129, 0.3),
+    0 2px 6px rgba(5, 150, 105, 0.2);
   cursor: default;
-  border-radius: 100px;
-  opacity: 0.95;
+  border-radius: 50px;
+  opacity: 0.96;
+  
+  /* Smooth color morph and bounce animation */
+  animation: successBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes successPop {
+@keyframes successBounce {
   0% {
     transform: scale(1);
   }
@@ -425,41 +485,30 @@
   }
 }
 
-@keyframes colorMorph {
-  0% {
-    background: linear-gradient(135deg, #6366f1 0%, #3b82f6 50%, #0ea5e9 100%);
-  }
-  100% {
-    background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
-  }
-}
-
 .btn-add-to-cart.added-state:hover {
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
   transform: scale(1.02);
   box-shadow: 
-    0 5px 18px rgba(16, 185, 129, 0.35),
-    0 2px 10px rgba(16, 185, 129, 0.2);
+    0 6px 18px rgba(16, 185, 129, 0.35),
+    0 3px 10px rgba(5, 150, 105, 0.25);
 }
 
+/* Checkmark icon animation - slides in with bounce */
 .btn-add-to-cart.added-state .btn-icon {
-  animation: checkmarkSlide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  background: rgba(255, 255, 255, 0.2);
-  padding: 2px;
-  border-radius: 4px;
+  animation: checkmarkBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes checkmarkSlide {
+@keyframes checkmarkBounce {
   0% {
-    transform: scale(0) translateY(10px);
+    transform: scale(0) rotate(-45deg);
     opacity: 0;
   }
-  60% {
-    transform: scale(1.15) translateY(-2px);
+  50% {
+    transform: scale(1.2) rotate(5deg);
     opacity: 1;
   }
   100% {
-    transform: scale(1) translateY(0);
+    transform: scale(1) rotate(0deg);
     opacity: 1;
   }
 }

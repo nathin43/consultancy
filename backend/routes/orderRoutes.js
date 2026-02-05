@@ -10,6 +10,7 @@ const {
   getOrdersByUserId
 } = require('../controllers/orderController');
 const { protect, adminProtect } = require('../middleware/auth');
+const { checkCanPlaceOrder } = require('../middleware/checkUserStatus');
 
 /**
  * Order Routes
@@ -22,7 +23,7 @@ router.get('/user/:userId', adminProtect, getOrdersByUserId);
 router.put('/:id/status', adminProtect, updateOrderStatus);
 
 // Customer routes
-router.post('/', protect, createOrder);
+router.post('/', protect, checkCanPlaceOrder, createOrder);
 router.get('/myorders', protect, getMyOrders);
 router.get('/:id', protect, getOrder);
 router.put('/:id/cancel', protect, cancelOrder);

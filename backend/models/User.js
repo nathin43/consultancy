@@ -57,6 +57,35 @@ const userSchema = new mongoose.Schema({
     enum: ['customer'],
     default: 'customer'
   },
+  status: {
+    type: String,
+    enum: ['ACTIVE', 'BLOCKED', 'SUSPENDED', 'INACTIVE'],
+    default: 'ACTIVE'
+  },
+  statusReason: {
+    type: String,
+    default: null
+  },
+  statusChangedAt: {
+    type: Date,
+    default: Date.now
+  },
+  statusChangedBy: {
+    type: String,
+    default: null
+  },
+  suspensionUntil: {
+    type: Date,
+    default: null
+  },
+  lastLoginAt: {
+    type: Date,
+    default: Date.now
+  },
+  loginAttempts: {
+    type: Number,
+    default: 0
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -89,6 +118,60 @@ userSchema.pre('save', async function(next) {
 // Compare password method
 userSchema.methods.comparePassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Determine actual status based on priority rules
+userSchema.methods.getActualStatus = function() {
+  // Priority 1: BLOCKED (manual override)
+  if (this.status === 'BLOCKED') {
+    return {
+      status: 'BLOCKED',
+      reason: this.statusReason || 'Account blocked by admin',
+      changedAt: this.statusChangedAt,
+      changedBy: this.statusChangedBy
+    };
+  }
+
+  // Priority 2: SUSPENDED (temporary restriction)
+  if (this.status === 'SUSPENDED') {
+    // Check if suspension has expired
+    if (this.suspensionUntil && new Date() > this.suspensionUntil) {
+      return {
+        status: 'ACTIVE',
+        reason: 'Suspension period ended',
+        changedAt: new Date(),
+        changedBy: 'system'
+      };
+    }
+    return {
+      status: 'SUSPENDED',
+      reason: this.statusReason || 'Account temporarily suspended',
+      changedAt: this.statusChangedAt,
+      changedBy: this.statusChangedBy,
+      suspensionUntil: this.suspensionUntil
+    };
+  }
+
+  // Priority 3: INACTIVE (auto-calculated based on last login)
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  
+  if (this.lastLoginAt && this.lastLoginAt < sixtyDaysAgo) {
+    return {
+      status: 'INACTIVE',
+      reason: 'No activity for 60+ days',
+      changedAt: this.lastLoginAt,
+      changedBy: 'system'
+    };
+  }
+
+  // Default: ACTIVE
+  return {
+    status: 'ACTIVE',
+    reason: null,
+    changedAt: this.statusChangedAt,
+    changedBy: this.statusChangedBy
+  };
 };
 
 module.exports = mongoose.model('User', userSchema);

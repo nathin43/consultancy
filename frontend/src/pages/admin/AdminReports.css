@@ -501,6 +501,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   display: inline-block;
+  cursor: help;
 }
 
 .status-badge.active {
@@ -508,9 +509,82 @@
   color: #059669;
 }
 
-.status-badge.inactive {
+.status-badge.blocked {
   background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
   color: #dc2626;
+}
+
+.status-badge.suspended {
+  background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+  color: #ea580c;
+}
+
+.status-badge.inactive {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  color: #6366f1;
+}
+
+/* Status Container with Tooltip */
+.status-container {
+  position: relative;
+  display: inline-block;
+}
+
+.status-container:hover .status-tooltip {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+}
+
+.status-tooltip {
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  padding: 0;
+  min-width: 250px;
+  z-index: 1000;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.tooltip-header {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px 8px 0 0;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tooltip-body {
+  padding: 12px 14px;
+  font-size: 12px;
+  color: #374151;
+}
+
+.tooltip-body p {
+  margin: 6px 0;
+  line-height: 1.5;
+}
+
+.tooltip-body strong {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.status-badge.inactive {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  color: #6366f1;
 }
 
 /* View Report Button */

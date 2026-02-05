@@ -762,7 +762,16 @@ exports.getUsersForReports = async (req, res) => {
     }
 
     if (req.query.accountStatus) {
-      filter.status = req.query.accountStatus;
+      // Filter by status field
+      if (req.query.accountStatus === 'active') {
+        filter.status = 'ACTIVE';
+      } else if (req.query.accountStatus === 'blocked') {
+        filter.status = 'BLOCKED';
+      } else if (req.query.accountStatus === 'suspended') {
+        filter.status = 'SUSPENDED';
+      } else if (req.query.accountStatus === 'inactive') {
+        filter.status = 'INACTIVE';
+      }
     }
 
     // Get users with aggregation for order stats
@@ -788,6 +797,12 @@ exports.getUsersForReports = async (req, res) => {
           name: 1,
           email: 1,
           status: 1,
+          statusReason: 1,
+          statusChangedAt: 1,
+          statusChangedBy: 1,
+          suspensionUntil: 1,
+          lastLoginAt: 1,
+          loginAttempts: 1,
           totalOrders: 1,
           totalAmountSpent: 1,
           lastOrder: 1,
@@ -799,8 +814,29 @@ exports.getUsersForReports = async (req, res) => {
       { $limit: limit }
     ]);
 
-    // Apply additional filters after aggregation
-    let filteredUsers = users;
+    // Calculate actual status for each user and apply INACTIVE filter
+    const usersWithActualStatus = await Promise.all(users.map(async (userData) => {
+      const user = await User.findById(userData._id);
+      if (!user) return null;
+      
+      const actualStatus = user.getActualStatus();
+      
+      return {
+        ...userData,
+        actualStatus: actualStatus.status,
+        actualStatusReason: actualStatus.reason,
+        actualStatusChangedAt: actualStatus.changedAt,
+        actualStatusChangedBy: actualStatus.changedBy,
+        actualSuspensionUntil: actualStatus.suspensionUntil
+      };
+    }));
+
+    let filteredUsers = usersWithActualStatus.filter(u => u !== null);
+
+    // Filter by INACTIVE status if requested
+    if (req.query.accountStatus === 'inactive') {
+      filteredUsers = filteredUsers.filter(u => u.actualStatus === 'INACTIVE');
+    }
 
     if (req.query.minOrders || req.query.maxOrders) {
       const minOrders = parseInt(req.query.minOrders) || 0;

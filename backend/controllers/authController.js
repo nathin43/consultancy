@@ -88,19 +88,63 @@ exports.login = async (req, res) => {
       });
     }
 
+    // Check account status
+    const actualStatus = user.getActualStatus();
+    
+    // BLOCKED users cannot login
+    if (actualStatus.status === 'BLOCKED') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been blocked',
+        reason: actualStatus.reason,
+        blockedAt: actualStatus.changedAt,
+        blockedBy: actualStatus.changedBy
+      });
+    }
+
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      // Increment failed login attempts
+      user.loginAttempts = (user.loginAttempts || 0) + 1;
+      
+      // Auto-suspend after 5 failed attempts
+      if (user.loginAttempts >= 5 && user.status !== 'SUSPENDED') {
+        user.status = 'SUSPENDED';
+        user.statusReason = 'Too many failed login attempts';
+        user.statusChangedAt = new Date();
+        user.statusChangedBy = 'system';
+        user.suspensionUntil = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      }
+      
+      await user.save();
+      
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Invalid credentials',
+        remainingAttempts: user.loginAttempts < 5 ? 5 - user.loginAttempts : 0
       });
     }
+
+    // Reset login attempts on successful login
+    user.loginAttempts = 0;
+    user.lastLoginAt = new Date();
+    
+    // Auto-activate if suspension expired
+    if (user.status === 'SUSPENDED' && actualStatus.status === 'ACTIVE') {
+      user.status = 'ACTIVE';
+      user.statusReason = null;
+      user.statusChangedAt = new Date();
+      user.statusChangedBy = 'system';
+      user.suspensionUntil = null;
+    }
+    
+    await user.save();
 
     // Generate token
     const token = generateToken(user._id);
 
-    res.status(200).json({
+    const response = {
       success: true,
       message: 'Login successful',
       token,
@@ -110,9 +154,27 @@ exports.login = async (req, res) => {
         email: user.email,
         phone: user.phone,
         address: user.address,
-        role: user.role
+        role: user.role,
+        status: actualStatus.status
       }
-    });
+    };
+
+    // Add warnings for SUSPENDED or INACTIVE users
+    if (actualStatus.status === 'SUSPENDED') {
+      response.warning = {
+        message: 'Your account is suspended',
+        reason: actualStatus.reason,
+        suspensionUntil: actualStatus.suspensionUntil
+      };
+    } else if (actualStatus.status === 'INACTIVE') {
+      response.message = 'Welcome back! We missed you';
+      response.info = {
+        message: 'Your account was inactive',
+        lastLogin: user.lastLoginAt
+      };
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     res.status(500).json({
       success: false,

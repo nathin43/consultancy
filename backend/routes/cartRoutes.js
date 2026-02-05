@@ -8,6 +8,7 @@ const {
   clearCart
 } = require('../controllers/cartController');
 const { protect } = require('../middleware/auth');
+const { checkUserStatus } = require('../middleware/checkUserStatus');
 
 /**
  * Cart Routes - User-Based Persistent Cart System
@@ -24,8 +25,8 @@ const { protect } = require('../middleware/auth');
 
 // Protected routes - all require authentication
 router.get('/', protect, getCart);
-router.post('/add', protect, addToCart);
-router.put('/update', protect, updateCartItem);
+router.post('/add', protect, checkUserStatus, addToCart);
+router.put('/update', protect, checkUserStatus, updateCartItem);
 router.delete('/remove/:productId', protect, removeFromCart);
 router.delete('/clear', protect, clearCart);
 

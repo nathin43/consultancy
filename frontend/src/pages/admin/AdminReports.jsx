@@ -100,7 +100,7 @@ const AdminReports = () => {
     const rows = users.map(u => [
       u.name,
       u.email,
-      u.isActive ? 'Active' : 'Blocked',
+      u.status || 'ACTIVE',
       u.orderStats?.totalOrders || 0,
       u.orderStats?.totalSpent || 0,
       u.orderStats?.lastOrderDate ? new Date(u.orderStats.lastOrderDate).toLocaleDateString() : 'N/A'
@@ -190,6 +190,8 @@ const AdminReports = () => {
                   <option value="">All</option>
                   <option value="active">Active</option>
                   <option value="blocked">Blocked</option>
+                  <option value="suspended">Suspended</option>
+                  <option value="inactive">Inactive</option>
                 </select>
               </div>
 
@@ -308,9 +310,36 @@ const AdminReports = () => {
                         </td>
                         <td>{user.email}</td>
                         <td>
-                          <span className={`status-badge ${user.status === 'active' ? 'active' : 'blocked'}`}>
-                            {user.status === 'active' ? 'Active' : 'Blocked'}
-                          </span>
+                          <div className="status-container">
+                            <span 
+                              className={`status-badge ${(user.actualStatus || user.status || 'ACTIVE').toLowerCase()}`}
+                              title={user.actualStatusReason || user.statusReason || ''}
+                            >
+                              {user.actualStatus || user.status || 'ACTIVE'}
+                            </span>
+                            {(user.actualStatusReason || user.statusReason) && (
+                              <div className="status-tooltip">
+                                <div className="tooltip-header">
+                                  {user.actualStatus || user.status}
+                                </div>
+                                <div className="tooltip-body">
+                                  <p><strong>Reason:</strong> {user.actualStatusReason || user.statusReason}</p>
+                                  {user.actualStatusChangedBy && (
+                                    <p><strong>By:</strong> {user.actualStatusChangedBy}</p>
+                                  )}
+                                  {user.actualStatusChangedAt && (
+                                    <p><strong>Date:</strong> {formatDate(user.actualStatusChangedAt)}</p>
+                                  )}
+                                  {user.actualSuspensionUntil && (
+                                    <p><strong>Until:</strong> {formatDate(user.actualSuspensionUntil)}</p>
+                                  )}
+                                  {user.lastLoginAt && (user.actualStatus === 'INACTIVE' || user.status === 'INACTIVE') && (
+                                    <p><strong>Last Login:</strong> {formatDate(user.lastLoginAt)}</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="text-center">{user.totalOrders || 0}</td>
                         <td className="amount">{formatCurrency(user.totalAmountSpent || 0)}</td>

@@ -331,14 +331,17 @@
 .admin-content {
   flex: 1;
   margin-left: 260px;
+  width: calc(100% - 260px);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   transition: margin-left 0.3s ease;
+  overflow-x: hidden;
 }
 
 .admin-sidebar.collapsed~.admin-content {
   margin-left: 80px;
+  width: calc(100% - 80px);
 }
 
 /* ===============================================
@@ -498,9 +501,13 @@
 
 .admin-main {
   flex: 1;
-  padding: 28px 32px;
+  padding: 28px 32px 60px;
   background: #F9FAFB;
   overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* ===============================================
