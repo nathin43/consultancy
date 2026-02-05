@@ -13,6 +13,7 @@ const UserReportDetail = () => {
   const [activeTab, setActiveTab] = useState('orders');
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
+  const [summary, setSummary] = useState(null);
   
   // Tab-specific data
   const [orders, setOrders] = useState([]);
@@ -26,82 +27,32 @@ const UserReportDetail = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   
   useEffect(() => {
-    fetchUserData();
-    fetchTabData();
-  }, [userId, activeTab]);
+    fetchUserFullReport();
+  }, [userId]);
   
-  const fetchUserData = async () => {
-    try {
-      const { data } = await api.get(`/api/users/${userId}`);
-      setUserData(data.user || data);
-    } catch (err) {
-      showError('Failed to fetch user data');
-      console.error(err);
-    }
-  };
-  
-  const fetchTabData = async () => {
+  const fetchUserFullReport = async () => {
     setLoading(true);
     try {
-      switch (activeTab) {
-        case 'orders':
-          await fetchOrders();
-          break;
-        case 'payments':
-          await fetchPayments();
-          break;
-        case 'invoices':
-          await fetchInvoices();
-          break;
-        case 'reviews':
-          await fetchReviews();
-          break;
+      const { data } = await api.get(`/reports/admin/user/${userId}`);
+      
+      if (data.success) {
+        setUserData(data.user);
+        setOrders(data.orders || []);
+        setReviews(data.reviews || []);
+        setSummary(data.summary);
+        setPayments([]); // Not included in current backend, can be added later
+        setInvoices([]); // Not included in current backend, can be added later
       }
     } catch (err) {
-      showError(`Failed to fetch ${activeTab} data`);
-      console.error(err);
+      console.error('Error fetching user report:', err);
+      // Only show error toast if it's a real error (not 404 for missing data)
+      if (err.response?.status !== 404 || err.response?.data?.message === 'User not found') {
+        showError(err.response?.data?.message || 'Failed to fetch user data');
+      }
+      setOrders([]);
+      setReviews([]);
     } finally {
       setLoading(false);
-    }
-  };
-  
-  const fetchOrders = async () => {
-    try {
-      const { data } = await api.get(`/api/orders/user/${userId}`);
-      setOrders(data.orders || data || []);
-    } catch (error) {
-      console.error(error);
-      setOrders([]);
-    }
-  };
-  
-  const fetchPayments = async () => {
-    try {
-      const { data } = await api.get(`/api/payments/user/${userId}`);
-      setPayments(data.payments || data || []);
-    } catch (error) {
-      console.error(error);
-      setPayments([]);
-    }
-  };
-  
-  const fetchInvoices = async () => {
-    try {
-      const { data } = await api.get(`/api/invoices/user/${userId}`);
-      setInvoices(data.invoices || data || []);
-    } catch (error) {
-      console.error(error);
-      setInvoices([]);
-    }
-  };
-  
-  const fetchReviews = async () => {
-    try {
-      const { data } = await api.get(`/api/reviews/user/${userId}`);
-      setReviews(data.reviews || data || []);
-    } catch (error) {
-      console.error(error);
-      setReviews([]);
     }
   };
   
@@ -109,7 +60,7 @@ const UserReportDetail = () => {
     try {
       await api.put(`/api/reviews/${reviewId}/approve`);
       success('Review approved successfully');
-      fetchReviews();
+      fetchUserFullReport();
     } catch (err) {
       showError('Failed to approve review');
     }
@@ -119,7 +70,7 @@ const UserReportDetail = () => {
     try {
       await api.put(`/api/reviews/${reviewId}/reject`);
       success('Review rejected successfully');
-      fetchReviews();
+      fetchUserFullReport();
     } catch (err) {
       showError('Failed to reject review');
     }
@@ -130,7 +81,7 @@ const UserReportDetail = () => {
     try {
       await api.delete(`/api/reviews/${reviewId}`);
       success('Review deleted successfully');
-      fetchReviews();
+      fetchUserFullReport();
     } catch (err) {
       showError('Failed to delete review');
     }
@@ -163,7 +114,8 @@ const UserReportDetail = () => {
   };
   
   const applyFilters = () => {
-    fetchTabData();
+    // Filters will be applied client-side for now
+    // Can be enhanced to pass filters to backend if needed
   };
   
   const clearFilters = () => {
@@ -244,13 +196,13 @@ const UserReportDetail = () => {
                 <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                 <td>{order.items?.length || 0} items</td>
                 <td>
-                  <span className={`status-badge ${order.status.toLowerCase()}`}>
-                    {order.status}
+                  <span className={`status-badge ${(order.orderStatus || order.status || 'pending').toLowerCase()}`}>
+                    {order.orderStatus || order.status || 'Pending'}
                   </span>
                 </td>
                 <td className="amount">₹{order.totalAmount?.toLocaleString()}</td>
                 <td>
-                  <span className={`status-badge ${order.paymentStatus?.toLowerCase()}`}>
+                  <span className={`status-badge ${(order.paymentStatus || 'pending').toLowerCase()}`}>
                     {order.paymentStatus || 'Pending'}
                   </span>
                 </td>
@@ -309,11 +261,11 @@ const UserReportDetail = () => {
                 <td>#{payment._id.slice(-8)}</td>
                 <td>#{payment.orderId?.slice(-8)}</td>
                 <td>{new Date(payment.createdAt).toLocaleDateString()}</td>
-                <td className="capitalize">{payment.method}</td>
+                <td className="capitalize">{payment.method || 'N/A'}</td>
                 <td className="amount">₹{payment.amount?.toLocaleString()}</td>
                 <td>
-                  <span className={`status-badge ${payment.status?.toLowerCase()}`}>
-                    {payment.status}
+                  <span className={`status-badge ${(payment.status || 'pending').toLowerCase()}`}>
+                    {payment.status || 'Pending'}
                   </span>
                 </td>
                 <td>
@@ -412,7 +364,7 @@ const UserReportDetail = () => {
                 <td className="review-comment">{review.comment || 'No comment'}</td>
                 <td>{new Date(review.createdAt).toLocaleDateString()}</td>
                 <td>
-                  <span className={`status-badge ${review.status?.toLowerCase()}`}>
+                  <span className={`status-badge ${(review.status || 'pending').toLowerCase()}`}>
                     {review.status || 'Pending'}
                   </span>
                 </td>
@@ -468,8 +420,8 @@ const UserReportDetail = () => {
                 <div className="user-details">
                   <h2>{userData.name}</h2>
                   <p>{userData.email}</p>
-                  <span className={`status-badge ${userData.status?.toLowerCase()}`}>
-                    {userData.status || 'Active'}
+                  <span className={`status-badge ${(userData.status || userData.accountStatus || 'active').toLowerCase()}`}>
+                    {userData.status || userData.accountStatus || 'Active'}
                   </span>
                 </div>
               </div>
@@ -481,6 +433,36 @@ const UserReportDetail = () => {
             </button>
           </div>
         </div>
+        
+        {/* Summary Stats */}
+        {summary && (
+          <div className="summary-stats">
+            <div className="stat-card">
+              <div className="stat-label">Total Orders</div>
+              <div className="stat-value">{summary.totalOrders || 0}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Total Spent</div>
+              <div className="stat-value">₹{(summary.totalSpent || 0).toLocaleString()}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Delivered</div>
+              <div className="stat-value success">{summary.deliveredOrders || 0}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Pending</div>
+              <div className="stat-value warning">{summary.pendingOrders || 0}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Cancelled</div>
+              <div className="stat-value danger">{summary.cancelledOrders || 0}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Total Reviews</div>
+              <div className="stat-value">{summary.totalReviews || 0}</div>
+            </div>
+          </div>
+        )}
         
         {/* Tabs */}
         <div className="report-tabs">

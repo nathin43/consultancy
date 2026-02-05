@@ -881,6 +881,100 @@ exports.getUsersForReports = async (req, res) => {
 };
 
 /**
+ * Get comprehensive user report data for admin
+ * Fetches user details, orders, payments, invoices, and reviews
+ * 
+ * @route GET /api/admin/reports/user/:userId
+ * @access Private/Admin
+ */
+exports.getUserFullReport = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate userId
+    if (!userId || !userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID'
+      });
+    }
+
+    // Fetch user details
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Fetch all orders for this user
+    const orders = await Order.find({ user: userId })
+      .populate('items.product', 'name price images')
+      .sort({ createdAt: -1 });
+
+    // Fetch all reviews by this user
+    const reviews = await Review.find({ user: userId })
+      .populate('product', 'name images')
+      .sort({ createdAt: -1 });
+
+    // Prepare response data
+    const responseData = {
+      success: true,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        status: user.status,
+        accountStatus: user.accountStatus,
+        createdAt: user.createdAt,
+        lastLoginAt: user.lastLoginAt,
+        addresses: user.addresses || []
+      },
+      orders: orders.map(order => ({
+        _id: order._id,
+        orderNumber: order.orderNumber,
+        items: order.items,
+        totalAmount: order.totalAmount || order.totalPrice,
+        orderStatus: order.orderStatus,
+        paymentMethod: order.paymentMethod,
+        paymentStatus: order.paymentStatus,
+        shippingAddress: order.shippingAddress,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        deliveredAt: order.deliveredAt
+      })),
+      reviews: reviews.map(review => ({
+        _id: review._id,
+        product: review.product,
+        rating: review.rating,
+        comment: review.comment,
+        status: review.status,
+        createdAt: review.createdAt
+      })),
+      summary: {
+        totalOrders: orders.length,
+        totalSpent: orders.reduce((sum, order) => sum + (order.totalAmount || order.totalPrice || 0), 0),
+        totalReviews: reviews.length,
+        deliveredOrders: orders.filter(o => o.orderStatus === 'delivered').length,
+        pendingOrders: orders.filter(o => o.orderStatus === 'pending').length,
+        cancelledOrders: orders.filter(o => o.orderStatus === 'cancelled').length
+      }
+    };
+
+    res.status(200).json(responseData);
+  } catch (error) {
+    console.error('Error fetching user full report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user report data',
+      error: error.message
+    });
+  }
+};
+
+/**
  * Export users report to Excel
  * 
  * @route GET /api/reports/export/excel

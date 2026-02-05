@@ -250,7 +250,7 @@
 }
 
 /* ===============================================
-   CHARTS GRID
+   CHARTS GRID - REDESIGNED 2-COLUMN LAYOUT
    =============================================== */
 
 .charts-grid {
@@ -262,42 +262,50 @@
   max-width: 100%;
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1024px) {
   .charts-grid {
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    align-items: start;
   }
 }
 
 .analytics-card {
   background: var(--bg-white);
-  border-radius: var(--radius-lg);
-  padding: 28px;
-  box-shadow: var(--shadow-medium);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
   border: 1px solid var(--border-light);
   transition: var(--transition-smooth);
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-height: 480px;
 }
 
 .analytics-card:hover {
-  box-shadow: var(--shadow-large);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 12px;
 }
 
 .header-text .card-title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text-dark);
-  margin: 0 0 4px 0;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.3px;
 }
 
 .header-text .card-subtitle {
@@ -305,6 +313,7 @@
   color: var(--text-light);
   font-weight: 500;
   margin: 0;
+  text-transform: capitalize;
 }
 
 .pill-toggle-group {
@@ -338,28 +347,34 @@
 }
 
 .card-body {
-  min-height: 350px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
+  min-height: 320px;
 }
 
-/* Gradient Line Chart */
+/* Gradient Line Chart - Redesigned */
 .gradient-line-chart {
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
-  height: 280px;
-  min-height: 280px;
-  gap: 8px;
-  padding: 20px 0;
+  justify-content: space-evenly;
+  height: 300px;
+  min-height: 300px;
+  gap: 12px;
+  padding: 16px 12px 0 12px;
   width: 100%;
 }
 
 .bar-column {
   flex: 1;
-  min-width: 40px;
+  max-width: 80px;
+  min-width: 50px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
   position: relative;
   cursor: pointer;
 }
@@ -435,10 +450,12 @@
 }
 
 .bar-label {
-  margin-top: 12px;
+  margin-top: 14px;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-medium);
+  text-align: center;
+  width: 100%;
 }
 
 .empty-state {
@@ -465,23 +482,29 @@
   color: var(--text-medium);
 }
 
-/* Donut Chart */
+/* Donut Chart - Redesigned */
 .donut-body {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 20px 0;
 }
 
 .donut-wrapper {
   display: flex;
   align-items: center;
-  gap: 40px;
+  justify-content: center;
+  gap: 48px;
+  width: 100%;
+  max-width: 500px;
 }
 
 .modern-donut {
   position: relative;
-  width: 200px;
-  height: 200px;
+  width: 180px;
+  height: 180px;
+  flex-shrink: 0;
 }
 
 .donut-svg {
@@ -497,10 +520,11 @@
 }
 
 .center-number {
-  font-size: 36px;
+  font-size: 32px;
   font-weight: 800;
   color: var(--text-dark);
   line-height: 1;
+  letter-spacing: -0.5px;
 }
 
 .center-text {
@@ -513,22 +537,26 @@
 .donut-legend-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+  flex: 1;
+  min-width: 160px;
 }
 
 .legend-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   background: var(--bg-soft);
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   transition: var(--transition-smooth);
+  min-height: 44px;
 }
 
 .legend-row:hover {
   background: var(--bg-light-grey);
-  transform: translateX(4px);
+  transform: translateX(2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .legend-marker {
@@ -946,14 +974,25 @@
    RESPONSIVE DESIGN
    =============================================== */
 
-@media (max-width: 1400px) {
+@media (max-width: 1024px) {
   .charts-grid {
     grid-template-columns: 1fr;
   }
   
+  .analytics-card {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 768px) {
   .donut-wrapper {
     flex-direction: column;
-    gap: 24px;
+    gap: 32px;
+  }
+  
+  .donut-legend-list {
+    width: 100%;
+    max-width: 300px;
   }
 }
 

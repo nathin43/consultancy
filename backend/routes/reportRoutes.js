@@ -12,7 +12,8 @@ const {
   getCustomerReportById,
   downloadCustomerReport,
   deleteCustomerReports,
-  regenerateCustomerReport
+  regenerateCustomerReport,
+  getUserFullReport
 } = require('../controllers/reportController');
 const { getUsersForReports, exportUsersExcel } = require('../controllers/reportControllerNew');
 const { protect, adminProtect } = require('../middleware/auth');
@@ -48,6 +49,9 @@ router.get('/customers/:customerId', adminProtect, getCustomerReportById);
 router.put('/customers/:customerId/download', adminProtect, downloadCustomerReport);
 router.delete('/customers/:customerId', adminProtect, deleteCustomerReports);
 router.post('/customers/:customerId/regenerate', adminProtect, regenerateCustomerReport);
+
+// ADMIN ONLY: Get comprehensive user report (all data in one call)
+router.get('/admin/user/:userId', adminProtect, getUserFullReport);
 
 // User and Admin routes - protect with user JWT auth
 // Access control is handled inside each controller
