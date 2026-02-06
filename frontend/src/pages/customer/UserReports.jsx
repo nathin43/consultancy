@@ -47,7 +47,7 @@ const UserReports = () => {
       if (filters.startDate) queryParams.append('startDate', filters.startDate);
       if (filters.endDate) queryParams.append('endDate', filters.endDate);
 
-      const response = await api.get(`/reports/user/${user._id}?${queryParams.toString()}`);
+      const response = await api.get(`/user/reports?${queryParams.toString()}`);
       if (response.data.success) {
         setReports(response.data.reports);
       }
@@ -107,7 +107,7 @@ const UserReports = () => {
   // Download report
   const handleDownloadReport = async (reportId) => {
     try {
-      const response = await api.put(`/reports/${reportId}/download`);
+      const response = await api.get(`/user/reports/download/${reportId}`);
       if (response.data.success) {
         toast.success('Report downloaded successfully');
         // Refresh reports

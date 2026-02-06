@@ -192,6 +192,8 @@ exports.adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    console.log('Admin login attempt:', { email, hasPassword: !!password });
+
     // Validate email & password
     if (!email || !password) {
       return res.status(400).json({
@@ -202,6 +204,8 @@ exports.adminLogin = async (req, res) => {
 
     // Check for admin
     const admin = await Admin.findOne({ email }).select('+password');
+    console.log('Admin found:', admin ? 'Yes' : 'No');
+    
     if (!admin) {
       return res.status(401).json({
         success: false,
@@ -211,6 +215,8 @@ exports.adminLogin = async (req, res) => {
 
     // Check password
     const isMatch = await admin.comparePassword(password);
+    console.log('Password match:', isMatch);
+    
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -220,6 +226,7 @@ exports.adminLogin = async (req, res) => {
 
     // Set role based on email - manielectricals@gmail.com is MAIN_ADMIN
     let adminRole = admin.email === 'manielectricals@gmail.com' ? 'MAIN_ADMIN' : 'SUB_ADMIN';
+    console.log('Admin role:', adminRole);
 
     // Update role in database if needed
     if (admin.role !== adminRole) {
@@ -243,6 +250,7 @@ exports.adminLogin = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Admin login error:', error);
     res.status(500).json({
       success: false,
       message: error.message

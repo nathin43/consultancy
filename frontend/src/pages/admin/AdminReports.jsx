@@ -50,7 +50,7 @@ const AdminReports = () => {
       if (filters.minAmount) params.append('minAmount', filters.minAmount);
       if (filters.maxAmount) params.append('maxAmount', filters.maxAmount);
 
-      const response = await api.get(`/reports/users?${params.toString()}`);
+      const response = await api.get(`/admin/reports/users?${params.toString()}`);
       if (response.data.success) {
         setUsers(response.data.users);
         setPagination({

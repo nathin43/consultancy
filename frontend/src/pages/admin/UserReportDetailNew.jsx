@@ -33,7 +33,7 @@ const UserReportDetail = () => {
   const fetchUserFullReport = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get(`/reports/admin/user/${userId}`);
+      const { data } = await api.get(`/admin/reports/user/${userId}`);
       
       if (data.success) {
         setUserData(data.user);
