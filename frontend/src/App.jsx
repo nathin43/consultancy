@@ -13,6 +13,7 @@ import Cart from './pages/customer/Cart';
 import Checkout from './pages/customer/Checkout';
 import Login from './pages/customer/Login';
 import Register from './pages/customer/Register';
+import ForgotPassword from './pages/customer/ForgotPassword';
 import Orders from './pages/customer/Orders';
 import Profile from './pages/customer/Profile';
 
@@ -54,6 +55,7 @@ function App() {
         <Route path="/cart" element={<Cart />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         
         {/* Protected Customer Routes */}
         <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />

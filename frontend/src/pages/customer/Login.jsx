@@ -140,6 +140,12 @@ const Login = () => {
               >
                 {loading ? 'Logging in...' : 'Login'}
               </button>
+
+              <div className="forgot-password-link">
+                <Link to="/forgot-password">
+                  Forgot Password?
+                </Link>
+              </div>
             </form>
 
             <div style={{ textAlign: 'center', margin: '24px 0', padding: '20px 0', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>

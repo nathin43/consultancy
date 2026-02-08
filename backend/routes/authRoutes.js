@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, adminLogin, getMe, logout, adminLogout } = require('../controllers/authController');
+const { register, login, adminLogin, getMe, logout, adminLogout, forgotPassword } = require('../controllers/authController');
 const { googleAuth } = require('../controllers/googleAuthController');
 const { protect, adminProtect } = require('../middleware/auth');
 
@@ -13,6 +13,7 @@ const { protect, adminProtect } = require('../middleware/auth');
 router.post('/register', register);
 router.post('/login', login);
 router.post('/google', googleAuth);
+router.post('/forgot-password', forgotPassword);
 router.get('/me', protect, getMe);
 router.post('/logout', protect, logout);
 

@@ -96,8 +96,8 @@ const Home = () => {
   }, [autoPlayEnabled]);
 
   // Feature card handlers
-  const handleFreeShippingClick = () => {
-    setActiveModal('shipping');
+  const handleFreeGiftClick = () => {
+    setActiveModal('gift');
   };
 
   const handleSecurePaymentClick = () => {
@@ -571,14 +571,14 @@ const Home = () => {
           <div className="features-grid">
             <div 
               className="feature-card" 
-              onClick={handleFreeShippingClick}
+              onClick={handleFreeGiftClick}
               role="button"
               tabIndex="0"
-              onKeyPress={(e) => e.key === 'Enter' && handleFreeShippingClick()}
+              onKeyPress={(e) => e.key === 'Enter' && handleFreeGiftClick()}
             >
-              <span className="feature-icon">🚚</span>
-              <h3>Free Shipping</h3>
-              <p>On orders above ₹10,000</p>
+              <span className="feature-icon">🎁</span>
+              <h3>Free Gift</h3>
+              <p>Get a FREE product on orders above ₹10,000</p>
             </div>
             <div 
               className="feature-card"
@@ -617,24 +617,73 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Modals */}
-      {activeModal === 'shipping' && (
+      {/* Free Gift Modal */}
+      {activeModal === 'gift' && (
         <div className="modal-overlay" onClick={() => setActiveModal(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setActiveModal(null)}>✕</button>
-            <h2>Free Shipping Policy</h2>
+          <div className="modal-content gift-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-circle" onClick={() => setActiveModal(null)}>
+              <span>×</span>
+            </button>
+            
+            {/* Promotional Banner */}
+            <div className="gift-banner">
+              <div className="gift-icon-large">
+                <span className="gift-emoji">🎁</span>
+              </div>
+              <div className="banner-text">
+                <h2>FREE GIFT OFFER</h2>
+                <p>Choose a complimentary product</p>
+              </div>
+            </div>
+
+            {/* Free Gift Badge */}
+            <div className="gift-threshold">
+              <div className="threshold-badge">
+                <span className="currency">₹</span>
+                <span className="amount">10,000</span>
+              </div>
+              <p className="threshold-text">Minimum order to unlock FREE GIFT</p>
+            </div>
+
             <div className="modal-body">
               <div className="policy-item">
-                <h4>📦 Minimum Order Value</h4>
-                <p>Free shipping is available on orders above ₹10,000. For orders below this amount, shipping charges will apply.</p>
+                <div className="policy-icon box-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 7h-9l-2-3H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"></path>
+                  </svg>
+                </div>
+                <div className="policy-content">
+                  <h4>🎁 How It Works</h4>
+                  <p>When your cart total reaches ₹10,000, you'll unlock access to choose ONE free product from our exclusive gift collection.</p>
+                </div>
               </div>
+              
               <div className="policy-item">
-                <h4>📍 Applicable Locations</h4>
-                <p>We deliver across India. Shipping is available to all major cities and many remote areas. Delivery times may vary based on location.</p>
+                <div className="policy-icon location-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                  </svg>
+                </div>
+                <div className="policy-content">
+                  <h4>🎉 Gift Selection</h4>
+                  <p>Choose from LED Bulbs, Extension Boxes, Mobile Chargers, or Mini Torches. Your selected gift will be added to your cart at ₹0.</p>
+                </div>
               </div>
+              
               <div className="policy-item">
-                <h4>⏱️ Delivery Timeline</h4>
-                <p>Standard Delivery: 5-7 business days | Express Delivery: 2-3 business days (additional charges apply)</p>
+                <div className="policy-icon clock-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                </div>
+                <div className="policy-content">
+                  <h4>✅ Terms & Conditions</h4>
+                  <p>Gift is valid only when cart total is ₹10,000 or above. If total drops below threshold, the free gift will be automatically removed from cart.</p>
+                </div>
               </div>
             </div>
           </div>
