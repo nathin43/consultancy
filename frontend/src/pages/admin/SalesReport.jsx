@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import useToast from '../../hooks/useToast';
@@ -13,7 +13,7 @@ const SalesReport = () => {
   const [exporting, setExporting] = useState(false);
   const [salesData, setSalesData] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
-  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
   const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
@@ -28,14 +28,33 @@ const SalesReport = () => {
     completedOrders: 0
   });
 
-  useEffect(() => {
-    fetchSalesData();
-  }, []);
+  // Refs to prevent duplicate calls
+  const isFetchingRef = useRef(false);
+  const cacheRef = useRef(null);
+  const cacheTimeRef = useRef(0);
+  const CACHE_DURATION = 30000; // 30 seconds
 
-  const fetchSalesData = async (isRetry = false) => {
-    if (loading && !isRetry) return;
+  // Memoized fetch function
+  const fetchSalesData = useCallback(async (forceRefresh = false) => {
+    // Prevent duplicate simultaneous calls
+    if (isFetchingRef.current && !forceRefresh) {
+      console.log('📊 Sales fetch already in progress, skipping...');
+      return;
+    }
+
+    // Check cache if not forcing refresh
+    if (!forceRefresh && cacheRef.current && (Date.now() - cacheTimeRef.current < CACHE_DURATION)) {
+      console.log('📊 Using cached sales data');
+      setSalesData(cacheRef.current.data);
+      setAnalytics(cacheRef.current.analytics);
+      setLoading(false);
+      return;
+    }
     
+    isFetchingRef.current = true;
     setLoading(true);
+    setErrorMessage('');
+
     try {
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) {
@@ -51,35 +70,36 @@ const SalesReport = () => {
       if (filters.status) params.append('status', filters.status);
 
       const queryString = params.toString();
-      const endpoint = queryString ? `/orders?${queryString}` : '/orders';
+      const endpoint = queryString ? `/admin/reports/sales?${queryString}` : '/admin/reports/sales';
       
+      console.log('📊 Fetching sales report from:', endpoint);
       const response = await api.get(endpoint);
       
-      if (!response.data || typeof response.data !== 'object') {
-        throw new Error('Invalid response format from server');
-      }
+      if (response.data?.success) {
+        const reportData = response.data.data || [];
+        const summary = response.data.summary || {};
+        
+        const analyticsData = {
+          totalSales: summary.totalSales || 0,
+          totalRevenue: summary.totalRevenue || 0,
+          averageOrderValue: summary.averageOrderValue || 0,
+          completedOrders: summary.completedOrders || 0
+        };
 
-      if (response.data.success) {
-        const orders = response.data.orders || [];
-        setSalesData(orders);
+        // Update state
+        setSalesData(reportData);
+        setAnalytics(analyticsData);
+
+        // Cache the results
+        cacheRef.current = { data: reportData, analytics: analyticsData };
+        cacheTimeRef.current = Date.now();
         
-        // Calculate analytics
-        const completed = orders.filter(o => o.status === 'Delivered' || o.orderStatus === 'delivered');
-        const totalRevenue = completed.reduce((sum, o) => sum + (o.totalAmount || o.totalPrice || 0), 0);
-        const avgOrderValue = completed.length > 0 ? totalRevenue / completed.length : 0;
-        
-        setAnalytics({
-          totalSales: orders.length,
-          totalRevenue: totalRevenue,
-          averageOrderValue: avgOrderValue,
-          completedOrders: completed.length
-        });
-        
-        console.log(`✅ Successfully fetched ${orders.length} sales records`);
-        setFetchAttempts(0);
+        console.log(`✅ Sales report loaded: ${reportData.length} records`);
+      } else {
+        throw new Error('Invalid response format');
       }
     } catch (err) {
-      console.error('Error fetching sales:', err);
+      console.error('❌ Error fetching sales:', err);
       
       if (err.response?.status === 401 || err.response?.status === 403) {
         localStorage.removeItem('adminToken');
@@ -88,27 +108,29 @@ const SalesReport = () => {
         return;
       }
       
-      if (!isRetry && fetchAttempts < 1) {
-        setFetchAttempts(prev => prev + 1);
-        setTimeout(() => fetchSalesData(true), 1000);
-        return;
-      }
-      
-      if (err.response?.status >= 500 || !err.response) {
-        error('Failed to fetch sales data. Please try again.');
-      } else if (err.response?.status === 404) {
-        setSalesData([]);
-        setAnalytics({
-          totalSales: 0,
-          totalRevenue: 0,
-          averageOrderValue: 0,
-          completedOrders: 0
-        });
-      }
+      const errorMsg = err.response?.data?.message || 'Failed to load sales report. Please try again.';
+      setErrorMessage(errorMsg);
+      error(errorMsg);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
-  };
+  }, [filters, navigate, error]);
+
+  // Initial load only
+  useEffect(() => {
+    let mounted = true;
+    
+    if (mounted) {
+      fetchSalesData();
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, []); // Empty deps - only run once on mount
+
+  // Removed old fetchSalesData - now using optimized version above
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -116,7 +138,8 @@ const SalesReport = () => {
   };
 
   const handleApplyFilters = () => {
-    fetchSalesData();
+    cacheRef.current = null; // Clear cache when filters change
+    fetchSalesData(true); // Force refresh
   };
 
   const handleClearFilters = () => {

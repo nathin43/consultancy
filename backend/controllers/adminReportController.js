@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Order = require('../models/Order');
 const Review = require('../models/Review');
 const ReportMessage = require('../models/ReportMessage');
+const GeneratedReport = require('../models/GeneratedReport');
 const { syncUserReportSummaries, upsertUserReportSummariesBulk } = require('../services/userReportSummaryService');
 
 const formatCurrency = (amount) => {
@@ -706,6 +707,749 @@ exports.getAllReportMessages = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch report messages',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get Sales Report - Real-time data from database
+ * @route GET /api/admin/reports/sales
+ * @access Private/Admin
+ */
+exports.getSalesReport = async (req, res) => {
+  try {
+    console.log('📊 [SALES REPORT] Starting...');
+    const { dateFrom, dateTo, status, minAmount, maxAmount } = req.query;
+
+    // Build filters
+    const filters = {};
+    if (dateFrom || dateTo) {
+      filters.createdAt = {};
+      if (dateFrom) filters.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) {
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        filters.createdAt.$lte = endDate;
+      }
+    }
+    if (status) filters.orderStatus = new RegExp(status, 'i');
+    if (minAmount || maxAmount) {
+      filters.totalAmount = {};
+      if (minAmount) filters.totalAmount.$gte = parseFloat(minAmount);
+      if (maxAmount) filters.totalAmount.$lte = parseFloat(maxAmount);
+    }
+
+    console.log('📊 [SALES REPORT] Fetching orders with filters:', filters);
+    
+    // Fetch orders with populated data
+    const orders = await Order.find(filters)
+      .populate('user', 'name email phone')
+      .populate('items.product', 'name image price')
+      .sort('-createdAt')
+      .lean();
+    
+    console.log(`📊 [SALES REPORT] Found ${orders.length} orders`);
+
+    // Calculate summary analytics
+    const totalOrders = orders.length;
+    const deliveredOrders = orders.filter(o => (o.orderStatus || '').toLowerCase() === 'delivered');
+    const totalRevenue = deliveredOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const averageOrderValue = deliveredOrders.length > 0 ? totalRevenue / deliveredOrders.length : 0;
+
+    // Monthly sales breakdown
+    const monthlySales = {};
+    orders.forEach(order => {
+      const month = new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+      if (!monthlySales[month]) {
+        monthlySales[month] = { revenue: 0, orders: 0 };
+      }
+      if ((order.orderStatus || '').toLowerCase() === 'delivered') {
+        monthlySales[month].revenue += order.totalAmount || 0;
+      }
+      monthlySales[month].orders += 1;
+    });
+
+    // Top products by revenue
+    const productRevenue = {};
+    deliveredOrders.forEach(order => {
+      (order.items || []).forEach(item => {
+        const productId = item.product?._id?.toString() || 'unknown';
+        const productName = item.product?.name || item.name || 'Unknown Product';
+        if (!productRevenue[productId]) {
+          productRevenue[productId] = {
+            name: productName,
+            revenue: 0,
+            quantity: 0
+          };
+        }
+        productRevenue[productId].revenue += (item.price || 0) * (item.quantity || 0);
+        productRevenue[productId].quantity += item.quantity || 0;
+      });
+    });
+
+    const topProducts = Object.values(productRevenue)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+
+    const summary = {
+      totalSales: totalOrders,
+      totalRevenue,
+      averageOrderValue,
+      completedOrders: deliveredOrders.length,
+      pendingOrders: orders.filter(o => (o.orderStatus || '').toLowerCase() === 'pending').length,
+      cancelledOrders: orders.filter(o => (o.orderStatus || '').toLowerCase() === 'cancelled').length
+    };
+
+    const reportData = orders.map(order => ({
+      _id: order._id,
+      orderNumber: order.orderNumber,
+      orderId: order.orderNumber || order._id.toString().slice(-8).toUpperCase(),
+      user: order.user,
+      totalAmount: order.totalAmount,
+      status: order.orderStatus,
+      orderStatus: order.orderStatus,
+      paymentMethod: order.paymentMethod,
+      createdAt: order.createdAt,
+      items: order.items
+    }));
+
+    // Auto-save report to database
+    try {
+      await GeneratedReport.saveReport(
+        'sales',
+        summary,
+        reportData,
+        { dateFrom, dateTo, status, minAmount, maxAmount },
+        req.admin?._id
+      );
+    } catch (saveError) {
+      console.error('⚠️  Failed to save report to database:', saveError.message);
+      // Continue anyway - don't fail the request if save fails
+    }
+
+    console.log(`📊 [SALES REPORT] Completed successfully - ${totalOrders} orders, ₹${totalRevenue.toFixed(2)} revenue`);
+
+    res.status(200).json({
+      success: true,
+      summary,
+      monthlySales,
+      topProducts,
+      data: reportData
+    });
+  } catch (error) {
+    console.error('Error fetching sales report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch sales report',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get Order Report - Real-time data from database
+ * @route GET /api/admin/reports/orders
+ * @access Private/Admin
+ */
+exports.getOrderReport = async (req, res) => {
+  try {
+    const { search, status, dateFrom, dateTo, paymentMethod } = req.query;
+
+    // Build filters
+    const filters = {};
+    if (search) {
+      filters.$or = [
+        { orderNumber: new RegExp(search, 'i') },
+        { 'user.name': new RegExp(search, 'i') },
+        { 'user.email': new RegExp(search, 'i') }
+      ];
+    }
+    if (status) filters.orderStatus = new RegExp(status, 'i');
+    if (dateFrom || dateTo) {
+      filters.createdAt = {};
+      if (dateFrom) filters.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) {
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        filters.createdAt.$lte = endDate;
+      }
+    }
+    if (paymentMethod) filters.paymentMethod = new RegExp(paymentMethod, 'i');
+
+    // Fetch orders
+    const orders = await Order.find(filters)
+      .populate('user', 'name email phone')
+      .populate('items.product', 'name image price')
+      .sort('-createdAt')
+      .lean();
+
+    // Calculate summary
+    const statusCounts = {
+      pending: 0,
+      processing: 0,
+      confirmed: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0
+    };
+
+    orders.forEach(order => {
+      const status = (order.orderStatus || 'pending').toLowerCase();
+      if (statusCounts.hasOwnProperty(status)) {
+        statusCounts[status]++;
+      } else if (['processing', 'shipped', 'confirmed'].includes(status)) {
+        statusCounts.processing++;
+      }
+    });
+
+    const summary = {
+      totalOrders: orders.length,
+      ...statusCounts
+    };
+
+    const reportData = orders.map(order => ({
+      _id: order._id,
+      orderNumber: order.orderNumber,
+      orderId: order.orderNumber || order._id.toString().slice(-8).toUpperCase(),
+      user: order.user,
+      totalAmount: order.totalAmount,
+      status: order.orderStatus,
+      orderStatus: order.orderStatus,
+      paymentMethod: order.paymentMethod,
+      paymentStatus: order.paymentStatus,
+      createdAt: order.createdAt,
+      items: order.items,
+      shippingAddress: order.shippingAddress
+    }));
+
+    // Auto-save report to database
+    try {
+      await GeneratedReport.saveReport(
+        'orders',
+        summary,
+        reportData,
+        { search, status, dateFrom, dateTo, paymentMethod },
+        req.admin?._id
+      );
+    } catch (saveError) {
+      console.error('⚠️  Failed to save order report:', saveError.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      summary,
+      data: reportData
+    });
+  } catch (error) {
+    console.error('Error fetching order report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch order report',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get Payment Report - Real-time data from database
+ * @route GET /api/admin/reports/payments
+ * @access Private/Admin
+ */
+exports.getPaymentReport = async (req, res) => {
+  try {
+    const { dateFrom, dateTo, paymentMethod, minAmount, maxAmount } = req.query;
+
+    // Build filters
+    const filters = {};
+    if (dateFrom || dateTo) {
+      filters.createdAt = {};
+      if (dateFrom) filters.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) {
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        filters.createdAt.$lte = endDate;
+      }
+    }
+    if (paymentMethod) filters.paymentMethod = new RegExp(paymentMethod, 'i');
+    if (minAmount || maxAmount) {
+      filters.totalAmount = {};
+      if (minAmount) filters.totalAmount.$gte = parseFloat(minAmount);
+      if (maxAmount) filters.totalAmount.$lte = parseFloat(maxAmount);
+    }
+
+    // Fetch orders (payments are tracked through orders)
+    const orders = await Order.find(filters)
+      .populate('user', 'name email phone')
+      .sort('-createdAt')
+      .lean();
+
+    // Calculate payment analytics
+    const totalAmount = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const codPayments = orders.filter(o => {
+      const method = (o.paymentMethod || '').toLowerCase();
+      return method === 'cod' || method === 'cash on delivery';
+    });
+    const onlinePayments = orders.filter(o => {
+      const method = (o.paymentMethod || '').toLowerCase();
+      return method && method !== 'cod' && method !== 'cash on delivery';
+    });
+
+    const paymentStatusCounts = {
+      pending: orders.filter(o => (o.paymentStatus || '').toLowerCase() === 'pending').length,
+      completed: orders.filter(o => (o.paymentStatus || '').toLowerCase() === 'completed').length,
+      failed: orders.filter(o => (o.paymentStatus || '').toLowerCase() === 'failed').length
+    };
+
+    const summary = {
+      totalTransactions: orders.length,
+      totalAmount,
+      codPayments: codPayments.length,
+      codAmount: codPayments.reduce((sum, o) => sum + (o.totalAmount || 0), 0),
+      onlinePayments: onlinePayments.length,
+      onlineAmount: onlinePayments.reduce((sum, o) => sum + (o.totalAmount || 0), 0),
+      ...paymentStatusCounts
+    };
+
+    const reportData = orders.map(order => ({
+      _id: order._id,
+      orderNumber: order.orderNumber,
+      orderId: order.orderNumber || order._id.toString().slice(-8).toUpperCase(),
+      user: order.user,
+      totalAmount: order.totalAmount,
+      paymentMethod: order.paymentMethod,
+      paymentStatus: order.paymentStatus,
+      paymentDetails: order.paymentDetails,
+      createdAt: order.createdAt
+    }));
+
+    // Auto-save report to database
+    try {
+      await GeneratedReport.saveReport(
+        'payments',
+        summary,
+        reportData,
+        { dateFrom, dateTo, paymentMethod, minAmount, maxAmount },
+        req.admin?._id
+      );
+    } catch (saveError) {
+      console.error('⚠️  Failed to save payment report:', saveError.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      summary,
+      data: reportData
+    });
+  } catch (error) {
+    console.error('Error fetching payment report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch payment report',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get Stock Report - Real-time data from database
+ * @route GET /api/admin/reports/stock
+ * @access Private/Admin
+ */
+exports.getStockReport = async (req, res) => {
+  try {
+    const Product = require('../models/Product');
+
+    const { category, minStock, maxStock, stockStatus } = req.query;
+
+    // Build filters
+    const filters = {};
+    if (category) filters.category = new RegExp(category, 'i');
+    if (minStock !== undefined || maxStock !== undefined) {
+      filters.stock = {};
+      if (minStock !== undefined) filters.stock.$gte = parseInt(minStock);
+      if (maxStock !== undefined) filters.stock.$lte = parseInt(maxStock);
+    }
+
+    // Apply stock status filter
+    if (stockStatus === 'out') {
+      filters.stock = 0;
+    } else if (stockStatus === 'low') {
+      filters.stock = { $gt: 0, $lte: 10 };
+    } else if (stockStatus === 'in') {
+      filters.stock = { $gt: 10 };
+    }
+
+    // Fetch products
+    const products = await Product.find(filters).sort('name').lean();
+
+    // Calculate stock analytics
+    const totalProducts = products.length;
+    const inStock = products.filter(p => p.stock > 10).length;
+    const lowStock = products.filter(p => p.stock > 0 && p.stock <= 10).length;
+    const outOfStock = products.filter(p => p.stock === 0).length;
+    const totalStockValue = products.reduce((sum, p) => sum + (p.price * p.stock), 0);
+    const totalQuantity = products.reduce((sum, p) => sum + (p.stock || 0), 0);
+
+    // Category breakdown
+    const categoryBreakdown = {};
+    products.forEach(product => {
+      const cat = product.category || 'Uncategorized';
+      if (!categoryBreakdown[cat]) {
+        categoryBreakdown[cat] = {
+          count: 0,
+          totalStock: 0,
+          totalValue: 0
+        };
+      }
+      categoryBreakdown[cat].count++;
+      categoryBreakdown[cat].totalStock += product.stock || 0;
+      categoryBreakdown[cat].totalValue += (product.price || 0) * (product.stock || 0);
+    });
+
+    const summary = {
+      totalProducts,
+      inStock,
+      lowStock,
+      outOfStock,
+      totalQuantity,
+      totalStockValue
+    };
+
+    const reportData = products.map(product => ({
+      _id: product._id,
+      name: product.name,
+      category: product.category,
+      price: product.price,
+      stock: product.stock,
+      stockValue: (product.price || 0) * (product.stock || 0),
+      stockStatus: product.stock === 0 ? 'Out of Stock' : product.stock <= 10 ? 'Low Stock' : 'In Stock',
+      image: product.image,
+      createdAt: product.createdAt
+    }));
+
+    // Auto-save report to database
+    try {
+      await GeneratedReport.saveReport(
+        'stock',
+        summary,
+        reportData,
+        { category, minStock, maxStock, stockStatus },
+        req.admin?._id
+      );
+    } catch (saveError) {
+      console.error('⚠️  Failed to save stock report:', saveError.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      summary,
+      categoryBreakdown,
+      data: reportData
+    });
+  } catch (error) {
+    console.error('Error fetching stock report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch stock report',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get Customer Report - Real-time data from database
+ * @route GET /api/admin/reports/customers
+ * @access Private/Admin
+ */
+exports.getCustomerReport = async (req, res) => {
+  try {
+    const { accountStatus, minOrders, maxOrders, dateFrom, dateTo } = req.query;
+
+    // Build filters for users
+    const userFilters = { role: { $in: ['customer', 'CUSTOMER', 'user'] } };
+    if (dateFrom || dateTo) {
+      userFilters.createdAt = {};
+      if (dateFrom) userFilters.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) {
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        userFilters.createdAt.$lte = endDate;
+      }
+    }
+
+    // Aggregate users with order counts
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const sixtyDaysAgo = new Date(now);
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    const pipeline = [
+      { $match: userFilters },
+      {
+        $lookup: {
+          from: 'orders',
+          localField: '_id',
+          foreignField: 'user',
+          as: 'orders'
+        }
+      },
+      {
+        $addFields: {
+          totalOrders: { $size: '$orders' },
+          totalSpent: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: '$orders',
+                    as: 'order',
+                    cond: { $eq: [{ $toLower: { $ifNull: ['$$order.orderStatus', ''] } }, 'delivered'] }
+                  }
+                },
+                as: 'order',
+                in: { $ifNull: ['$$order.totalAmount', 0] }
+              }
+            }
+          },
+          lastOrderDate: { $max: '$orders.createdAt' },
+          actualStatus: {
+            $switch: {
+              branches: [
+                { case: { $eq: ['$status', 'BLOCKED'] }, then: 'BLOCKED' },
+                { case: { $eq: ['$status', 'SUSPENDED'] }, then: 'SUSPENDED' },
+                { case: { $lt: ['$lastLoginAt', sixtyDaysAgo] }, then: 'INACTIVE' }
+              ],
+              default: 'ACTIVE'
+            }
+          }
+        }
+      }
+    ];
+
+    // Apply order count filters
+    if (minOrders || maxOrders) {
+      const orderMatch = {};
+      if (minOrders) orderMatch.$gte = parseInt(minOrders);
+      if (maxOrders) orderMatch.$lte = parseInt(maxOrders);
+      pipeline.push({ $match: { totalOrders: orderMatch } });
+    }
+
+    // Apply account status filter
+    if (accountStatus) {
+      pipeline.push({ $match: { actualStatus: accountStatus.toUpperCase() } });
+    }
+
+    pipeline.push({ $sort: { createdAt: -1 } });
+    pipeline.push({ $project: { password: 0, orders: 0 } });
+
+    const users = await User.aggregate(pipeline);
+
+    // Calculate analytics
+    const totalCustomers = users.length;
+    const activeCustomers = users.filter(u => u.actualStatus === 'ACTIVE').length;
+    const newCustomers = users.filter(u => new Date(u.createdAt) >= thirtyDaysAgo).length;
+    const totalRevenue = users.reduce((sum, u) => sum + (u.totalSpent || 0), 0);
+    const averageOrdersPerCustomer = totalCustomers > 0 ? users.reduce((sum, u) => sum + (u.totalOrders || 0), 0) / totalCustomers : 0;
+
+    // Top customers by spending
+    const topCustomers = users
+      .filter(u => u.totalSpent > 0)
+      .sort((a, b) => b.totalSpent - a.totalSpent)
+      .slice(0, 10);
+
+    const summary = {
+      totalCustomers,
+      activeCustomers,
+      inactiveCustomers: users.filter(u => u.actualStatus === 'INACTIVE').length,
+      blockedCustomers: users.filter(u => u.actualStatus === 'BLOCKED').length,
+      newCustomers,
+      totalRevenue,
+      averageOrdersPerCustomer: parseFloat(averageOrdersPerCustomer.toFixed(2))
+    };
+
+    const reportData = users.map(user => ({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      status: user.actualStatus,
+      totalOrders: user.totalOrders,
+      totalSpent: user.totalSpent,
+      lastOrderDate: user.lastOrderDate,
+      lastLoginAt: user.lastLoginAt,
+      createdAt: user.createdAt
+    }));
+
+    // Auto-save report to database
+    try {
+      await GeneratedReport.saveReport(
+        'customers',
+        summary,
+        reportData,
+        { accountStatus, minOrders, maxOrders, dateFrom, dateTo },
+        req.admin?._id
+      );
+    } catch (saveError) {
+      console.error('⚠️  Failed to save customer report:', saveError.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      summary,
+      topCustomers,
+      data: reportData
+    });
+  } catch (error) {
+    console.error('Error fetching customer report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch customer report',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Generate and Save Report - Manually trigger report generation
+ * @route POST /api/admin/reports/generate
+ * @access Private/Admin
+ */
+exports.generateReport = async (req, res) => {
+  try {
+    const { type, filters = {} } = req.body;
+
+    if (!type) {
+      return res.status(400).json({
+        success: false,
+        message: 'Report type is required'
+      });
+    }
+
+    const validTypes = ['sales', 'orders', 'payments', 'stock', 'customers'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid report type. Must be one of: ${validTypes.join(', ')}`
+      });
+    }
+
+    // Call the appropriate report function based on type
+    let reportResult;
+    const mockReq = { query: filters, admin: req.admin };
+    const mockRes = {
+      status: (code) => ({
+        json: (data) => { reportResult = { statusCode: code, ...data }; }
+      })
+    };
+
+    switch (type) {
+      case 'sales':
+        await exports.getSalesReport(mockReq, mockRes);
+        break;
+      case 'orders':
+        await exports.getOrderReport(mockReq, mockRes);
+        break;
+      case 'payments':
+        await exports.getPaymentReport(mockReq, mockRes);
+        break;
+      case 'stock':
+        await exports.getStockReport(mockReq, mockRes);
+        break;
+      case 'customers':
+        await exports.getCustomerReport(mockReq, mockRes);
+        break;
+    }
+
+    if (reportResult && reportResult.success) {
+      res.status(201).json({
+        success: true,
+        message: `${type} report generated and saved successfully`,
+        reportId: reportResult._id,
+        summary: reportResult.summary,
+        recordCount: reportResult.data?.length || 0
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: `Failed to generate ${type} report`,
+        error: reportResult?.message
+      });
+    }
+  } catch (error) {
+    console.error('Error generating report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate report',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get Report History - Fetch previously generated reports
+ * @route GET /api/admin/reports/history/:type
+ * @access Private/Admin
+ */
+exports.getReportHistory = async (req, res) => {
+  try {
+    const { type } = req.params;
+    const { limit = 10 } = req.query;
+
+    const validTypes = ['sales', 'orders', 'payments', 'stock', 'customers'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid report type. Must be one of: ${validTypes.join(', ')}`
+      });
+    }
+
+    const history = await GeneratedReport.getHistory(type, parseInt(limit));
+
+    res.status(200).json({
+      success: true,
+      type,
+      historyCount: history.length,
+      data: history
+    });
+  } catch (error) {
+    console.error('Error fetching report history:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch report history',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get Specific Generated Report by ID
+ * @route GET /api/admin/reports/generated/:id
+ * @access Private/Admin
+ */
+exports.getGeneratedReportById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const report = await GeneratedReport.findById(id).lean();
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Report not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: report
+    });
+  } catch (error) {
+    console.error('Error fetching generated report:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch report',
       error: error.message
     });
   }

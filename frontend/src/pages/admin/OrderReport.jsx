@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import useToast from '../../hooks/useToast';
@@ -13,7 +13,7 @@ const OrderReport = () => {
   const [exporting, setExporting] = useState(false);
   const [orderData, setOrderData] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
-  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
   const [filters, setFilters] = useState({
     search: '',
     status: '',
@@ -28,20 +28,32 @@ const OrderReport = () => {
     delivered: 0
   });
 
-  useEffect(() => {
-    fetchOrderData();
-  }, []);
+  const isFetchingRef = useRef(false);
+  const cacheRef = useRef(null);
+  const cacheTimeRef = useRef(0);
+  const CACHE_DURATION = 30000;
 
-  const fetchOrderData = async (isRetry = false) => {
-    // Prevent duplicate calls if already loading
-    if (loading && !isRetry) return;
+  const fetchOrderData = useCallback(async (forceRefresh = false) => {
+    if (isFetchingRef.current && !forceRefresh) {
+      console.log('📋 Order fetch already in progress, skipping...');
+      return;
+    }
+
+    if (!forceRefresh && cacheRef.current && (Date.now() - cacheTimeRef.current < CACHE_DURATION)) {
+      console.log('📋 Using cached order data');
+      setOrderData(cacheRef.current.data);
+      setAnalytics(cacheRef.current.analytics);
+      setLoading(false);
+      return;
+    }
     
+    isFetchingRef.current = true;
     setLoading(true);
+    setErrorMessage('');
+
     try {
-      // Check for admin token
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) {
-        console.warn('No admin token found, redirecting to login');
         navigate('/admin/login');
         return;
       }
@@ -54,75 +66,62 @@ const OrderReport = () => {
       if (filters.paymentMethod) params.append('paymentMethod', filters.paymentMethod);
 
       const queryString = params.toString();
-      const endpoint = queryString ? `/orders?${queryString}` : '/orders';
+      const endpoint = queryString ? `/admin/reports/orders?${queryString}` : '/admin/reports/orders';
       
-      console.log('Fetching order data from:', endpoint);
+      console.log('📋 Fetching order report from:', endpoint);
       const response = await api.get(endpoint);
       
-      // Validate response structure
-      if (!response.data || typeof response.data !== 'object') {
-        throw new Error('Invalid response format from server');
-      }
+      if (response.data?.success) {
+        const reportData = response.data.data || [];
+        const summary = response.data.summary || {};
+        
+        const analyticsData = {
+          totalOrders: summary.totalOrders || 0,
+          pending: summary.pending || 0,
+          processing: summary.processing || 0,
+          delivered: summary.delivered || 0
+        };
 
-      const orders = response.data.orders || [];
-      setOrderData(orders);
-      
-      // Calculate analytics
-      const pending = orders.filter(o => o.status === 'Pending' || o.orderStatus === 'pending').length;
-      const processing = orders.filter(o => 
-        o.status === 'Processing' || o.status === 'Shipped' || 
-        o.orderStatus === 'processing' || o.orderStatus === 'shipped'
-      ).length;
-      const delivered = orders.filter(o => o.status === 'Delivered' || o.orderStatus === 'delivered').length;
-      
-      setAnalytics({
-        totalOrders: orders.length,
-        pending,
-        processing,
-        delivered
-      });
-      
-      console.log(`✅ Successfully fetched ${orders.length} orders`);
-      setFetchAttempts(0); // Reset attempts on success
-      
+        setOrderData(reportData);
+        setAnalytics(analyticsData);
+
+        cacheRef.current = { data: reportData, analytics: analyticsData };
+        cacheTimeRef.current = Date.now();
+        
+        console.log(`✅ Order report loaded: ${reportData.length} records`);
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (err) {
-      console.error('Error fetching orders:', err);
+      console.error('❌ Error fetching orders:', err);
       
-      // Handle specific error cases
       if (err.response?.status === 401 || err.response?.status === 403) {
-        console.warn('Authentication failed, redirecting to admin login');
         localStorage.removeItem('adminToken');
         localStorage.removeItem('admin');
         navigate('/admin/login');
         return;
       }
       
-      // Retry once if first attempt fails
-      if (!isRetry && fetchAttempts < 1) {
-        console.log('Retrying order data fetch...');
-        setFetchAttempts(prev => prev + 1);
-        setTimeout(() => fetchOrderData(true), 1000);
-        return;
-      }
-      
-      // Only show error toast for real network/server errors, not for empty data
-      if (err.response?.status >= 500 || !err.response) {
-        error('Failed to fetch order data. Please try again.');
-      } else if (err.response?.status === 404) {
-        // 404 means no orders found, which is not an error
-        setOrderData([]);
-        setAnalytics({
-          totalOrders: 0,
-          pending: 0,
-          processing: 0,
-          delivered: 0
-        });
-      }
-      
+      const errorMsg = err.response?.data?.message || 'Failed to load order report. Please try again.';
+      setErrorMessage(errorMsg);
+      error(errorMsg);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
-  };
+  }, [filters, navigate, error]);
+
+  useEffect(() => {
+    let mounted = true;
+    
+    if (mounted) {
+      fetchOrderData();
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -130,7 +129,8 @@ const OrderReport = () => {
   };
 
   const handleApplyFilters = () => {
-    fetchOrderData();
+    cacheRef.current = null;
+    fetchOrderData(true);
   };
 
   const handleClearFilters = () => {
@@ -186,9 +186,9 @@ const OrderReport = () => {
       doc.setFontSize(10);
       const summaryData = [
         ['Total Orders', analytics.totalOrders.toString()],
-        ['Pending Orders', analytics.pendingOrders.toString()],
-        ['Processing Orders', analytics.processingOrders.toString()],
-        ['Delivered Orders', analytics.deliveredOrders.toString()]
+        ['Pending Orders', analytics.pending.toString()],
+        ['Processing Orders', analytics.processing.toString()],
+        ['Delivered Orders', analytics.delivered.toString()]
       ];
       
       autoTable(doc, {

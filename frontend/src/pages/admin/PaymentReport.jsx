@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import useToast from '../../hooks/useToast';
@@ -13,7 +13,7 @@ const PaymentReport = () => {
   const [exporting, setExporting] = useState(false);
   const [paymentData, setPaymentData] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
-  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
   const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
@@ -28,14 +28,30 @@ const PaymentReport = () => {
     onlinePayments: 0
   });
 
-  useEffect(() => {
-    fetchPaymentData();
-  }, []);
+  // Refs to prevent duplicate calls and enable caching
+  const isFetchingRef = useRef(false);
+  const cacheRef = useRef(null);
+  const cacheTimeRef = useRef(0);
+  const CACHE_DURATION = 30000; // 30 seconds
 
-  const fetchPaymentData = async (isRetry = false) => {
-    if (loading && !isRetry) return;
+  const fetchPaymentData = useCallback(async (forceRefresh = false) => {
+    if (isFetchingRef.current && !forceRefresh) {
+      console.log('💳 Payment fetch already in progress, skipping...');
+      return;
+    }
+
+    if (!forceRefresh && cacheRef.current && (Date.now() - cacheTimeRef.current < CACHE_DURATION)) {
+      console.log('💳 Using cached payment data');
+      setPaymentData(cacheRef.current.data);
+      setAnalytics(cacheRef.current.analytics);
+      setLoading(false);
+      return;
+    }
     
+    isFetchingRef.current = true;
     setLoading(true);
+    setErrorMessage('');
+
     try {
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) {
@@ -51,34 +67,34 @@ const PaymentReport = () => {
       if (filters.maxAmount) params.append('maxAmount', filters.maxAmount);
 
       const queryString = params.toString();
-      const endpoint = queryString ? `/orders?${queryString}` : '/orders';
+      const endpoint = queryString ? `/admin/reports/payments?${queryString}` : '/admin/reports/payments';
       
+      console.log('💳 Fetching payment report from:', endpoint);
       const response = await api.get(endpoint);
       
-      if (!response.data || typeof response.data !== 'object') {
-        throw new Error('Invalid response format from server');
-      }
+      if (response.data?.success) {
+        const reportData = response.data.data || [];
+        const summary = response.data.summary || {};
+        
+        const analyticsData = {
+          totalTransactions: summary.totalTransactions || 0,
+          totalAmount: summary.totalAmount || 0,
+          codPayments: summary.codPayments || 0,
+          onlinePayments: summary.onlinePayments || 0
+        };
 
-      const orders = response.data.orders || [];
-      setPaymentData(orders);
-      
-      // Calculate analytics
-      const totalAmount = orders.reduce((sum, o) => sum + (o.totalAmount || o.totalPrice || 0), 0);
-      const codCount = orders.filter(o => o.paymentMethod === 'COD' || o.paymentMethod === 'cod').length;
-      const onlineCount = orders.filter(o => o.paymentMethod !== 'COD' && o.paymentMethod !== 'cod' && o.paymentMethod).length;
-      
-      setAnalytics({
-        totalTransactions: orders.length,
-        totalAmount: totalAmount,
-        codPayments: codCount,
-        onlinePayments: onlineCount
-      });
-      
-      console.log(`✅ Successfully fetched ${orders.length} payment records`);
-      setFetchAttempts(0);
-      
+        setPaymentData(reportData);
+        setAnalytics(analyticsData);
+
+        cacheRef.current = { data: reportData, analytics: analyticsData };
+        cacheTimeRef.current = Date.now();
+        
+        console.log(`✅ Payment report loaded: ${reportData.length} records`);
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (err) {
-      console.error('Error fetching payments:', err);
+      console.error('❌ Error fetching payments:', err);
       
       if (err.response?.status === 401 || err.response?.status === 403) {
         localStorage.removeItem('adminToken');
@@ -87,27 +103,28 @@ const PaymentReport = () => {
         return;
       }
       
-      if (!isRetry && fetchAttempts < 1) {
-        setFetchAttempts(prev => prev + 1);
-        setTimeout(() => fetchPaymentData(true), 1000);
-        return;
-      }
-      
-      if (err.response?.status >= 500 || !err.response) {
-        error('Failed to fetch payment data. Please try again.');
-      } else if (err.response?.status === 404) {
-        setPaymentData([]);
-        setAnalytics({
-          totalTransactions: 0,
-          totalAmount: 0,
-          codPayments: 0,
-          onlinePayments: 0
-        });
-      }
+      const errorMsg = err.response?.data?.message || 'Failed to load payment report. Please try again.';
+      setErrorMessage(errorMsg);
+      error(errorMsg);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
-  };
+  }, [filters, navigate, error]);
+
+  useEffect(() => {
+    let mounted = true;
+    
+    if (mounted) {
+      fetchPaymentData();
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, []); // Only run once on mount
+
+  // Removed old fetchPaymentData - now using optimized version above
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -115,7 +132,8 @@ const PaymentReport = () => {
   };
 
   const handleApplyFilters = () => {
-    fetchPaymentData();
+    cacheRef.current = null;
+    fetchPaymentData(true);
   };
 
   const handleClearFilters = () => {

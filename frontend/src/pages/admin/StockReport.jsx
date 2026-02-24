@@ -33,30 +33,64 @@ const StockReport = () => {
   const fetchStockData = async () => {
     setLoading(true);
     try {
+      const adminToken = localStorage.getItem('adminToken');
+      if (!adminToken) {
+        navigate('/admin/login');
+        return;
+      }
+
       const params = new URLSearchParams();
-      params.append('limit', '1000'); // Fetch all products for stock report
       if (filters.search) params.append('search', filters.search);
       if (filters.category) params.append('category', filters.category);
       if (filters.brand) params.append('brand', filters.brand);
+      if (filters.stockStatus) params.append('stockStatus', filters.stockStatus);
 
-      const response = await api.get(`/products?${params.toString()}`);
-      const products = response.data.products || response.data || [];
-      setStockData(products);
+      const queryString = params.toString();
+      const endpoint = queryString ? `/admin/reports/stock?${queryString}` : '/admin/reports/stock';
+
+      console.log('📦 Fetching stock report from:', endpoint);
+      const response = await api.get(endpoint);
       
-      // Calculate analytics
-      const inStock = products.filter(p => p.stock > 10).length;
-      const lowStock = products.filter(p => p.stock > 0 && p.stock <= 10).length;
-      const outOfStock = products.filter(p => p.stock === 0).length;
-      
-      setAnalytics({
-        totalProducts: products.length,
-        inStock,
-        lowStock,
-        outOfStock
-      });
+      if (!response.data || typeof response.data !== 'object') {
+        throw new Error('Invalid response format from server');
+      }
+
+      if (response.data.success) {
+        const reportData = response.data.data || [];
+        const summary = response.data.summary || {};
+        
+        setStockData(reportData);
+        
+        // Use summary data from API
+        setAnalytics({
+          totalProducts: summary.totalProducts || 0,
+          inStock: summary.inStock || 0,
+          lowStock: summary.lowStock || 0,
+          outOfStock: summary.outOfStock || 0
+        });
+        
+        console.log(`✅ Successfully fetched ${reportData.length} products`);
+        console.log('📈 Summary:', summary);
+      }
     } catch (err) {
-      error('Failed to fetch stock data');
-      console.error('Error fetching stock:', err);
+      console.error('❌ Stock Report Error:', err);
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        endpoint: '/admin/reports/stock'
+      });
+      
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        error('Authentication failed. Please login again.');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('admin');
+        navigate('/admin/login');
+      } else if (err.response?.status === 500) {
+        error('Server error. Please try again later.');
+      } else {
+        error(err.response?.data?.message || 'Failed to fetch stock data');
+      }
     } finally {
       setLoading(false);
     }

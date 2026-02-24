@@ -32,20 +32,25 @@ const CustomerReport = () => {
     totalCustomers: 0,
     activeCustomers: 0,
     newCustomersThisMonth: 0,
-    averageOrders: 0
+    averageOrders: 0,
+    totalRevenue: 0,
+    totalOrders: 0
   });
 
   useEffect(() => {
     fetchCustomerData();
-  }, [pagination.currentPage, filters]);
+  }, []);
 
   const fetchCustomerData = async () => {
     setLoading(true);
     try {
+      const adminToken = localStorage.getItem('adminToken');
+      if (!adminToken) {
+        navigate('/admin/login');
+        return;
+      }
+
       const params = new URLSearchParams();
-      params.append('page', pagination.currentPage);
-      params.append('limit', 15);
-      
       if (filters.search) params.append('search', filters.search);
       if (filters.accountStatus) params.append('accountStatus', filters.accountStatus);
       if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
@@ -55,32 +60,61 @@ const CustomerReport = () => {
       if (filters.minAmount) params.append('minAmount', filters.minAmount);
       if (filters.maxAmount) params.append('maxAmount', filters.maxAmount);
 
-      const response = await api.get(`/admin/reports/users?${params.toString()}`);
+      const queryString = params.toString();
+      const endpoint = queryString ? `/admin/reports/customers?${queryString}` : '/admin/reports/customers';
+
+      console.log('👥 Fetching customer report from:', endpoint);
+      const response = await api.get(endpoint);
+      
+      if (!response.data || typeof response.data !== 'object') {
+        throw new Error('Invalid response format from server');
+      }
+
       if (response.data.success) {
-        const customers = response.data.users || [];
-        setCustomerData(customers);
-        setPagination({
-          currentPage: response.data.currentPage,
-          totalPages: response.data.totalPages,
-          totalUsers: response.data.totalUsers
-        });
+        const reportData = response.data.data || [];
+        const summary = response.data.summary || {};
         
-        // Calculate analytics
-        const active = customers.filter(c => c.actualStatus === 'ACTIVE' || c.status === 'active').length;
-        const avgOrders = customers.length > 0 
-          ? customers.reduce((sum, c) => sum + (c.totalOrders || 0), 0) / customers.length 
-          : 0;
+        setCustomerData(reportData);
         
+        // Use summary data from API
         setAnalytics({
-          totalCustomers: response.data.totalUsers,
-          activeCustomers: active,
-          newCustomersThisMonth: 0,
-          averageOrders: Math.round(avgOrders * 10) / 10
+          totalCustomers: summary.totalCustomers || 0,
+          activeCustomers: summary.activeCustomers || 0,
+          newCustomersThisMonth: summary.newCustomers || 0,
+          averageOrders: summary.averageOrdersPerCustomer || 0,
+          totalRevenue: summary.totalRevenue || 0,
+          totalOrders: reportData.reduce((sum, customer) => sum + (customer.totalOrders || 0), 0)
         });
+        
+        // Set pagination if using paginated endpoint
+        setPagination({
+          currentPage: 1,
+          totalPages: 1,
+          totalUsers: reportData.length
+        });
+        
+        console.log(`✅ Successfully fetched ${reportData.length} customers`);
+        console.log('📈 Summary:', summary);
       }
     } catch (err) {
-      error('Failed to fetch customer data');
-      console.error('Error fetching customers:', err);
+      console.error('❌ Customer Report Error:', err);
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        endpoint: '/admin/reports/customers'
+      });
+      
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        error('Authentication failed. Please login again.');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('admin');
+        navigate('/admin/login');
+      } else if (err.response?.status === 500) {
+        error('Server error. Please try again later.');
+      } else {
+        error(err.response?.data?.message || 'Failed to fetch customer data');
+      }
     } finally {
       setLoading(false);
     }
@@ -181,8 +215,8 @@ const CustomerReport = () => {
         customer.email || 'N/A',
         customer.actualStatus || customer.status || 'ACTIVE',
         (customer.totalOrders || 0).toString(),
-        formatCurrency(customer.totalAmountSpent || 0),
-        formatDate(customer.lastOrder)
+        formatCurrency(customer.totalSpent || 0),
+        formatDate(customer.lastOrderDate)
       ]);
       
       autoTable(doc, {
