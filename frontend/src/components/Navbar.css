@@ -223,275 +223,116 @@
 .nav-right {
     display: flex;
     align-items: center;
-    gap: 28px;
-    /* Increased spacing between cart and profile */
+    gap: 12px;
 }
 
 .cart-button {
     position: relative;
-    width: 54px;
-    height: 54px;
-    border-radius: 50%;
-    /* Perfect circle */
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 50%, #3B82F6 100%);
-    /* Purple to Blue gradient */
-    border: 2px solid rgba(255, 255, 255, 0.25);
-    /* Neon gradient border */
-    color: #FFFFFF !important;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
     text-decoration: none;
-    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    backdrop-filter: blur(16px) saturate(180%);
-    /* Enhanced glassmorphism */
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    box-shadow:
-        0 12px 32px rgba(139, 92, 246, 0.5),
-        0 0 28px rgba(139, 92, 246, 0.4),
-        0 0 48px rgba(139, 92, 246, 0.2),
-        inset 0 2px 4px rgba(255, 255, 255, 0.2);
-    overflow: hidden;
-    animation: cartFloat 3s ease-in-out infinite;
-    /* Subtle floating */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: visible;
     cursor: pointer;
-}
-
-/* Subtle floating animation */
-@keyframes cartFloat {
-    0%, 100% {
-        transform: translateY(0px);
-    }
-    50% {
-        transform: translateY(-2px);
-    }
-}
-
-/* Ripple effect on click */
-.cart-button::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 14px;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
-    opacity: 0;
-    transform: scale(0);
-    transition: all 0.5s ease-out;
-}
-
-.cart-button:active::after {
-    opacity: 1;
-    transform: scale(2.5);
-    transition: 0s;
-}
-
-/* Shimmer effect */
-.cart-button .shimmer {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg,
-            rgba(255, 255, 255, 0) 0%,
-            rgba(255, 255, 255, 0.25) 50%,
-            rgba(255, 255, 255, 0) 100%);
-    transform: translateX(-100%);
-    transition: transform 0.6s ease;
-    pointer-events: none;
-    border-radius: 14px;
-}
-
-.cart-button:hover .shimmer {
-    transform: translateX(100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.2);
 }
 
 .cart-button:hover {
-    transform: translateY(-4px) scale(1.12);
-    /* Enhanced scale animation */
-    animation: none;
-    /* Stop floating on hover */
-    box-shadow:
-        0 18px 48px rgba(139, 92, 246, 0.65),
-        0 0 52px rgba(139, 92, 246, 0.55),
-        0 0 80px rgba(139, 92, 246, 0.35),
-        0 0 120px rgba(139, 92, 246, 0.2),
-        inset 0 2px 4px rgba(255, 255, 255, 0.3);
-    /* Intense neon glow */
-    border-color: rgba(255, 255, 255, 0.4);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(139, 92, 246, 0.25) 100%);
+    border-color: rgba(255, 255, 255, 0.35);
+    transform: translateY(-4px) scale(1.08);
+    box-shadow: 0 12px 32px rgba(59, 130, 246, 0.35), 0 0 30px rgba(139, 92, 246, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.3);
 }
 
-/* Cart Icon - White and Visible */
+/* Cart Icon - Modern Vector Design */
 .cart-icon {
     position: relative;
     z-index: 1;
-    width: 26px;
-    height: 26px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    color: #FFFFFF !important;
-    stroke: #FFFFFF !important;
-    fill: none;
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
+    width: 28px;
+    height: 28px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease;
+    color: #FFFFFF;
+    stroke-width: 1.5;
 }
 
-/* Ensure circles are filled */
-.cart-icon circle {
-    fill: #FFFFFF !important;
-    stroke: none !important;
-}
-
-/* Bounce animation on hover */
+/* Smooth icon hover with glow */
 .cart-button:hover .cart-icon {
-    animation: cartBounce 0.6s ease;
-    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.6));
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.5));
 }
 
-@keyframes cartBounce {
-
-    0%,
-    100% {
-        transform: scale(1) rotate(0deg);
-    }
-
-    25% {
-        transform: scale(1.15) rotate(-8deg);
-    }
-
-    50% {
-        transform: scale(1.1) rotate(5deg);
-    }
-
-    75% {
-        transform: scale(1.15) rotate(-3deg);
-    }
-}
-
-/* Shake animation when item added (can be triggered via JS) */
-@keyframes cartShake {
-
-    0%,
-    100% {
-        transform: translateX(0);
-    }
-
-    10%,
-    30%,
-    50%,
-    70%,
-    90% {
-        transform: translateX(-3px);
-    }
-
-    20%,
-    40%,
-    60%,
-    80% {
-        transform: translateX(3px);
-    }
-}
-
-.cart-button.cart-shake {
-    animation: cartShake 0.5s ease;
+/* Click feedback animation */
+@keyframes cartPress {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.95); }
+    100% { transform: scale(1); }
 }
 
 .cart-button:active {
-    transform: scale(0.95);
+    animation: cartPress 0.2s ease;
 }
 
-/* Tooltip for cart button */
-.cart-button-wrapper {
-    position: relative;
+/* Item added bounce animation */
+@keyframes cartBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
 }
 
-.cart-button-wrapper::before {
-    content: 'View Cart';
-    position: absolute;
-    bottom: -45px;
-    left: 50%;
-    transform: translateX(-50%) scale(0.9);
-    padding: 8px 14px;
-    background: rgba(15, 23, 42, 0.95);
-    color: #FFFFFF;
-    font-size: 13px;
-    font-weight: 600;
-    border-radius: 8px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
+.cart-button.bounce {
+    animation: cartBounce 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-.cart-button-wrapper:hover::before {
-    opacity: 1;
-    transform: translateX(-50%) scale(1);
-    bottom: -48px;
+/* Badge update animation */
+@keyframes badgeUpdate {
+    0% { transform: scale(0.5) rotateZ(-180deg); opacity: 0; }
+    50% { transform: scale(1.2) rotateZ(0deg); }
+    100% { transform: scale(1) rotateZ(0deg); opacity: 1; }
 }
 
-/* Cart Badge - Circular with Red Gradient and Pulse */
+/* Cart Badge - Premium Notification Bubble */
 .cart-badge {
     position: absolute;
-    top: -6px;
-    right: -6px;
-    min-width: 22px;
-    height: 22px;
-    padding: 0 6px;
-    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-    /* Red gradient */
+    top: -8px;
+    right: -8px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 2px;
+    background: linear-gradient(135deg, #FF4757 0%, #EE5A6F 100%);
     color: #FFFFFF !important;
     border-radius: 50%;
-    /* Perfect circle */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 800;
-    letter-spacing: -0.3px;
+    line-height: 1;
+    letter-spacing: -0.2px;
     box-shadow:
-        0 4px 16px rgba(239, 68, 68, 0.7),
-        0 0 20px rgba(239, 68, 68, 0.5),
-        0 0 0 3px rgba(255, 255, 255, 0.95);
-    animation: badgePopIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    z-index: 2;
+        0 0 0 2px rgba(255, 255, 255, 0.95),
+        0 2px 8px rgba(255, 71, 87, 0.5),
+        0 0 12px rgba(255, 71, 87, 0.3);
+    animation: badgeUpdate 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+    z-index: 11;
+    font-weight: bold;
 }
 
-/* Badge pop-in animation */
-@keyframes badgePopIn {
-    0% {
-        opacity: 0;
-        transform: scale(0);
-    }
-
-    50% {
-        transform: scale(1.3);
-    }
-
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-/* Badge pulse animation when count changes */
-@keyframes badgePulse {
-    0%, 100% {
-        transform: scale(1);
-        box-shadow:
-            0 4px 16px rgba(239, 68, 68, 0.7),
-            0 0 20px rgba(239, 68, 68, 0.5),
-            0 0 0 3px rgba(255, 255, 255, 0.95);
-    }
-    50% {
-        transform: scale(1.2);
-        box-shadow:
-            0 6px 24px rgba(239, 68, 68, 0.9),
-            0 0 32px rgba(239, 68, 68, 0.7),
-            0 0 0 4px rgba(255, 255, 255, 1);
-    }
-}
-
-/* Apply pulse when badge appears */
-.cart-badge {
-    animation: badgePopIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55), badgePulse 0.6s ease-in-out 0.5s, badgePulse 2s ease-in-out infinite 1.5s;
+/* Badge hover effect */
+.cart-button:hover .cart-badge {
+    transform: scale(1.1);
+    box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 1),
+        0 3px 10px rgba(255, 71, 87, 0.6),
+        0 0 16px rgba(255, 71, 87, 0.4);
 }
 
 /* ===========================================
@@ -871,11 +712,12 @@
 
     .cart-button,
     .profile-chip {
-        height: 46px;
+        height: 50px;
     }
 
     .cart-button {
-        width: 46px;
+        width: 50px;
+        border-radius: 12px;
     }
 }
 
@@ -908,8 +750,9 @@
     }
 
     .cart-button {
-        width: 44px;
-        height: 44px;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
     }
 
     .profile-chip {
@@ -1171,45 +1014,52 @@
 
 .cart-button {
     position: relative;
-    width: 52px;
-    height: 52px;
-    border-radius: 16px;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #1e3a8a 0%, #6b21a8 100%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(99, 102, 241, 0.2) 50%, rgba(59, 130, 246, 0.15) 100%);
+    border: 1.5px solid rgba(139, 92, 246, 0.3);
     color: #FFFFFF !important;
     text-decoration: none;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    backdrop-filter: blur(10px);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     box-shadow:
-        0 8px 32px rgba(107, 33, 168, 0.4),
-        0 0 48px rgba(107, 33, 168, 0.25),
-        inset 0 1px 2px rgba(255, 255, 255, 0.15);
-    overflow: hidden;
+        0 8px 24px rgba(139, 92, 246, 0.35),
+        0 4px 12px rgba(99, 102, 241, 0.25),
+        inset 0 1px 2px rgba(255, 255, 255, 0.15),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.1);
+    overflow: visible;
 }
 
 .cart-button:hover {
-    transform: translateY(-2px) scale(1.12);
-    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-3px) scale(1.05);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.4) 0%, rgba(99, 102, 241, 0.35) 50%, rgba(59, 130, 246, 0.3) 100%);
+    border-color: rgba(139, 92, 246, 0.5);
     box-shadow:
-        0 12px 48px rgba(107, 33, 168, 0.6),
-        0 0 64px rgba(107, 33, 168, 0.4),
-        inset 0 1px 2px rgba(255, 255, 255, 0.2);
+        0 12px 36px rgba(139, 92, 246, 0.55),
+        0 6px 18px rgba(99, 102, 241, 0.4),
+        0 0 40px rgba(139, 92, 246, 0.3),
+        inset 0 1px 2px rgba(255, 255, 255, 0.25),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .cart-icon {
     position: relative;
     z-index: 1;
-    transition: all 0.3s ease-in-out;
-    font-size: 22px;
+    width: 26px;
+    height: 26px;
+    transition: all 0.35s ease-in-out;
     color: #FFFFFF !important;
+    filter: drop-shadow(0 2px 8px rgba(139, 92, 246, 0.4));
 }
 
 .cart-button:hover .cart-icon {
-    transform: scale(1.1) rotate(-3deg);
-    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5));
+    animation: cartIconHover 0.5s ease;
+    filter: drop-shadow(0 0 16px rgba(139, 92, 246, 0.8)) drop-shadow(0 4px 8px rgba(255, 255, 255, 0.3));
 }
 
 .cart-button:active {
@@ -1224,30 +1074,32 @@
     min-width: 24px;
     height: 24px;
     padding: 0 7px;
-    background: #EF4444;
+    background: linear-gradient(135deg, #ff4d4f 0%, #ff1f1f 100%);
     color: #FFFFFF !important;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 800;
+    line-height: 1;
     letter-spacing: -0.3px;
     box-shadow:
         0 4px 16px rgba(239, 68, 68, 0.6),
         0 0 0 3px rgba(255, 255, 255, 1);
     animation: badgePopIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    z-index: 2;
+    z-index: 10;
+    /* Ensure badge appears above all effects */
 }
 
 @keyframes badgePopIn {
     0% {
         opacity: 0;
-        transform: scale(0);
+        transform: scale(0.9);
     }
 
     50% {
-        transform: scale(1.2);
+        transform: scale(1.15);
     }
 
     100% {

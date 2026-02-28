@@ -4,6 +4,7 @@ import AdminLayout from '../../components/AdminLayout';
 import useToast from '../../hooks/useToast';
 import api from '../../services/api';
 import './ReportStyles.css';
+import { addShopHeader, addPageNumbers, loadUnicodeFonts, pdfRupee } from '../../utils/pdfUtils';
 
 const StockReport = () => {
   const navigate = useNavigate();
@@ -122,20 +123,17 @@ const StockReport = () => {
       
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
-      let yPos = 20;
-      
-      // Title
-      doc.setFontSize(20);
-      doc.setTextColor(16, 185, 129);
-      doc.text('📦 Stock Report', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 15;
-      
-      // Date and Filters
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      const dateStr = `Generated: ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}`;
-      doc.text(dateStr, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 10;
+
+      // Load Unicode font for ₹ symbol
+      const PDF_FONT = await loadUnicodeFonts(doc);
+
+      let yPos = addShopHeader(doc, 'STOCK REPORT', [16, 185, 129]);
+
+      // Reset text style for content
+      doc.setFont(PDF_FONT, 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+
       
       if (filters.search || filters.category || filters.brand || filters.stockStatus) {
         doc.text('Filters Applied:', 14, yPos);
@@ -148,9 +146,12 @@ const StockReport = () => {
       }
       
       // Analytics Summary
+      doc.setFont(PDF_FONT, 'bold');
       doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(16, 185, 129);
       doc.text('Inventory Summary', 14, yPos);
+      doc.setFont(PDF_FONT, 'normal');
+      doc.setTextColor(60, 60, 60);
       yPos += 8;
       
       doc.setFontSize(10);
@@ -167,36 +168,43 @@ const StockReport = () => {
         body: summaryData,
         theme: 'grid',
         headStyles: { fillColor: [16, 185, 129], textColor: 255 },
+        styles: { font: PDF_FONT },
         margin: { left: 14, right: 14 }
       });
       
       yPos = doc.lastAutoTable.finalY + 10;
       
       // Detailed Stock Data
+      doc.setFont(PDF_FONT, 'bold');
       doc.setFontSize(12);
+      doc.setTextColor(16, 185, 129);
       doc.text('Detailed Stock Data', 14, yPos);
+      doc.setFont(PDF_FONT, 'normal');
+      doc.setTextColor(60, 60, 60);
       yPos += 8;
       
       const tableData = stockData.map(product => [
         product.name,
         product.category || 'N/A',
-        product.brand || 'N/A',
-        formatCurrency(product.price),
+        pdfRupee(product.price),
         product.stock.toString(),
-        product.stock > 10 ? 'In Stock' : product.stock > 0 ? 'Low Stock' : 'Out of Stock'
+        pdfRupee(product.stockValue || (product.price * product.stock) || 0),
+        product.stock > 10 ? 'In Stock' : product.stock > 0 ? 'Low Stock' : 'Out of Stock',
+        product.createdAt ? new Date(product.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'
       ]);
       
       autoTable(doc, {
         startY: yPos,
-        head: [['Product Name', 'Category', 'Brand', 'Price', 'Stock', 'Status']],
+        head: [['Product Name', 'Category', 'Price', 'Stock Qty', 'Stock Value', 'Status', 'Date Added']],
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [16, 185, 129], textColor: 255 },
-        styles: { fontSize: 9 },
+        styles: { font: PDF_FONT, fontSize: 9 },
         margin: { left: 14, right: 14 }
       });
       
       // Save PDF
+      addPageNumbers(doc, [16, 185, 129]);
       const fileName = `stock-report_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(fileName);
       

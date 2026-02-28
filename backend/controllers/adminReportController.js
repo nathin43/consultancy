@@ -1125,7 +1125,9 @@ exports.getStockReport = async (req, res) => {
       stockValue: (product.price || 0) * (product.stock || 0),
       stockStatus: product.stock === 0 ? 'Out of Stock' : product.stock <= 10 ? 'Low Stock' : 'In Stock',
       image: product.image,
-      createdAt: product.createdAt
+      description: product.description,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt
     }));
 
     // Auto-save report to database
@@ -1164,10 +1166,18 @@ exports.getStockReport = async (req, res) => {
  */
 exports.getCustomerReport = async (req, res) => {
   try {
-    const { accountStatus, minOrders, maxOrders, dateFrom, dateTo } = req.query;
+    const { accountStatus, minOrders, maxOrders, dateFrom, dateTo, search } = req.query;
 
     // Build filters for users
     const userFilters = { role: { $in: ['customer', 'CUSTOMER', 'user'] } };
+
+    if (search) {
+      userFilters.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
     if (dateFrom || dateTo) {
       userFilters.createdAt = {};
       if (dateFrom) userFilters.createdAt.$gte = new Date(dateFrom);
@@ -1205,7 +1215,14 @@ exports.getCustomerReport = async (req, res) => {
                   $filter: {
                     input: '$orders',
                     as: 'order',
-                    cond: { $eq: [{ $toLower: { $ifNull: ['$$order.orderStatus', ''] } }, 'delivered'] }
+                    cond: {
+                      $not: {
+                        $in: [
+                          { $toLower: { $ifNull: ['$$order.orderStatus', ''] } },
+                          ['cancelled']
+                        ]
+                      }
+                    }
                   }
                 },
                 as: 'order',
@@ -1234,6 +1251,15 @@ exports.getCustomerReport = async (req, res) => {
       if (minOrders) orderMatch.$gte = parseInt(minOrders);
       if (maxOrders) orderMatch.$lte = parseInt(maxOrders);
       pipeline.push({ $match: { totalOrders: orderMatch } });
+    }
+
+    // Apply amount filters
+    const { minAmount, maxAmount } = req.query;
+    if (minAmount || maxAmount) {
+      const amountMatch = {};
+      if (minAmount) amountMatch.$gte = parseFloat(minAmount);
+      if (maxAmount) amountMatch.$lte = parseFloat(maxAmount);
+      pipeline.push({ $match: { totalSpent: amountMatch } });
     }
 
     // Apply account status filter
@@ -1274,6 +1300,7 @@ exports.getCustomerReport = async (req, res) => {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      address: user.address,
       status: user.actualStatus,
       totalOrders: user.totalOrders,
       totalSpent: user.totalSpent,

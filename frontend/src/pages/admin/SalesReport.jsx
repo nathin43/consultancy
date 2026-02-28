@@ -4,6 +4,7 @@ import AdminLayout from '../../components/AdminLayout';
 import useToast from '../../hooks/useToast';
 import api from '../../services/api';
 import './ReportStyles.css';
+import { addShopHeader, addPageNumbers, loadUnicodeFonts, pdfRupee } from '../../utils/pdfUtils';
 
 const SalesReport = () => {
   const navigate = useNavigate();
@@ -157,88 +158,242 @@ const SalesReport = () => {
     try {
       const { jsPDF } = await import('jspdf');
       const autoTable = (await import('jspdf-autotable')).default;
-      
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      let yPos = 20;
-      
-      // Title
-      doc.setFontSize(20);
-      doc.setTextColor(59, 130, 246);
-      doc.text('💰 Sales Report', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 15;
-      
-      // Date and Filters
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      const dateStr = `Generated: ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}`;
-      doc.text(dateStr, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 10;
-      
-      if (filters.dateFrom || filters.dateTo || filters.status) {
-        doc.text('Filters Applied:', 14, yPos);
-        yPos += 5;
-        if (filters.dateFrom) doc.text(`  • From: ${filters.dateFrom}`, 14, yPos), yPos += 5;
-        if (filters.dateTo) doc.text(`  • To: ${filters.dateTo}`, 14, yPos), yPos += 5;
-        if (filters.status) doc.text(`  • Status: ${filters.status}`, 14, yPos), yPos += 5;
-        yPos += 5;
+
+      // ── Palette ───────────────────────────────────────────────────────────
+      const ACCENT  = [59, 130, 246];          // blue accent
+      const HDR_BG  = [22, 58, 138];           // deep navy for table header
+      const TEXT    = [25, 25, 25];
+      const SUBTEXT = [130, 140, 155];
+
+      // Landscape A4: 297 × 210 mm
+      const doc        = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
+      const pageWidth  = doc.internal.pageSize.getWidth();   // 297 mm
+      const pageHeight = doc.internal.pageSize.getHeight();  // 210 mm
+      const MARGIN     = 14;
+      const CONTENT_W  = pageWidth - MARGIN * 2;             // 269 mm
+
+      // Load Unicode font for ₹ symbol
+      const PDF_FONT = await loadUnicodeFonts(doc);
+
+      // Indian rupee formatter — ₹ renders correctly once NotoSans is embedded
+      const rupee = (amount) => '\u20B9' + Math.round(Number(amount || 0)).toLocaleString('en-IN');
+
+      // ── 1. Shop letterhead ────────────────────────────────────────────────
+      let y = addShopHeader(doc, 'SALES REPORT', ACCENT);
+
+      // ── 2. Active filters (shown only when filters are applied) ───────────
+      const activeFilters = [
+        filters.dateFrom  && `From: ${filters.dateFrom}`,
+        filters.dateTo    && `To: ${filters.dateTo}`,
+        filters.status    && `Status: ${filters.status}`,
+        filters.minAmount && `Min: ${rupee(filters.minAmount)}`,
+        filters.maxAmount && `Max: ${rupee(filters.maxAmount)}`,
+      ].filter(Boolean);
+
+      if (activeFilters.length) {
+        doc.setFont(PDF_FONT, 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(...SUBTEXT);
+        doc.text('Filters applied: ' + activeFilters.join('   |   '), MARGIN, y);
+        y += 6;
       }
-      
-      // Analytics Summary
-      doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
-      doc.text('Summary Analytics', 14, yPos);
-      yPos += 8;
-      
-      doc.setFontSize(10);
-      const summaryData = [
-        ['Total Sales', analytics.totalSales.toString()],
-        ['Total Revenue', formatCurrency(analytics.totalRevenue)],
-        ['Average Order Value', formatCurrency(analytics.averageOrderValue)],
-        ['Completed Orders', analytics.completedOrders.toString()]
+
+      // ── 3. Summary KPI cards ──────────────────────────────────────────────
+      const kpis = [
+        { label: 'Total Orders',     value: String(analytics.totalSales || 0),          clr: [59, 130, 246]  },
+        { label: 'Total Revenue',    value: rupee(analytics.totalRevenue),               clr: [16, 150, 95]   },
+        { label: 'Avg. Order Value', value: rupee(analytics.averageOrderValue),          clr: [218, 128, 10]  },
+        { label: 'Completed Orders', value: String(analytics.completedOrders || 0),      clr: [110, 55, 200]  },
       ];
-      
+      const cardGap = 5;
+      const cardW   = (CONTENT_W - cardGap * 3) / 4;
+      const cardH   = 17;
+
+      kpis.forEach((kpi, i) => {
+        const cx = MARGIN + i * (cardW + cardGap);
+        doc.setFillColor(...kpi.clr);
+        doc.roundedRect(cx, y, cardW, cardH, 2.5, 2.5, 'F');
+
+        // Label
+        doc.setFont(PDF_FONT, 'normal');
+        doc.setFontSize(6);
+        doc.setTextColor(210, 230, 255);
+        doc.text(kpi.label.toUpperCase(), cx + cardW / 2, y + 5.5, { align: 'center' });
+
+        // Value
+        doc.setFont(PDF_FONT, 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(255, 255, 255);
+        doc.text(kpi.value, cx + cardW / 2, y + 13.5, { align: 'center' });
+      });
+
+      y += cardH + 6;
+
+      // ── 4. Section heading ────────────────────────────────────────────────
+      doc.setFillColor(...ACCENT);
+      doc.rect(MARGIN, y, 3, 7, 'F');
+      doc.setFont(PDF_FONT, 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...ACCENT);
+      doc.text('ORDER DETAILS', MARGIN + 6, y + 5.2);
+
+      const totalRowCount = salesData.reduce((s, o) => s + Math.max(o.items?.length || 0, 1), 0);
+      doc.setFont(PDF_FONT, 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(...SUBTEXT);
+      doc.text(
+        `${salesData.length} order(s)   ·   ${totalRowCount} product line(s)`,
+        pageWidth - MARGIN, y + 5.2, { align: 'right' }
+      );
+
+      y += 11;
+
+      // ── 5. Build table rows ───────────────────────────────────────────────
+      // RULE: every product row is fully populated — no blank cells anywhere.
+      // If an order has multiple products, each product gets its own complete row.
+      //
+      // 8 columns summing to 269 mm (CONTENT_W):
+      // Order ID | Product Name | Customer | Date | Qty | Amount | Payment Method | Status
+      //    30    |      66      |    38    |  27  |  12 |   32   |       38       |  26   = 269
+      const colWidths = [30, 66, 38, 27, 12, 32, 38, 26];
+
+      const tableRows    = [];
+      let grandTotalAmt  = 0;
+      let grandTotalQty  = 0;
+
+      salesData.forEach((order) => {
+        const orderId    = order.orderNumber || order._id?.toString().slice(-8).toUpperCase() || '—';
+        const customer   = order.user?.name || 'N/A';
+        const date       = formatDate(order.createdAt);
+        const rawPayment = (order.paymentMethod || 'N/A');
+        // Normalise common payment method strings
+        const payment    = rawPayment === 'cod'      ? 'Cash on Delivery'
+                         : rawPayment === 'razorpay' ? 'Razorpay'
+                         : rawPayment === 'online'   ? 'Online'
+                         : rawPayment;
+        const rawStatus  = order.status || order.orderStatus || 'pending';
+        const statusDisp = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase();
+        const items      = order.items?.length > 0 ? order.items : null;
+
+        if (items) {
+          items.forEach((item) => {
+            const name      = item.product?.name || item.name || 'Unknown Product';
+            const qty       = Number(item.quantity) || 1;
+            const unitPrice = Number(item.price) || Number(item.product?.price) || 0;
+            const lineAmt   = qty * unitPrice;
+            grandTotalAmt  += lineAmt;
+            grandTotalQty  += qty;
+
+            tableRows.push([
+              orderId,          // ← repeated on every row: no blank cells
+              name,
+              customer,
+              date,
+              qty.toString(),
+              rupee(lineAmt),
+              payment,
+              statusDisp,
+            ]);
+          });
+        } else {
+          // Order with no item detail — show order-level total
+          const amt       = Number(order.totalAmount) || 0;
+          grandTotalAmt  += amt;
+          grandTotalQty  += 1;
+          tableRows.push([orderId, '—', customer, date, '—', rupee(amt), payment, statusDisp]);
+        }
+      });
+
+      // ── 6. autoTable ──────────────────────────────────────────────────────
       autoTable(doc, {
-        startY: yPos,
-        head: [['Metric', 'Value']],
-        body: summaryData,
+        startY: y,
+        head: [['Order ID', 'Product Name', 'Customer', 'Date', 'Qty', 'Amount', 'Payment Method', 'Status']],
+        body: tableRows,
         theme: 'grid',
-        headStyles: { fillColor: [59, 130, 246], textColor: 255 },
-        margin: { left: 14, right: 14 }
+        margin: { left: MARGIN, right: MARGIN },
+
+        // Base styles applied to every cell (head + body)
+        styles: {
+          font: PDF_FONT,
+          fontSize: 7.5,
+          valign: 'middle',
+          cellPadding: { top: 2.8, bottom: 2.8, left: 3, right: 3 },
+          lineColor: [205, 215, 232],
+          lineWidth: 0.22,
+          minCellHeight: 8,
+          overflow: 'ellipsize',
+          textColor: TEXT,
+        },
+
+        headStyles: {
+          fillColor: HDR_BG,
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 7.5,
+          cellPadding: { top: 3.5, bottom: 3.5, left: 3, right: 3 },
+          lineColor: [10, 35, 90],
+          lineWidth: 0.25,
+        },
+
+        // Subtle blue-tinted zebra rows
+        alternateRowStyles: {
+          fillColor: [244, 248, 255],
+        },
+
+        columnStyles: {
+          0: { halign: 'left',   cellWidth: colWidths[0], fontStyle: 'bold'     },  // Order ID
+          1: { halign: 'left',   cellWidth: colWidths[1], overflow: 'linebreak'  },  // Product Name (wraps)
+          2: { halign: 'left',   cellWidth: colWidths[2]                         },  // Customer
+          3: { halign: 'center', cellWidth: colWidths[3]                         },  // Date
+          4: { halign: 'center', cellWidth: colWidths[4]                         },  // Qty
+          5: { halign: 'center', cellWidth: colWidths[5], fontStyle: 'bold'      },  // Amount ₹
+          6: { halign: 'left',   cellWidth: colWidths[6]                         },  // Payment Method
+          7: { halign: 'center', cellWidth: colWidths[7]                         },  // Status
+        },
+
+        // Status colour coding
+        didParseCell(data) {
+          if (data.section !== 'body' || data.column.index !== 7) return;
+          const v = (data.cell.raw || '').toLowerCase();
+          if      (v === 'delivered')  { data.cell.styles.textColor = [14, 142, 55];  data.cell.styles.fontStyle = 'bold'; }
+          else if (v === 'cancelled')  { data.cell.styles.textColor = [205, 28, 28];  data.cell.styles.fontStyle = 'bold'; }
+          else if (v === 'pending')    { data.cell.styles.textColor = [165, 75, 0];   data.cell.styles.fontStyle = 'bold'; }
+          else if (v === 'shipped')    { data.cell.styles.textColor = [20, 90, 218];  data.cell.styles.fontStyle = 'bold'; }
+          else if (v === 'processing') { data.cell.styles.textColor = [100, 28, 198]; data.cell.styles.fontStyle = 'bold'; }
+        },
       });
-      
-      yPos = doc.lastAutoTable.finalY + 10;
-      
-      // Detailed Data Table
-      doc.setFontSize(12);
-      doc.text('Detailed Sales Data', 14, yPos);
-      yPos += 8;
-      
-      const tableData = salesData.map(order => [
-        order.orderId || order._id?.slice(-8).toUpperCase(),
-        order.user?.name || 'N/A',
-        formatDate(order.createdAt),
-        formatCurrency(order.totalAmount),
-        order.paymentMethod || 'N/A',
-        order.status || 'Pending'
-      ]);
-      
-      autoTable(doc, {
-        startY: yPos,
-        head: [['Order ID', 'Customer', 'Date', 'Amount', 'Payment', 'Status']],
-        body: tableData,
-        theme: 'striped',
-        headStyles: { fillColor: [59, 130, 246], textColor: 255 },
-        styles: { fontSize: 9 },
-        margin: { left: 14, right: 14 }
-      });
-      
-      // Save PDF
-      const fileName = `sales-report_${new Date().toISOString().split('T')[0]}.pdf`;
-      doc.save(fileName);
-      
-      success('Sales report exported as PDF successfully');
+
+      // ── 7. Grand total footer bar ─────────────────────────────────────────
+      const tableBottom = doc.lastAutoTable.finalY;
+
+      if (tableBottom + 13 < pageHeight - 18) {
+        const barH = 9;
+        const barY = tableBottom + 3;
+
+        doc.setFillColor(...HDR_BG);
+        doc.roundedRect(MARGIN, barY, CONTENT_W, barH, 1.5, 1.5, 'F');
+
+        doc.setFont(PDF_FONT, 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(255, 255, 255);
+
+        // Label
+        doc.text('GRAND TOTAL', MARGIN + 4, barY + 6);
+
+        // Total qty — aligned to right edge of Qty column (index 4)
+        const qtyRightEdge = MARGIN
+          + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4] - 3;
+        doc.text(grandTotalQty.toString(), qtyRightEdge, barY + 6, { align: 'right' });
+
+        // Grand total — aligned to right edge of Amount column (index 5)
+        const amtRightEdge = qtyRightEdge + colWidths[5];
+        doc.text(rupee(grandTotalAmt), amtRightEdge, barY + 6, { align: 'right' });
+      }
+
+      // ── 8. Page numbers ───────────────────────────────────────────────────
+      addPageNumbers(doc, ACCENT);
+      doc.save(`sales-report_${new Date().toISOString().split('T')[0]}.pdf`);
+      success('Sales report exported successfully');
     } catch (err) {
       error('Failed to export PDF');
       console.error('PDF export error:', err);
@@ -411,6 +566,7 @@ const SalesReport = () => {
                 <thead>
                   <tr>
                     <th>Order ID</th>
+                    <th>Product Name</th>
                     <th>Customer</th>
                     <th>Date</th>
                     <th>Amount</th>
@@ -421,7 +577,25 @@ const SalesReport = () => {
                 <tbody>
                   {salesData.map((order) => (
                     <tr key={order._id}>
-                      <td className="order-id">{order.orderId || order._id?.slice(-8).toUpperCase()}</td>
+                      <td className="order-id">{order.orderNumber || order.orderId || order._id?.slice(-8).toUpperCase()}</td>
+                      <td>
+                        {order.items && order.items.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            {order.items.map((item, idx) => (
+                              <span key={idx} style={{ fontSize: '13px' }}>
+                                {item.product?.name || item.name || 'Unknown Product'}
+                                {item.quantity > 1 && (
+                                  <span style={{ color: '#6b7280', fontSize: '11px', marginLeft: '4px' }}>
+                                    ×{item.quantity}
+                                  </span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span style={{ color: '#9ca3af' }}>—</span>
+                        )}
+                      </td>
                       <td>{order.user?.name || 'N/A'}</td>
                       <td>{formatDate(order.createdAt)}</td>
                       <td className="amount">{formatCurrency(order.totalAmount)}</td>

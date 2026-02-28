@@ -4,6 +4,7 @@ import AdminLayout from '../../components/AdminLayout';
 import useToast from '../../hooks/useToast';
 import api from '../../services/api';
 import './ReportStyles.css';
+import { addShopHeader, addPageNumbers, loadUnicodeFonts, pdfRupee } from '../../utils/pdfUtils';
 
 const PaymentReport = () => {
   const navigate = useNavigate();
@@ -154,20 +155,17 @@ const PaymentReport = () => {
       
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
-      let yPos = 20;
-      
-      // Title
-      doc.setFontSize(20);
-      doc.setTextColor(245, 158, 11);
-      doc.text('💳 Payment Report', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 15;
-      
-      // Date and Filters
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      const dateStr = `Generated: ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}`;
-      doc.text(dateStr, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 10;
+
+      // Load Unicode font for ₹ symbol
+      const PDF_FONT = await loadUnicodeFonts(doc);
+
+      let yPos = addShopHeader(doc, 'PAYMENT REPORT', [245, 158, 11]);
+
+      // Reset text style for content
+      doc.setFont(PDF_FONT, 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+
       
       if (filters.dateFrom || filters.dateTo || filters.paymentMethod || filters.minAmount || filters.maxAmount) {
         doc.text('Filters Applied:', 14, yPos);
@@ -181,17 +179,20 @@ const PaymentReport = () => {
       }
       
       // Analytics Summary
+      doc.setFont(PDF_FONT, 'bold');
       doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(245, 158, 11);
       doc.text('Payment Summary', 14, yPos);
+      doc.setFont(PDF_FONT, 'normal');
+      doc.setTextColor(60, 60, 60);
       yPos += 8;
       
       doc.setFontSize(10);
       const summaryData = [
         ['Total Transactions', analytics.totalTransactions.toString()],
-        ['Total Amount', formatCurrency(analytics.totalAmount)],
-        ['COD Payments', formatCurrency(analytics.codPayments)],
-        ['Online Payments', formatCurrency(analytics.onlinePayments)]
+        ['Total Amount', pdfRupee(analytics.totalAmount)],
+        ['COD Payments', pdfRupee(analytics.codPayments)],
+        ['Online Payments', pdfRupee(analytics.onlinePayments)]
       ];
       
       autoTable(doc, {
@@ -200,21 +201,26 @@ const PaymentReport = () => {
         body: summaryData,
         theme: 'grid',
         headStyles: { fillColor: [245, 158, 11], textColor: 255 },
+        styles: { font: PDF_FONT },
         margin: { left: 14, right: 14 }
       });
       
       yPos = doc.lastAutoTable.finalY + 10;
       
       // Detailed Payment Data
+      doc.setFont(PDF_FONT, 'bold');
       doc.setFontSize(12);
+      doc.setTextColor(245, 158, 11);
       doc.text('Transaction Details', 14, yPos);
+      doc.setFont(PDF_FONT, 'normal');
+      doc.setTextColor(60, 60, 60);
       yPos += 8;
       
       const tableData = paymentData.map(payment => [
         payment._id?.slice(-8).toUpperCase() || 'N/A',
         payment.user?.name || 'N/A',
         formatDate(payment.createdAt),
-        formatCurrency(payment.totalAmount),
+        pdfRupee(payment.totalAmount),
         payment.paymentMethod || 'N/A',
         payment.status || 'Pending'
       ]);
@@ -225,11 +231,12 @@ const PaymentReport = () => {
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [245, 158, 11], textColor: 255 },
-        styles: { fontSize: 8 },
+        styles: { font: PDF_FONT, fontSize: 8 },
         margin: { left: 14, right: 14 }
       });
       
       // Save PDF
+      addPageNumbers(doc, [245, 158, 11]);
       const fileName = `payment-report_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(fileName);
       

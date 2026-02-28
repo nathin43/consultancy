@@ -4,6 +4,7 @@ import AdminLayout from '../../components/AdminLayout';
 import useToast from '../../hooks/useToast';
 import api from '../../services/api';
 import './ReportStyles.css';
+import { addShopHeader, addPageNumbers, loadUnicodeFonts, pdfRupee } from '../../utils/pdfUtils';
 
 const OrderReport = () => {
   const navigate = useNavigate();
@@ -151,20 +152,17 @@ const OrderReport = () => {
       
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
-      let yPos = 20;
-      
-      // Title
-      doc.setFontSize(20);
-      doc.setTextColor(236, 72, 153);
-      doc.text('📋 Order Report', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 15;
-      
-      // Date and Filters
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      const dateStr = `Generated: ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}`;
-      doc.text(dateStr, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 10;
+
+      // Load Unicode font for ₹ symbol
+      const PDF_FONT = await loadUnicodeFonts(doc);
+
+      let yPos = addShopHeader(doc, 'ORDER REPORT', [236, 72, 153]);
+
+      // Reset text style for content
+      doc.setFont(PDF_FONT, 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+
       
       if (filters.search || filters.status || filters.dateFrom || filters.dateTo || filters.paymentMethod) {
         doc.text('Filters Applied:', 14, yPos);
@@ -178,9 +176,12 @@ const OrderReport = () => {
       }
       
       // Analytics Summary
+      doc.setFont(PDF_FONT, 'bold');
       doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(236, 72, 153);
       doc.text('Order Summary', 14, yPos);
+      doc.setFont(PDF_FONT, 'normal');
+      doc.setTextColor(60, 60, 60);
       yPos += 8;
       
       doc.setFontSize(10);
@@ -197,21 +198,26 @@ const OrderReport = () => {
         body: summaryData,
         theme: 'grid',
         headStyles: { fillColor: [236, 72, 153], textColor: 255 },
+        styles: { font: PDF_FONT },
         margin: { left: 14, right: 14 }
       });
       
       yPos = doc.lastAutoTable.finalY + 10;
       
       // Detailed Order Data
+      doc.setFont(PDF_FONT, 'bold');
       doc.setFontSize(12);
+      doc.setTextColor(236, 72, 153);
       doc.text('Order Details', 14, yPos);
+      doc.setFont(PDF_FONT, 'normal');
+      doc.setTextColor(60, 60, 60);
       yPos += 8;
       
       const tableData = orderData.map(order => [
         order.orderId || order._id?.slice(-8).toUpperCase() || 'N/A',
         order.user?.name || 'N/A',
         formatDate(order.createdAt),
-        formatCurrency(order.totalAmount),
+        pdfRupee(order.totalAmount),
         order.paymentMethod || 'N/A',
         order.status || 'Pending',
         (order.items?.length || 0).toString()
@@ -223,11 +229,12 @@ const OrderReport = () => {
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [236, 72, 153], textColor: 255 },
-        styles: { fontSize: 8 },
+        styles: { font: PDF_FONT, fontSize: 8 },
         margin: { left: 14, right: 14 }
       });
       
       // Save PDF
+      addPageNumbers(doc, [236, 72, 153]);
       const fileName = `order-report_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(fileName);
       

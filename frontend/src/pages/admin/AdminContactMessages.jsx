@@ -215,42 +215,53 @@ const AdminContactMessages = () => {
             <p className="header-subtitle">View and manage customer inquiries</p>
           </div>
           <button className="refresh-btn" onClick={fetchMessages}>
-            🔄 Refresh
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+            Refresh
           </button>
         </div>
 
         {/* Statistics Cards */}
         <div className="stats-grid">
           <div className="stat-card" onClick={() => setFilter('all')}>
-            <div className="stat-icon total">📧</div>
+            <div className="stat-icon total">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
             <div className="stat-info">
               <p className="stat-label">Total Messages</p>
               <h3 className="stat-value">{stats.total}</h3>
             </div>
           </div>
           <div className="stat-card" onClick={() => setFilter('new')}>
-            <div className="stat-icon new">🔔</div>
+            <div className="stat-icon new">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </div>
             <div className="stat-info">
               <p className="stat-label">New</p>
               <h3 className="stat-value">{stats.new}</h3>
             </div>
           </div>
           <div className="stat-card" onClick={() => setFilter('read')}>
-            <div className="stat-icon read">👁️</div>
+            <div className="stat-icon read">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
             <div className="stat-info">
               <p className="stat-label">Read</p>
               <h3 className="stat-value">{stats.read}</h3>
             </div>
           </div>
           <div className="stat-card" onClick={() => setFilter('replied')}>
-            <div className="stat-icon replied">💬</div>
+            <div className="stat-icon replied">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
             <div className="stat-info">
               <p className="stat-label">Replied</p>
               <h3 className="stat-value">{stats.replied}</h3>
             </div>
           </div>
           <div className="stat-card" onClick={() => setFilter('resolved')}>
-            <div className="stat-icon resolved">✅</div>
+            <div className="stat-icon resolved">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
             <div className="stat-info">
               <p className="stat-label">Resolved</p>
               <h3 className="stat-value">{stats.resolved}</h3>
@@ -341,21 +352,21 @@ const AdminContactMessages = () => {
                         onClick={() => handleViewMessage(message)}
                         title="View Details"
                       >
-                        👁️
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                       </button>
                       <button 
                         className="action-btn reply-btn"
                         onClick={() => handleOpenReplyModal(message)}
                         title="Reply to Customer"
                       >
-                        💬
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                       </button>
                       <button 
                         className="action-btn delete-btn"
                         onClick={() => handleDelete(message._id)}
                         title="Delete Message"
                       >
-                        🗑️
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                       </button>
                     </td>
                   </tr>
@@ -518,7 +529,7 @@ const AdminContactMessages = () => {
                   onClick={handleSendReply}
                   disabled={sendingReply || !replyMessage.trim()}
                 >
-                  {sendingReply ? '📧 Sending...' : '📧 Send Reply'}
+                  {sendingReply ? 'Sending...' : 'Send Reply'}
                 </button>
               </div>
             </div>

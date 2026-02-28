@@ -210,6 +210,9 @@
   gap: 60px;
   position: relative;
   z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 32px;
 }
 
 .hero-content {
@@ -237,7 +240,7 @@
   font-weight: 800;
   letter-spacing: 3.2px;
   text-transform: uppercase;
-  color: #ffffff;
+  color: #ffffff !important;
   margin-bottom: 16px;
   padding: 14px 34px;
   background: linear-gradient(135deg, 
@@ -447,7 +450,7 @@
   animation: heroDescriptionIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 1.2s forwards;
   line-height: 1.6;
   max-width: 500px;
-  color: #ffffff;
+  color: #ffffff !important;
   will-change: transform, opacity;
 }
 
@@ -626,6 +629,7 @@
   .hero-container {
     grid-template-columns: 1fr;
     gap: 40px;
+    padding: 0 24px;
   }
 
   .hero-product-card {
@@ -649,6 +653,7 @@
 
   .hero-container {
     gap: 30px;
+    padding: 0 20px;
   }
 
   .hero-title {

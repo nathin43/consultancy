@@ -4,6 +4,7 @@ import AdminLayout from '../../components/AdminLayout';
 import useToast from '../../hooks/useToast';
 import api from '../../services/api';
 import './ReportStyles.css';
+import { addShopHeader, addPageNumbers, loadUnicodeFonts, pdfRupee } from '../../utils/pdfUtils';
 
 const CustomerReport = () => {
   const navigate = useNavigate();
@@ -153,37 +154,37 @@ const CustomerReport = () => {
       const { jsPDF } = await import('jspdf');
       const autoTable = (await import('jspdf-autotable')).default;
       
-      const doc = new jsPDF();
+      const doc = new jsPDF({ orientation: 'landscape' });
       const pageWidth = doc.internal.pageSize.getWidth();
-      let yPos = 20;
+
+      // Load Unicode font for ₹ symbol
+      const PDF_FONT = await loadUnicodeFonts(doc);
+
+      let yPos = addShopHeader(doc, 'CUSTOMER REPORT', [139, 92, 246]);
+
+      // Reset text style for content
+      doc.setFont(PDF_FONT, 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+
       
-      // Title
-      doc.setFontSize(20);
-      doc.setTextColor(139, 92, 246);
-      doc.text('👥 Customer Report', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 15;
-      
-      // Date and Filters
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      const dateStr = `Generated: ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}`;
-      doc.text(dateStr, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 10;
-      
-      if (filters.search || filters.status || filters.dateFrom || filters.dateTo) {
+      if (filters.search || filters.accountStatus || filters.dateFrom || filters.dateTo) {
         doc.text('Filters Applied:', 14, yPos);
         yPos += 5;
         if (filters.search) doc.text(`  • Search: ${filters.search}`, 14, yPos), yPos += 5;
-        if (filters.status) doc.text(`  • Status: ${filters.status}`, 14, yPos), yPos += 5;
+        if (filters.accountStatus) doc.text(`  • Status: ${filters.accountStatus}`, 14, yPos), yPos += 5;
         if (filters.dateFrom) doc.text(`  • From: ${filters.dateFrom}`, 14, yPos), yPos += 5;
         if (filters.dateTo) doc.text(`  • To: ${filters.dateTo}`, 14, yPos), yPos += 5;
         yPos += 5;
       }
       
       // Analytics Summary
+      doc.setFont(PDF_FONT, 'bold');
       doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(139, 92, 246);
       doc.text('Customer Analytics', 14, yPos);
+      doc.setFont(PDF_FONT, 'normal');
+      doc.setTextColor(60, 60, 60);
       yPos += 8;
       
       doc.setFontSize(10);
@@ -191,7 +192,7 @@ const CustomerReport = () => {
         ['Total Customers', analytics.totalCustomers.toString()],
         ['Active Customers', analytics.activeCustomers.toString()],
         ['Total Orders', analytics.totalOrders.toString()],
-        ['Total Revenue', formatCurrency(analytics.totalRevenue)]
+        ['Total Revenue', pdfRupee(analytics.totalRevenue)]
       ];
       
       autoTable(doc, {
@@ -200,44 +201,56 @@ const CustomerReport = () => {
         body: summaryData,
         theme: 'grid',
         headStyles: { fillColor: [139, 92, 246], textColor: 255 },
+        styles: { font: PDF_FONT },
         margin: { left: 14, right: 14 }
       });
       
       yPos = doc.lastAutoTable.finalY + 10;
       
       // Detailed Customer Data
+      doc.setFont(PDF_FONT, 'bold');
       doc.setFontSize(12);
+      doc.setTextColor(139, 92, 246);
       doc.text('Customer Details', 14, yPos);
+      doc.setFont(PDF_FONT, 'normal');
+      doc.setTextColor(60, 60, 60);
       yPos += 8;
       
       const tableData = customerData.map(customer => [
         customer.name || 'Unknown',
         customer.email || 'N/A',
+        customer.phone || 'N/A',
+        customer.address
+          ? [customer.address.city, customer.address.state].filter(Boolean).join(', ') || 'N/A'
+          : 'N/A',
         customer.actualStatus || customer.status || 'ACTIVE',
         (customer.totalOrders || 0).toString(),
-        formatCurrency(customer.totalSpent || 0),
+        pdfRupee(customer.totalSpent || 0),
         formatDate(customer.lastOrderDate)
       ]);
       
       autoTable(doc, {
         startY: yPos,
-        head: [['Name', 'Email', 'Status', 'Orders', 'Total Spent', 'Last Order']],
+        head: [['Name', 'Email', 'Phone', 'City / State', 'Status', 'Orders', 'Total Spent', 'Last Order']],
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [139, 92, 246], textColor: 255 },
-        styles: { fontSize: 8 },
+        styles: { font: PDF_FONT, fontSize: 8 },
         columnStyles: {
-          0: { cellWidth: 30 },
-          1: { cellWidth: 40 },
-          2: { cellWidth: 25 },
-          3: { cellWidth: 20 },
-          4: { cellWidth: 30 },
-          5: { cellWidth: 30 }
+          0: { cellWidth: 35 },
+          1: { cellWidth: 50 },
+          2: { cellWidth: 28 },
+          3: { cellWidth: 38 },
+          4: { cellWidth: 22 },
+          5: { cellWidth: 18 },
+          6: { cellWidth: 28 },
+          7: { cellWidth: 28 }
         },
         margin: { left: 14, right: 14 }
       });
       
       // Save PDF
+      addPageNumbers(doc, [139, 92, 246]);
       const fileName = `customer-report_${new Date().toISOString().split('T')[0]}.pdf`;
       doc.save(fileName);
       
@@ -494,8 +507,8 @@ const CustomerReport = () => {
                           </span>
                         </td>
                         <td className="text-center">{customer.totalOrders || 0}</td>
-                        <td className="amount">{formatCurrency(customer.totalAmountSpent || 0)}</td>
-                        <td>{formatDate(customer.lastOrder)}</td>
+                        <td className="amount">{formatCurrency(customer.totalSpent || 0)}</td>
+                        <td>{formatDate(customer.lastOrderDate)}</td>
                         <td>
                           <button 
                             onClick={() => handleViewReport(customer._id)}
