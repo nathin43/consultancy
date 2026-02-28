@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
+import Loading from '../../components/Loading';
 import API from '../../services/api';
 import { useToast } from '../../hooks/useToast';
 import './AdminManagement.css';
@@ -224,6 +225,14 @@ const AdminManagement = () => {
   const mainAdminCount = admins.filter(a => a.role === 'MAIN_ADMIN').length;
   const subAdminCount = admins.filter(a => a.role === 'SUB_ADMIN').length;
 
+  if (loading) {
+    return (
+      <AdminLayout>
+        <Loading title="Loading Admin Users..." subtitle="Fetching admin data..." />
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="admin-management-container">
@@ -257,11 +266,7 @@ const AdminManagement = () => {
 
         {/* Admin List */}
         <div className="admin-management-content">
-          {loading ? (
-            <div className="loading">
-              <div className="spinner"></div>
-            </div>
-          ) : admins.length === 0 ? (
+          {admins.length === 0 ? (
             <div className="no-admins">
               <p>📭 No admins found</p>
             </div>

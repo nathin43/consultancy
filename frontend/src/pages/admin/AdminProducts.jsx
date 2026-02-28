@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
+import Loading from '../../components/Loading';
 import API from '../../services/api';
 import './AdminProducts.css';
 
@@ -200,20 +201,7 @@ const AdminProducts = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="admin-products-container">
-          <div className="skeleton-header"></div>
-          <div className="skeleton-metrics">
-            <div className="skeleton-metric"></div>
-            <div className="skeleton-metric"></div>
-            <div className="skeleton-metric"></div>
-            <div className="skeleton-metric"></div>
-          </div>
-          <div className="skeleton-list">
-            {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="skeleton-row"></div>
-            ))}
-          </div>
-        </div>
+        <Loading title="Loading Products..." subtitle="Fetching product inventory..." />
       </AdminLayout>
     );
   }

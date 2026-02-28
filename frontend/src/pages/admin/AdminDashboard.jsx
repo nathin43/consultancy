@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import AdminLayout from "../../components/AdminLayout";
+import Loading from "../../components/Loading";
 import API from "../../services/api";
 import "./AdminDashboard.css";
 
@@ -156,10 +157,7 @@ const AdminDashboard = () => {
   if (loading && !stats) {
     return (
       <AdminLayout>
-        <div className="dash-loading">
-          <div className="dash-spinner"></div>
-          <p>Loading Dashboard...</p>
-        </div>
+        <Loading showProgress={false} showSkeletonCards={true} />
       </AdminLayout>
     );
   }
@@ -188,7 +186,7 @@ const AdminDashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="dash-content">
+      <div className="dash-content" style={{ animation: 'fadeInUp 0.6s ease-out' }}>
         <div className="dash-container">
           {/* WELCOME */}
           <section className="dash-welcome">

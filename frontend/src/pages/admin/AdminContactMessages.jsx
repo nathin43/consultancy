@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import AdminLayout from '../../components/AdminLayout';
+import Loading from '../../components/Loading';
 import API from '../../services/api';
 import { ToastContext } from '../../context/ToastContext';
 import './AdminContactMessages.css';
@@ -196,12 +197,7 @@ const AdminContactMessages = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="admin-contact-messages">
-          <div className="loading-state">
-            <div className="spinner"></div>
-            <p>Loading messages...</p>
-          </div>
-        </div>
+        <Loading title="Loading Messages..." subtitle="Fetching contact messages..." />
       </AdminLayout>
     );
   }

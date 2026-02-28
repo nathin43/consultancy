@@ -1,0 +1,429 @@
+/* ===============================================
+   LOADING COMPONENT - MODERN PROFESSIONAL DESIGN
+   Blue Gradient Theme with Smooth Animations
+   =============================================== */
+
+/* ===============================================
+   MODERN LOADING SCREEN
+   Clean Static Card + Animated Background
+   =============================================== */
+
+/* Main Container */
+.modern-loading-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 180px);
+  padding: 2rem;
+  margin: 20px;
+  border-radius: 16px;
+  overflow: hidden;
+  opacity: 0;
+  animation: containerFadeIn 0.6s ease-out 0.1s forwards;
+}
+
+.modern-loading-container.mounted {
+  opacity: 1;
+}
+
+@keyframes containerFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ===============================================
+   ANIMATED GRADIENT WAVES BACKGROUND
+   =============================================== */
+
+.gradient-waves-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* Animated Wave Layers */
+.wave {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  top: -50%;
+  left: -50%;
+  border-radius: 40%;
+  opacity: 0.6;
+}
+
+.wave-1 {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(59, 130, 246, 0.3) 0%,
+    rgba(96, 165, 250, 0.2) 30%,
+    transparent 70%
+  );
+  animation: waveRotate 20s linear infinite;
+}
+
+.wave-2 {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(99, 102, 241, 0.25) 0%,
+    rgba(129, 140, 248, 0.15) 40%,
+    transparent 70%
+  );
+  animation: waveRotate 15s linear infinite reverse;
+  animation-delay: -5s;
+}
+
+.wave-3 {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(139, 92, 246, 0.2) 0%,
+    rgba(167, 139, 250, 0.1) 35%,
+    transparent 70%
+  );
+  animation: waveRotate 25s linear infinite;
+  animation-delay: -10s;
+}
+
+@keyframes waveRotate {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+/* ===============================================
+   CLEAN STATIC GLASS CARD
+   =============================================== */
+
+.static-glass-card {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 3.5rem 4rem;
+  min-width: 380px;
+  box-shadow: 
+    0 25px 50px -12px rgba(30, 64, 175, 0.25),
+    0 10px 20px -5px rgba(59, 130, 246, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  transform: translateY(-5vh);
+  animation: cardFadeInUp 0.8s ease-out 0.3s backwards;
+}
+
+@keyframes cardFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-5vh + 30px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-5vh);
+  }
+}
+
+/* ===============================================
+   LOADING ICON
+   =============================================== */
+
+.loading-icon {
+  margin-bottom: 1.5rem;
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+/* ===============================================
+   LOADING TEXT
+   =============================================== */
+
+.static-loading-text {
+  font-size: 1.75rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 50%, #60A5FA 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.01em;
+  margin-bottom: 0.75rem;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Animated Ellipsis Dots */
+.animated-dots {
+  display: inline-block;
+  width: 1.5em;
+  text-align: left;
+  font-family: monospace;
+  color: #3B82F6;
+  -webkit-text-fill-color: #3B82F6;
+}
+
+/* Loading Subtitle */
+.static-loading-subtitle {
+  font-size: 1rem;
+  color: #64748b;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-align: center;
+  animation: subtitleFadeIn 1s ease-out 0.5s backwards;
+}
+
+@keyframes subtitleFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Progress Bar Container */
+.progress-container {
+  width: 300px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1E40AF 0%, #3B82F6 50%, #60A5FA 100%);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  animation: shimmerProgress 2s linear infinite;
+  background-size: 200% 100%;
+}
+
+@keyframes shimmerProgress {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.progress-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1E40AF;
+}
+
+/* Skeleton Cards */
+.skeleton-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 1rem;
+}
+
+.skeleton-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 180px;
+}
+
+.skeleton-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.skeleton-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+}
+
+.skeleton-title {
+  flex: 1;
+  height: 20px;
+  border-radius: 6px;
+}
+
+.skeleton-value {
+  height: 36px;
+  width: 60%;
+  border-radius: 8px;
+  margin: 0.5rem 0;
+}
+
+.skeleton-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.skeleton-badge {
+  width: 80px;
+  height: 24px;
+  border-radius: 12px;
+}
+
+.skeleton-text {
+  width: 120px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+/* Shimmer Animation */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    #e2e8f0 0%,
+    #f1f5f9 50%,
+    #e2e8f0 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Responsive Design */
+/* ===============================================
+   RESPONSIVE DESIGN
+   =============================================== */
+
+@media (max-width: 768px) {
+  .static-glass-card {
+    min-width: 320px;
+    padding: 3rem 3rem;
+    transform: translateY(-3vh);
+  }
+
+  .static-loading-text {
+    font-size: 1.5rem;
+  }
+
+  .static-loading-subtitle {
+    font-size: 0.925rem;
+  }
+
+  .loading-icon svg {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-loading-container {
+    padding: 1rem;
+    margin: 10px;
+  }
+
+  .static-glass-card {
+    min-width: 280px;
+    padding: 2.5rem 2rem;
+    border-radius: 20px;
+    transform: translateY(-2vh);
+  }
+
+  .static-loading-text {
+    font-size: 1.375rem;
+  }
+
+  .static-loading-subtitle {
+    font-size: 0.875rem;
+  }
+
+  .loading-icon {
+    margin-bottom: 1.25rem;
+  }
+
+  .loading-icon svg {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* ===============================================
+   FADE OUT TRANSITION
+   =============================================== */
+
+.modern-loading-container.fade-out {
+  animation: containerFadeOut 0.5s ease-in forwards;
+}
+
+@keyframes containerFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Fade Out Animation */
+.loading-container.fade-out {
+  animation: fadeOut 0.5s ease-out forwards;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
