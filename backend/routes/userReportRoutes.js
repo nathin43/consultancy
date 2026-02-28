@@ -4,9 +4,7 @@ const {
   getMyReports,
   getMyOrders,
   downloadMyReport,
-  generateMyReport,
-  getMyReportMessages,
-  markReportMessageAsRead
+  generateMyReport
 } = require('../controllers/userReportController');
 const { protect } = require('../middleware/auth');
 
@@ -29,9 +27,5 @@ router.get('/download/:reportId', protect, downloadMyReport);
 
 // Generate report for user's own order
 router.post('/generate/:orderId', protect, generateMyReport);
-
-// Report Message Routes (Inbox)
-router.get('/messages', protect, getMyReportMessages);
-router.patch('/messages/:messageId/read', protect, markReportMessageAsRead);
 
 module.exports = router;

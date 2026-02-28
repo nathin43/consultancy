@@ -3,7 +3,6 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { AuthContext } from '../../context/AuthContext';
 import API from '../../services/api';
-import UserReports from './UserReports';
 import './Profile.css';
 
 /**
@@ -14,7 +13,6 @@ const Profile = () => {
   const { user, logout } = useContext(AuthContext);
   const [editing, setEditing] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState('profile');
   
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
@@ -112,24 +110,7 @@ const Profile = () => {
         <div className="container">
           <h1>My Profile</h1>
 
-          {/* Tabs */}
-          <div className="profile-tabs">
-            <button
-              className={`tab-button ${activeTab === 'profile' ? 'active' : ''}`}
-              onClick={() => setActiveTab('profile')}
-            >
-              Profile Information
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'reports' ? 'active' : ''}`}
-              onClick={() => setActiveTab('reports')}
-            >
-              My Reports
-            </button>
-          </div>
 
-          {activeTab === 'profile' ? (
-            <>
           {message.text && (
             <div className={`alert alert-${message.type === 'success' ? 'success' : 'danger'}`}>
               {message.text}
@@ -351,10 +332,6 @@ const Profile = () => {
               Logout from All Devices
             </button>
           </div>
-            </>
-          ) : (
-            <UserReports />
-          )}
         </div>
       </div>
 
