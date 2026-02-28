@@ -141,41 +141,30 @@ const ProductDetails = () => {
                 <p>{product.description}</p>
               </div>
 
-              {product.specifications && (
+              {product.specifications && Object.keys(product.specifications).length > 0 && (
                 <div className="product-specifications">
                   <h3>Specifications</h3>
                   <table>
                     <tbody>
-                      {product.specifications.power && (
-                        <tr>
-                          <td>Power</td>
-                          <td>{product.specifications.power}</td>
-                        </tr>
-                      )}
-                      {product.specifications.voltage && (
-                        <tr>
-                          <td>Voltage</td>
-                          <td>{product.specifications.voltage}</td>
-                        </tr>
-                      )}
-                      {product.specifications.warranty && (
-                        <tr>
-                          <td>Warranty</td>
-                          <td>{product.specifications.warranty}</td>
-                        </tr>
-                      )}
-                      {product.specifications.color && (
-                        <tr>
-                          <td>Color</td>
-                          <td>{product.specifications.color}</td>
-                        </tr>
-                      )}
-                      {product.specifications.dimensions && (
-                        <tr>
-                          <td>Dimensions</td>
-                          <td>{product.specifications.dimensions}</td>
-                        </tr>
-                      )}
+                      {Object.entries(product.specifications).map(([key, value]) => {
+                        // Skip empty or null values
+                        if (!value || value === '' || value === null || value === undefined) {
+                          return null;
+                        }
+                        
+                        // Format the key to be human-readable
+                        const formattedKey = key
+                          .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+                          .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+                          .trim();
+                        
+                        return (
+                          <tr key={key}>
+                            <td className="spec-label">{formattedKey}</td>
+                            <td className="spec-value">{value}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

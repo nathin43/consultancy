@@ -184,6 +184,8 @@ const AdminEditProduct = () => {
   const fetchProduct = async () => {
     try {
       setLoading(true);
+      setError('');
+      
       const { data } = await API.get(`/products/${id}`);
       const product = data.product;
 
@@ -218,16 +220,20 @@ const AdminEditProduct = () => {
         specifications: initialFormData.specifications
       });
 
-      setFormData(initialFormData);
-      setPreview(product.image || '');
-      setError('');
+      // Use setTimeout to show smooth loading transition
+      setTimeout(() => {
+        setFormData(initialFormData);
+        setPreview(product.image || '');
+        setError('');
+        setLoading(false);
+      }, 300);
+      
     } catch (err) {
       console.error('❌ Error fetching product:', err);
       console.error('❌ Error response:', err.response?.data);
       setError(err.response?.data?.message || 'Failed to load product. Product not found.');
-      setTimeout(() => navigate('/admin/products'), 3000);
-    } finally {
       setLoading(false);
+      setTimeout(() => navigate('/admin/products'), 3000);
     }
   };
 
@@ -324,12 +330,12 @@ const AdminEditProduct = () => {
       onChange: (e) => handleSpecChange(field.key, e.target.value),
       required: isRequired,
       placeholder: field.placeholder,
-      className: hasValue ? 'form-input has-value' : 'form-input'
+      className: hasValue ? 'form-input has-value autofilled' : 'form-input'
     };
 
     if (field.type === 'select') {
       return (
-        <select {...commonProps} className={hasValue ? 'form-select has-value' : 'form-select'}>
+        <select {...commonProps} className={hasValue ? 'form-select has-value autofilled' : 'form-select'}>
           <option value="">Select {field.label}</option>
           {field.options.map(option => (
             <option key={option} value={option}>{option}</option>
@@ -343,7 +349,7 @@ const AdminEditProduct = () => {
         <textarea
           {...commonProps}
           rows={4}
-          className={hasValue ? 'form-textarea has-value' : 'form-textarea'}
+          className={hasValue ? 'form-textarea has-value autofilled' : 'form-textarea'}
         />
       );
     }
@@ -360,11 +366,70 @@ const AdminEditProduct = () => {
     return (
       <AdminLayout>
         <div className="admin-add-product-container">
-          <div className="loading-state">
-            <svg className="spinner" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-            </svg>
-            <p>Loading product...</p>
+          {/* Skeleton Header */}
+          <div className="page-header skeleton-animate">
+            <div className="skeleton skeleton-button" style={{ width: '160px', height: '40px' }}></div>
+            <div className="skeleton skeleton-title" style={{ width: '200px', height: '36px', marginTop: '16px' }}></div>
+            <div className="skeleton skeleton-text" style={{ width: '320px', height: '20px', marginTop: '8px' }}></div>
+          </div>
+
+          {/* Skeleton Info Banner */}
+          <div className="skeleton skeleton-card" style={{ height: '60px', marginBottom: '24px' }}></div>
+
+          {/* Skeleton Form Cards */}
+          <div className="skeleton-form">
+            {/* Basic Info Card Skeleton */}
+            <div className="form-card skeleton-animate">
+              <div className="card-header">
+                <div className="skeleton skeleton-title" style={{ width: '180px', height: '24px' }}></div>
+                <div className="skeleton skeleton-text" style={{ width: '280px', height: '18px', marginTop: '8px' }}></div>
+              </div>
+              <div className="card-body">
+                <div className="basic-info-grid">
+                  {[...Array(6)].map((_, i) => (
+                    <div className="input-group" key={i}>
+                      <div className="skeleton skeleton-label" style={{ width: '120px', height: '16px', marginBottom: '8px' }}></div>
+                      <div className="skeleton skeleton-input" style={{ width: '100%', height: i === 5 ? '80px' : '44px' }}></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Specifications Card Skeleton */}
+            <div className="form-card skeleton-animate">
+              <div className="card-header">
+                <div className="skeleton skeleton-title" style={{ width: '220px', height: '24px' }}></div>
+                <div className="skeleton skeleton-text" style={{ width: '300px', height: '18px', marginTop: '8px' }}></div>
+              </div>
+              <div className="card-body">
+                <div className="specs-grid-layout">
+                  {[...Array(4)].map((_, i) => (
+                    <div className="input-group" key={i}>
+                      <div className="skeleton skeleton-label" style={{ width: '140px', height: '16px', marginBottom: '8px' }}></div>
+                      <div className="skeleton skeleton-input" style={{ width: '100%', height: '44px' }}></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Image Card Skeleton */}
+            <div className="form-card skeleton-animate">
+              <div className="card-header">
+                <div className="skeleton skeleton-title" style={{ width: '160px', height: '24px' }}></div>
+                <div className="skeleton skeleton-text" style={{ width: '240px', height: '18px', marginTop: '8px' }}></div>
+              </div>
+              <div className="card-body">
+                <div className="skeleton skeleton-image" style={{ width: '100%', height: '300px', borderRadius: '12px' }}></div>
+              </div>
+            </div>
+
+            {/* Action Buttons Skeleton */}
+            <div className="form-actions skeleton-animate">
+              <div className="skeleton skeleton-button" style={{ width: '120px', height: '48px' }}></div>
+              <div className="skeleton skeleton-button" style={{ width: '180px', height: '48px' }}></div>
+            </div>
           </div>
         </div>
       </AdminLayout>

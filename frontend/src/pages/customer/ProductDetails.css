@@ -257,11 +257,19 @@
   font-size: 15px;
 }
 
-.product-specifications td:first-child {
+.product-specifications td:first-child,
+.product-specifications .spec-label {
   font-weight: 500;
   width: 35%;
   color: var(--text-main);
   /* Darker for labels */
+}
+
+.product-specifications td:last-child,
+.product-specifications .spec-value {
+  font-weight: 400;
+  color: #475569;
+  /* Slightly darker for better readability */
 }
 
 .product-specifications td:first-child::before {

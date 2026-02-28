@@ -1,5 +1,12 @@
 const Product = require('../models/Product');
 const path = require('path');
+const {
+  specificationSchemas,
+  getSpecificationSchema,
+  getCategories,
+  validateSpecifications,
+  getSpecLabel
+} = require('../config/specificationSchemas');
 
 // Mock data for fallback when database is unavailable
 const MOCK_PRODUCTS = [
@@ -514,3 +521,47 @@ exports.toggleProductStatus = async (req, res) => {
     });
   }
 };
+
+/**
+ * Get specification schemas for all categories
+ * @route GET /api/products/specifications/schemas
+ * @access Public
+ */
+exports.getSpecificationSchemas = async (req, res) => {
+  try {
+    res.status(200).json({
+      success: true,
+      schemas: specificationSchemas,
+      categories: getCategories()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get specification schema for a specific category
+ * @route GET /api/products/specifications/schemas/:category
+ * @access Public
+ */
+exports.getCategorySpecificationSchema = async (req, res) => {
+  try {
+    const { category } = req.params;
+    const schema = getSpecificationSchema(category);
+    
+    res.status(200).json({
+      success: true,
+      category,
+      schema
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+

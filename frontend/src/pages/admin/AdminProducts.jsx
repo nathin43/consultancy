@@ -444,79 +444,99 @@ const AdminProducts = () => {
                       e.target.src = 'https://via.placeholder.com/400x300?text=Product+Image';
                     }}
                   />
-                  <span className={`card-status-badge status-${product.status}`}>
-                    {product.status === 'active' ? '✓ Active' : 
-                     product.status === 'inactive' ? '⊘ Inactive' : 
-                     '🚫 Out of Stock'}
-                  </span>
+                  <div className="card-status-overlay">
+                    <button 
+                      className={`status-pill ${product.status === 'active' ? 'status-active' : 'status-inactive'}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleToggleStatus(product._id, product.status);
+                      }}
+                      title="Click to toggle status"
+                    >
+                      <span className="status-indicator"></span>
+                      <span className="status-text">{product.status === 'active' ? 'Active' : 'Inactive'}</span>
+                    </button>
+                  </div>
+                  {product.stock === 0 && <div className="out-of-stock-banner">Out of Stock</div>}
+                  {product.stock > 0 && product.stock < 10 && <div className="low-stock-banner">Low Stock</div>}
                 </div>
 
                 {/* Product Details */}
                 <div className="card-content">
-                  <h3 className="card-product-name">{product.name}</h3>
-                  
-                  <div className="card-meta-badges">
-                    <span className="card-badge brand">
-                      {product.brand}
-                    </span>
-                    <span className="card-badge category">
-                      {product.category}
-                    </span>
+                  <div className="card-header-section">
+                    <h3 className="card-product-name" title={product.name}>{product.name}</h3>
+                    <div className="card-meta-badges">
+                      <span className="card-badge brand">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        </svg>
+                        {product.brand}
+                      </span>
+                      <span className="card-badge category">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                          <path d="M22 6l-10 7L2 6"></path>
+                        </svg>
+                        {product.category}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="card-info-row">
-                    <div className="card-price">
-                      <span className="price-label">Price</span>
-                      <span className="price-value">₹{product.price.toLocaleString()}</span>
+                  <div className="card-stats-grid">
+                    <div className="stat-box stat-price">
+                      <div className="stat-icon">₹</div>
+                      <div className="stat-content">
+                        <span className="stat-label">Price</span>
+                        <span className="stat-value">₹{product.price.toLocaleString()}</span>
+                      </div>
                     </div>
-                    <div className="card-stock">
-                      <span className="stock-label">Stock</span>
-                      <span className={`stock-value ${product.stock === 0 ? 'out' : product.stock < 10 ? 'low' : 'good'}`}>
-                        {product.stock}
-                      </span>
+                    <div className="stat-box stat-stock">
+                      <div className="stat-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                          <path d="M3.27 6.96L12 12.01l8.73-5.05"></path>
+                          <path d="M12 22.08V12"></path>
+                        </svg>
+                      </div>
+                      <div className="stat-content">
+                        <span className="stat-label">Stock</span>
+                        <span className={`stat-value ${product.stock === 0 ? 'out' : product.stock < 10 ? 'low' : 'good'}`}>
+                          {product.stock} units
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="card-actions">
+                <div className="card-actions-modern">
                   <Link
                     to={`/admin/products/edit/${product._id}`}
-                    className="card-action-btn edit-btn"
-                    title="Edit product"
+                    className="action-btn-modern edit-btn-modern"
+                    title="Edit product details"
                   >
+                    <span className="btn-ripple"></span>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
-                    Edit
+                    <span className="btn-text">Edit</span>
                   </Link>
 
                   <button
-                    onClick={() => handleToggleStatus(product._id, product.status)}
-                    className="card-action-btn toggle-btn"
-                    title="Toggle status"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                      <path d="M21 3v5h-5"/>
-                      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                      <path d="M3 21v-5h5"/>
-                    </svg>
-                    Toggle
-                  </button>
-
-                  <button
                     onClick={() => handleDelete(product._id, product.name)}
-                    className="card-action-btn delete-btn"
-                    title="Delete product"
+                    className="action-btn-modern delete-btn-modern"
+                    title="Delete this product"
                   >
+                    <span className="btn-ripple"></span>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M3 6h18"></path>
                       <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
                       <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
                     </svg>
-                    Delete
+                    <span className="btn-text">Delete</span>
                   </button>
                 </div>
               </div>

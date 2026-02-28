@@ -8,7 +8,9 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
-  toggleProductStatus
+  toggleProductStatus,
+  getSpecificationSchemas,
+  getCategorySpecificationSchema
 } = require('../controllers/productController');
 const { adminProtect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
@@ -23,6 +25,8 @@ const upload = require('../middleware/upload');
 router.get('/', getProducts);
 router.get('/featured', getFeaturedProducts);
 router.get('/categories', getCategories);
+router.get('/specifications/schemas', getSpecificationSchemas);
+router.get('/specifications/schemas/:category', getCategorySpecificationSchema);
 
 // Admin routes - BEFORE /:id to ensure POST works correctly
 router.post('/', adminProtect, upload.single('image'), createProduct);
