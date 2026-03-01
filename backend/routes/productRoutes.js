@@ -13,7 +13,7 @@ const {
   getCategorySpecificationSchema
 } = require('../controllers/productController');
 const { adminProtect } = require('../middleware/auth');
-const upload = require('../middleware/upload');
+const { uploadProductImages } = require('../middleware/upload');
 
 /**
  * Product Routes
@@ -29,8 +29,8 @@ router.get('/specifications/schemas', getSpecificationSchemas);
 router.get('/specifications/schemas/:category', getCategorySpecificationSchema);
 
 // Admin routes - BEFORE /:id to ensure POST works correctly
-router.post('/', adminProtect, upload.single('image'), createProduct);
-router.put('/:id', adminProtect, upload.single('image'), updateProduct);
+router.post('/', adminProtect, uploadProductImages, createProduct);
+router.put('/:id', adminProtect, uploadProductImages, updateProduct);
 router.patch('/:id/status', adminProtect, toggleProductStatus);
 router.delete('/:id', adminProtect, deleteProduct);
 

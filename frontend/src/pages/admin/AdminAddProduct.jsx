@@ -22,6 +22,8 @@ const AdminAddProduct = () => {
   });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState('');
+  const [galleryFiles, setGalleryFiles] = useState([]);
+  const [galleryPreviews, setGalleryPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -207,6 +209,21 @@ const AdminAddProduct = () => {
     }
   };
 
+  const handleGalleryChange = (e) => {
+    const files = Array.from(e.target.files);
+    const remaining = 5 - galleryFiles.length;
+    const toAdd = files.slice(0, remaining);
+    setGalleryFiles(prev => [...prev, ...toAdd]);
+    setGalleryPreviews(prev => [...prev, ...toAdd.map(f => URL.createObjectURL(f))]);
+    // Reset input so same file can be re-selected if removed
+    e.target.value = '';
+  };
+
+  const removeGalleryImage = (index) => {
+    setGalleryFiles(prev => prev.filter((_, i) => i !== index));
+    setGalleryPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -224,6 +241,9 @@ const AdminAddProduct = () => {
       if (image) {
         data.append('image', image);
       }
+
+      // Gallery images
+      galleryFiles.forEach(f => data.append('images', f));
 
       // Specifications
       const specifications = Object.entries(formData.specifications).reduce((acc, [key, value]) => {
@@ -480,7 +500,7 @@ const AdminAddProduct = () => {
             </div>
           </div>
 
-          {/* Product Image Card */}
+          {/* Product Images Card */}
           <div className="form-card">
             <div className="card-header">
               <h2 className="card-title">
@@ -489,11 +509,13 @@ const AdminAddProduct = () => {
                   <circle cx="8.5" cy="8.5" r="1.5"/>
                   <path d="m21 15-5-5L5 21"/>
                 </svg>
-                Product Image
+                Product Images
               </h2>
-              <p className="card-description">Upload high-quality product image</p>
+              <p className="card-description">Main image (required) + up to 5 gallery images</p>
             </div>
             <div className="card-body">
+              {/* Main Image */}
+              <p className="gallery-section-label">Main Image <span className="required">*</span></p>
               <div className="upload-area">
                 <input
                   type="file"
@@ -521,10 +543,43 @@ const AdminAddProduct = () => {
                       </svg>
                       <span className="upload-title">Click to upload or drag and drop</span>
                       <span className="upload-hint">Recommended: 800×800px, max 5MB</span>
-                      <span className="upload-hint">PNG, JPG, JPEG formats supported</span>
+                      <span className="upload-hint">PNG, JPG, JPEG, WEBP supported</span>
                     </div>
                   )}
                 </label>
+              </div>
+
+              {/* Gallery Images */}
+              <div className="gallery-section">
+                <p className="gallery-section-label">Gallery Images <span className="gallery-count">({galleryFiles.length}/5)</span></p>
+                <div className="gallery-thumbnails">
+                  {galleryPreviews.map((src, i) => (
+                    <div key={i} className="gallery-thumb">
+                      <img src={src} alt={`Gallery ${i + 1}`} />
+                      <button type="button" className="gallery-remove-btn" onClick={() => removeGalleryImage(i)} title="Remove">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M18 6 6 18M6 6l12 12"/>
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                  {galleryFiles.length < 5 && (
+                    <label className="gallery-add-btn" title="Add gallery image">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="upload-input"
+                        onChange={handleGalleryChange}
+                      />
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 5v14M5 12h14"/>
+                      </svg>
+                      <span>Add Photos</span>
+                    </label>
+                  )}
+                </div>
+                <p className="gallery-hint">Up to 5 additional images. Each max 5MB.</p>
               </div>
             </div>
           </div>

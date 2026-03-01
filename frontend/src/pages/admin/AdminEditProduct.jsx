@@ -23,6 +23,9 @@ const AdminEditProduct = () => {
   });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState('');
+  const [existingImages, setExistingImages] = useState([]);
+  const [newGalleryFiles, setNewGalleryFiles] = useState([]);
+  const [newGalleryPreviews, setNewGalleryPreviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -224,6 +227,7 @@ const AdminEditProduct = () => {
       setTimeout(() => {
         setFormData(initialFormData);
         setPreview(product.image || '');
+        setExistingImages(Array.isArray(product.images) ? product.images : []);
         setError('');
         setLoading(false);
       }, 300);
@@ -270,6 +274,24 @@ const AdminEditProduct = () => {
     }
   };
 
+  const removeExistingImage = (url) => {
+    setExistingImages(prev => prev.filter(u => u !== url));
+  };
+
+  const handleGalleryChange = (e) => {
+    const files = Array.from(e.target.files);
+    const remaining = 5 - existingImages.length - newGalleryFiles.length;
+    const toAdd = files.slice(0, remaining);
+    setNewGalleryFiles(prev => [...prev, ...toAdd]);
+    setNewGalleryPreviews(prev => [...prev, ...toAdd.map(f => URL.createObjectURL(f))]);
+    e.target.value = '';
+  };
+
+  const removeNewGalleryImage = (index) => {
+    setNewGalleryFiles(prev => prev.filter((_, i) => i !== index));
+    setNewGalleryPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -287,6 +309,12 @@ const AdminEditProduct = () => {
       if (image) {
         data.append('image', image);
       }
+
+      // Tell backend which existing gallery images to keep
+      data.append('existingImages', JSON.stringify(existingImages));
+
+      // Append any new gallery images
+      newGalleryFiles.forEach(f => data.append('images', f));
 
       // Specifications
       const specifications = Object.entries(formData.specifications).reduce((acc, [key, value]) => {
@@ -636,7 +664,7 @@ const AdminEditProduct = () => {
             </div>
           </div>
 
-          {/* Product Image Card */}
+          {/* Product Images Card */}
           <div className="form-card">
             <div className="card-header">
               <h2 className="card-title">
@@ -645,11 +673,13 @@ const AdminEditProduct = () => {
                   <circle cx="8.5" cy="8.5" r="1.5"/>
                   <path d="m21 15-5-5L5 21"/>
                 </svg>
-                Product Image
+                Product Images
               </h2>
-              <p className="card-description">Update product image (optional)</p>
+              <p className="card-description">Update main image and manage gallery photos</p>
             </div>
             <div className="card-body">
+              {/* Main Image */}
+              <p className="gallery-section-label">Main Image</p>
               <div className="upload-area">
                 <input
                   type="file"
@@ -680,6 +710,67 @@ const AdminEditProduct = () => {
                     </div>
                   )}
                 </label>
+              </div>
+
+              {/* Gallery Images */}
+              <div className="gallery-section">
+                <p className="gallery-section-label">
+                  Gallery Images
+                  <span className="gallery-count"> ({existingImages.length + newGalleryFiles.length}/5)</span>
+                </p>
+                <div className="gallery-thumbnails">
+                  {/* Existing saved images */}
+                  {existingImages.map((url, i) => (
+                    <div key={`existing-${i}`} className="gallery-thumb gallery-thumb-saved">
+                      <img src={url} alt={`Gallery ${i + 1}`} />
+                      <span className="gallery-saved-badge">Saved</span>
+                      <button
+                        type="button"
+                        className="gallery-remove-btn"
+                        onClick={() => removeExistingImage(url)}
+                        title="Remove"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M18 6 6 18M6 6l12 12"/>
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                  {/* Newly added previews */}
+                  {newGalleryPreviews.map((src, i) => (
+                    <div key={`new-${i}`} className="gallery-thumb gallery-thumb-new">
+                      <img src={src} alt={`New ${i + 1}`} />
+                      <span className="gallery-new-badge">New</span>
+                      <button
+                        type="button"
+                        className="gallery-remove-btn"
+                        onClick={() => removeNewGalleryImage(i)}
+                        title="Remove"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M18 6 6 18M6 6l12 12"/>
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                  {/* Add button */}
+                  {existingImages.length + newGalleryFiles.length < 5 && (
+                    <label className="gallery-add-btn" title="Add gallery image">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="upload-input"
+                        onChange={handleGalleryChange}
+                      />
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 5v14M5 12h14"/>
+                      </svg>
+                      <span>Add Photos</span>
+                    </label>
+                  )}
+                </div>
+                <p className="gallery-hint">Up to 5 additional images. Click × to remove. Each max 5MB.</p>
               </div>
             </div>
           </div>

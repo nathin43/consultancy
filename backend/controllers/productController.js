@@ -353,10 +353,19 @@ exports.getCategories = async (req, res) => {
  */
 exports.createProduct = async (req, res) => {
   try {
-    // Get image path if uploaded
+    // Handle main image (from uploadProductImages fields middleware)
     let imagePath = '';
-    if (req.file) {
+    if (req.files && req.files['image'] && req.files['image'][0]) {
+      imagePath = `/uploads/products/${req.files['image'][0].filename}`;
+    } else if (req.file) {
+      // fallback for single upload middleware
       imagePath = `/uploads/products/${req.file.filename}`;
+    }
+
+    // Handle gallery images
+    let galleryImages = [];
+    if (req.files && req.files['images']) {
+      galleryImages = req.files['images'].map(f => `/uploads/products/${f.filename}`);
     }
 
     // Parse specifications if it's a JSON string
@@ -380,7 +389,8 @@ exports.createProduct = async (req, res) => {
 
     const productData = {
       ...req.body,
-      image: imagePath || req.body.image
+      image: imagePath || req.body.image,
+      images: galleryImages
     };
 
     const product = await Product.create(productData);
@@ -423,10 +433,31 @@ exports.updateProduct = async (req, res) => {
       });
     }
 
-    // Get image path if uploaded
-    if (req.file) {
+    // Handle main image replacement
+    if (req.files && req.files['image'] && req.files['image'][0]) {
+      req.body.image = `/uploads/products/${req.files['image'][0].filename}`;
+    } else if (req.file) {
       req.body.image = `/uploads/products/${req.file.filename}`;
     }
+
+    // Handle gallery images merge:
+    // existingImages = JSON array of kept image URLs sent from frontend
+    // newImages = newly uploaded gallery files
+    let keptImages = [];
+    if (req.body.existingImages) {
+      try {
+        keptImages = JSON.parse(req.body.existingImages);
+      } catch (e) {
+        keptImages = [];
+      }
+    } else {
+      // If not sent, preserve existing gallery
+      keptImages = product.images || [];
+    }
+    const newGalleryImages = req.files && req.files['images']
+      ? req.files['images'].map(f => `/uploads/products/${f.filename}`)
+      : [];
+    req.body.images = [...keptImages, ...newGalleryImages];
 
     // Parse specifications if it's a JSON string
     if (req.body.specifications && typeof req.body.specifications === 'string') {

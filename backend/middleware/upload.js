@@ -40,4 +40,15 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
+// Multi-field upload: main image + up to 5 gallery images
+const uploadProductImages = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: fileFilter
+}).fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'images', maxCount: 5 }
+]);
+
 module.exports = upload;
+module.exports.uploadProductImages = uploadProductImages;
