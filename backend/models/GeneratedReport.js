@@ -10,8 +10,7 @@ const generatedReportSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['sales', 'stock', 'customer', 'customers', 'payment', 'payments', 'order', 'orders'],
-    index: true
+    enum: ['sales', 'stock', 'customer', 'customers', 'payment', 'payments', 'order', 'orders']
   },
   
   // Report Summary Data
@@ -50,8 +49,7 @@ const generatedReportSchema = new mongoose.Schema({
   generatedAt: {
     type: Date,
     default: Date.now,
-    required: true,
-    index: true
+    required: true
   },
   
   generatedBy: {
@@ -68,8 +66,7 @@ const generatedReportSchema = new mongoose.Schema({
   
   // Expiry (optional - for cleanup of old reports)
   expiresAt: {
-    type: Date,
-    index: true
+    type: Date
   }
 }, {
   timestamps: true,
