@@ -14,7 +14,7 @@ const getBackendURL = () => {
     return '/api';
   }
   // In production, use the full URL
-  return `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api`;
+  return `${import.meta.env.VITE_API_URL || 'https://manielectrical-backend.onrender.com'}/api`;
 };
 
 const API = axios.create({

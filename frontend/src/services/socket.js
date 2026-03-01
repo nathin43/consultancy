@@ -3,9 +3,9 @@ import { io } from 'socket.io-client';
 // Socket.IO client instance
 let socket = null;
 
-// Get backend URL - use localhost:50004 directly (not proxied like REST API)
+// Get backend URL - production or development
 // Socket.IO needs direct connection, cannot go through Vite proxy
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:50004';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://manielectrical-backend.onrender.com';
 
 /**
  * Initialize Socket.IO connection
