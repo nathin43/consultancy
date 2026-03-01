@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
+import DashboardSkeleton from '../../components/DashboardSkeleton';
+import useAdminLoader from '../../hooks/useAdminLoader';
 import useToast from '../../hooks/useToast';
 import api from '../../services/api';
 import './ReportStyles.css';
@@ -10,7 +12,7 @@ const StockReport = () => {
   const navigate = useNavigate();
   const { success, error } = useToast();
   
-  const [loading, setLoading] = useState(false);
+  const { loading, run } = useAdminLoader();
   const [exporting, setExporting] = useState(false);
   const [stockData, setStockData] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -28,11 +30,11 @@ const StockReport = () => {
   });
 
   useEffect(() => {
-    fetchStockData();
+    run(fetchStockData);
   }, []);
 
   const fetchStockData = async () => {
-    setLoading(true);
+    // loading managed by useAdminLoader's run()
     try {
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) {
@@ -93,7 +95,7 @@ const StockReport = () => {
         error(err.response?.data?.message || 'Failed to fetch stock data');
       }
     } finally {
-      setLoading(false);
+      // loading managed by run()
     }
   };
 
@@ -103,7 +105,7 @@ const StockReport = () => {
   };
 
   const handleApplyFilters = () => {
-    fetchStockData();
+    run(fetchStockData);
   };
 
   const handleClearFilters = () => {
@@ -224,6 +226,14 @@ const StockReport = () => {
     if (stock > 0) return { status: 'Low Stock', class: 'low-stock' };
     return { status: 'Out of Stock', class: 'out-of-stock' };
   };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <DashboardSkeleton title="Loading Stock Report" />
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -351,12 +361,7 @@ const StockReport = () => {
             <p>Showing {stockData.length} products</p>
           </div>
 
-          {loading ? (
-            <div className="table-loading">
-              <div className="spinner"></div>
-              <p>Loading stock data...</p>
-            </div>
-          ) : stockData.length > 0 ? (
+          {stockData.length > 0 ? (
             <div className="table-wrapper">
               <table className="report-table">
                 <thead>

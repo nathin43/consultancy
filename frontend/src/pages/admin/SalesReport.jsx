@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
+import DashboardSkeleton from '../../components/DashboardSkeleton';
+import useAdminLoader from '../../hooks/useAdminLoader';
 import useToast from '../../hooks/useToast';
 import api from '../../services/api';
 import './ReportStyles.css';
@@ -10,7 +12,7 @@ const SalesReport = () => {
   const navigate = useNavigate();
   const { success, error } = useToast();
   
-  const [loading, setLoading] = useState(true);
+  const { loading, run } = useAdminLoader();
   const [exporting, setExporting] = useState(false);
   const [salesData, setSalesData] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -48,12 +50,11 @@ const SalesReport = () => {
       console.log('📊 Using cached sales data');
       setSalesData(cacheRef.current.data);
       setAnalytics(cacheRef.current.analytics);
-      setLoading(false);
-      return;
+      return; // run() handles loading=false
     }
     
     isFetchingRef.current = true;
-    setLoading(true);
+    // loading is managed by useAdminLoader’s run()
     setErrorMessage('');
 
     try {
@@ -113,25 +114,15 @@ const SalesReport = () => {
       setErrorMessage(errorMsg);
       error(errorMsg);
     } finally {
-      setLoading(false);
       isFetchingRef.current = false;
+      // loading state managed by useAdminLoader's run()
     }
   }, [filters, navigate, error]);
 
-  // Initial load only
+  // Initial load — enforces 2s minimum display time matching Dashboard
   useEffect(() => {
-    let mounted = true;
-    
-    if (mounted) {
-      fetchSalesData();
-    }
-
-    return () => {
-      mounted = false;
-    };
-  }, []); // Empty deps - only run once on mount
-
-  // Removed old fetchSalesData - now using optimized version above
+    run(fetchSalesData);
+  }, []);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -140,7 +131,7 @@ const SalesReport = () => {
 
   const handleApplyFilters = () => {
     cacheRef.current = null; // Clear cache when filters change
-    fetchSalesData(true); // Force refresh
+    run(() => fetchSalesData(true)); // enforces same 2s minimum
   };
 
   const handleClearFilters = () => {
@@ -410,6 +401,15 @@ const SalesReport = () => {
     });
   };
 
+  // Show identical Dashboard skeleton while loading (initial or filter refresh)
+  if (loading) {
+    return (
+      <AdminLayout>
+        <DashboardSkeleton title="Loading Sales Report" />
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="admin-report-page">
@@ -555,12 +555,7 @@ const SalesReport = () => {
             <p>Showing {salesData.length} sales records</p>
           </div>
 
-          {loading ? (
-            <div className="table-loading">
-              <div className="spinner"></div>
-              <p>Loading sales data...</p>
-            </div>
-          ) : salesData.length > 0 ? (
+          {salesData.length > 0 ? (
             <div className="table-wrapper">
               <table className="report-table">
                 <thead>

@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
+import DashboardSkeleton from '../../components/DashboardSkeleton';
+import useAdminLoader from '../../hooks/useAdminLoader';
 import './AdminReportsNewStyle.css';
 
 const AdminReports = () => {
   const navigate = useNavigate();
+  const { loading, run } = useAdminLoader();
 
   // Report categories data
   const reportCategories = [
@@ -50,9 +53,23 @@ const AdminReports = () => {
     }
   ];
 
+  useEffect(() => {
+    // No API call needed — run() still enforces the 2s minimum display time
+    // so the Reports Dashboard matches every other admin page exactly
+    run(async () => {});
+  }, []);
+
   const handleNavigateToReport = (path) => {
     navigate(path);
   };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <DashboardSkeleton title="Loading Reports" />
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

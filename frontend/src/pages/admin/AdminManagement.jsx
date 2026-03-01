@@ -2,6 +2,8 @@ import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
+import DashboardSkeleton from '../../components/DashboardSkeleton';
+import useAdminLoader from '../../hooks/useAdminLoader';
 import API from '../../services/api';
 import { useToast } from '../../hooks/useToast';
 import './AdminManagement.css';
@@ -16,9 +18,8 @@ const AdminManagement = () => {
   const showToast = useToast();
 
   const [admins, setAdmins] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
+  const [modalMode, setModalMode] = useState('add');
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -28,6 +29,7 @@ const AdminManagement = () => {
     status: 'Active'
   });
   const [formError, setFormError] = useState('');
+  const { loading, run } = useAdminLoader();
 
   // Redirect if not MAIN_ADMIN (check role)
   useEffect(() => {
@@ -39,35 +41,26 @@ const AdminManagement = () => {
 
   // Fetch all admins
   useEffect(() => {
-    fetchAdmins();
+    run(fetchAdmins);
   }, []);
 
   const fetchAdmins = async () => {
     try {
-      setLoading(true);
       const token = localStorage.getItem('adminToken');
       const { data } = await API.get('/admin-management/admins', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
-
       if (data.success) {
         setAdmins(data.admins);
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to fetch admins';
-      
-      // Handle 403 Forbidden (SUB_ADMIN trying to access)
       if (error.response?.status === 403) {
         showToast('Access denied. Admin management is restricted.', 'error');
         navigate('/admin/dashboard');
         return;
       }
-      
       showToast(errorMessage, 'error');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -227,9 +220,7 @@ const AdminManagement = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-          Loading admin users...
-        </div>
+        <DashboardSkeleton title="Loading Admin Management" />
       </AdminLayout>
     );
   }

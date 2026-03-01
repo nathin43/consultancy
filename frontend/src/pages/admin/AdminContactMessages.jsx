@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import AdminLayout from '../../components/AdminLayout';
-import Loading from '../../components/Loading';
+import DashboardSkeleton from '../../components/DashboardSkeleton';
+import useAdminLoader from '../../hooks/useAdminLoader';
 import API from '../../services/api';
 import { ToastContext } from '../../context/ToastContext';
 import './AdminContactMessages.css';
@@ -12,26 +13,23 @@ import './AdminContactMessages.css';
 const AdminContactMessages = () => {
   const { success, error } = useContext(ToastContext);
   const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showReplyModal, setShowReplyModal] = useState(false);
   const [replyMessage, setReplyMessage] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
-  const [filter, setFilter] = useState('all'); // all, new, read, replied, resolved
+  const [filter, setFilter] = useState('all');
+  const { loading, run } = useAdminLoader();
 
   useEffect(() => {
-    fetchMessages();
+    run(fetchMessages);
   }, []);
 
   const fetchMessages = async () => {
     try {
-      setLoading(true);
       console.log('🔄 Fetching contact messages from API...');
       const { data } = await API.get('/contact');
-      
       console.log('📥 API Response:', data);
-      
       if (data.success) {
         setMessages(data.data);
         console.log(`✅ Loaded ${data.data.length} contact messages`);
@@ -42,7 +40,6 @@ const AdminContactMessages = () => {
     } catch (err) {
       console.error('❌ Error fetching messages:', err);
       console.error('Error details:', err.response?.data);
-      
       if (err.response?.status === 401) {
         error('Not authorized. Please log in as admin.');
       } else if (err.response?.status === 404) {
@@ -50,8 +47,6 @@ const AdminContactMessages = () => {
       } else {
         error(err.response?.data?.message || 'Failed to load contact messages');
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -197,9 +192,7 @@ const AdminContactMessages = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-          Loading messages...
-        </div>
+        <DashboardSkeleton title="Loading Messages" />
       </AdminLayout>
     );
   }

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
+import DashboardSkeleton from '../../components/DashboardSkeleton';
+import useAdminLoader from '../../hooks/useAdminLoader';
 import useToast from '../../hooks/useToast';
 import api from '../../services/api';
 import './ReportStyles.css';
@@ -10,7 +12,7 @@ const OrderReport = () => {
   const navigate = useNavigate();
   const { success, error } = useToast();
   
-  const [loading, setLoading] = useState(true);
+  const { loading, run } = useAdminLoader();
   const [exporting, setExporting] = useState(false);
   const [orderData, setOrderData] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -44,12 +46,11 @@ const OrderReport = () => {
       console.log('📋 Using cached order data');
       setOrderData(cacheRef.current.data);
       setAnalytics(cacheRef.current.analytics);
-      setLoading(false);
-      return;
+      return; // run() handles loading=false
     }
     
     isFetchingRef.current = true;
-    setLoading(true);
+    // loading managed by useAdminLoader's run()
     setErrorMessage('');
 
     try {
@@ -107,21 +108,13 @@ const OrderReport = () => {
       setErrorMessage(errorMsg);
       error(errorMsg);
     } finally {
-      setLoading(false);
       isFetchingRef.current = false;
+      // loading managed by run()
     }
   }, [filters, navigate, error]);
 
   useEffect(() => {
-    let mounted = true;
-    
-    if (mounted) {
-      fetchOrderData();
-    }
-
-    return () => {
-      mounted = false;
-    };
+    run(fetchOrderData);
   }, []);
 
   const handleFilterChange = (e) => {
@@ -131,7 +124,7 @@ const OrderReport = () => {
 
   const handleApplyFilters = () => {
     cacheRef.current = null;
-    fetchOrderData(true);
+    run(() => fetchOrderData(true));
   };
 
   const handleClearFilters = () => {
@@ -254,6 +247,14 @@ const OrderReport = () => {
       year: 'numeric', month: 'short', day: 'numeric' 
     });
   };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <DashboardSkeleton title="Loading Order Report" />
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -400,12 +401,7 @@ const OrderReport = () => {
             <p>Showing {orderData.length} orders</p>
           </div>
 
-          {loading ? (
-            <div className="table-loading">
-              <div className="spinner"></div>
-              <p>Loading order data...</p>
-            </div>
-          ) : orderData.length > 0 ? (
+          {orderData.length > 0 ? (
             <div className="table-wrapper">
               <table className="report-table">
                 <thead>

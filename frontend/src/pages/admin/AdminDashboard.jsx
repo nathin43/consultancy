@@ -1,6 +1,8 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import AdminLayout from "../../components/AdminLayout";
+import DashboardSkeleton from "../../components/DashboardSkeleton";
+import useAdminLoader from "../../hooks/useAdminLoader";
 import API from "../../services/api";
 import "./AdminDashboard.css";
 
@@ -48,58 +50,52 @@ const AdminDashboard = () => {
   const [salesTrend, setSalesTrend] = useState([]);
   const [orderDist, setOrderDist] = useState(null);
   const [recentOrders, setRecentOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const refreshIntervalRef = useRef(null);
+  // Shared loader hook — same 2 s minimum delay as every other admin page
+  const { loading, run } = useAdminLoader();
 
-  useEffect(() => {
-    fetchDashboard();
-    // Auto-refresh every 5 minutes
-    refreshIntervalRef.current = setInterval(fetchDashboard, 300000);
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current);
-      }
-    };
-  }, []);
-
+  // Pure data-fetch (no loading state management — the hook handles it)
   const fetchDashboard = async () => {
+    setError(null);
     try {
-      setError(null);
       const { data } = await API.get("/admin/dashboard");
       console.log("📊 Dashboard data received:", data);
       if (data.success) {
         setStats(data.stats);
         console.log("📈 Sales Trend Data:", data.salesTrendData);
         setSalesTrend(data.salesTrendData || []);
-        
-        // Convert orderDistribution object to array format for donut chart
         if (data.orderDistribution) {
           const distArray = [
             { _id: 'Delivered', count: data.orderDistribution.delivered || 0 },
             { _id: 'Shipped', count: data.orderDistribution.shipped || 0 },
             { _id: 'Pending', count: data.orderDistribution.pending || 0 },
             { _id: 'Cancelled', count: data.orderDistribution.cancelled || 0 }
-          ].filter(item => item.count > 0); // Only include statuses with orders
+          ].filter(item => item.count > 0);
           setOrderDist(distArray);
         } else {
           setOrderDist([]);
         }
-        
         setRecentOrders(data.recentOrders || []);
       }
     } catch (err) {
       console.error("Dashboard error:", err);
       setError("Failed to load dashboard data. Please try again.");
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleRefresh = () => {
-    setLoading(true);
-    fetchDashboard();
-  };
+  useEffect(() => {
+    // Initial load — show skeleton for minimum LOADER_MIN_MS
+    run(fetchDashboard);
+    // Auto-refresh every 5 min (silent — no skeleton)
+    refreshIntervalRef.current = setInterval(fetchDashboard, 300000);
+    return () => {
+      if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
+    };
+  }, []);
+
+  // Manual refresh also honours minimum display time
+  const handleRefresh = () => run(fetchDashboard);
 
   const fmt = (n) => {
     if (n === null || n === undefined) return '₹0';
@@ -153,12 +149,10 @@ const AdminDashboard = () => {
   const animatedOrders = useAnimatedCounter(stats?.totalOrders || 0, 1200);
   const animatedCustomers = useAnimatedCounter(stats?.totalUsers || 0, 1000);
 
-  if (loading && !stats) {
+  if (loading) {
     return (
       <AdminLayout>
-        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-          Loading dashboard...
-        </div>
+        <DashboardSkeleton />
       </AdminLayout>
     );
   }

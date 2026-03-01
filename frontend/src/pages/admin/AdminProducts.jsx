@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
+import DashboardSkeleton from '../../components/DashboardSkeleton';
+import useAdminLoader from '../../hooks/useAdminLoader';
 import API from '../../services/api';
 import './AdminProducts.css';
 
@@ -12,13 +14,13 @@ const AdminProducts = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [selectedProducts, setSelectedProducts] = useState(new Set());
   const [categories, setCategories] = useState([]);
+  const { loading, run } = useAdminLoader();
 
   // Apply URL filter on component mount and URL change
   useEffect(() => {
@@ -31,7 +33,7 @@ const AdminProducts = () => {
   }, [location.search]);
 
   useEffect(() => {
-    fetchProducts();
+    run(fetchProducts);
     fetchCategories();
   }, []);
 
@@ -42,8 +44,6 @@ const AdminProducts = () => {
     } catch (error) {
       console.error('Error fetching products:', error);
       setProducts([]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -200,9 +200,7 @@ const AdminProducts = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-          Loading products...
-        </div>
+        <DashboardSkeleton title="Loading Products" />
       </AdminLayout>
     );
   }

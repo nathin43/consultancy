@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
+import DashboardSkeleton from '../../components/DashboardSkeleton';
+import useAdminLoader from '../../hooks/useAdminLoader';
 import API from '../../services/api';
 import './AdminCustomers.css';
 
@@ -31,18 +33,18 @@ const AdminCustomers = () => {
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerOrders, setCustomerOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const { loading, run } = useAdminLoader();
 
   useEffect(() => {
     document.body.style.overflow = selectedCustomer ? 'hidden' : 'unset';
     return () => { document.body.style.overflow = 'unset'; };
   }, [selectedCustomer]);
 
-  useEffect(() => { fetchCustomers(); }, []);
+  useEffect(() => { run(fetchCustomers); }, []);
 
   const fetchCustomers = async () => {
     try {
@@ -50,8 +52,6 @@ const AdminCustomers = () => {
       setCustomers(data.customers);
     } catch (e) {
       console.error('Error fetching customers:', e);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -109,9 +109,7 @@ const AdminCustomers = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-          Loading customers...
-        </div>
+        <DashboardSkeleton title="Loading Customers" />
       </AdminLayout>
     );
   }

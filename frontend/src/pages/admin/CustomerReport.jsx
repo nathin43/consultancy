@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
+import DashboardSkeleton from '../../components/DashboardSkeleton';
+import useAdminLoader from '../../hooks/useAdminLoader';
 import useToast from '../../hooks/useToast';
 import api from '../../services/api';
 import './ReportStyles.css';
@@ -10,7 +12,7 @@ const CustomerReport = () => {
   const navigate = useNavigate();
   const { success, error } = useToast();
   
-  const [loading, setLoading] = useState(false);
+  const { loading, run } = useAdminLoader();
   const [exporting, setExporting] = useState(false);
   const [customerData, setCustomerData] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -39,11 +41,10 @@ const CustomerReport = () => {
   });
 
   useEffect(() => {
-    fetchCustomerData();
+    run(fetchCustomerData);
   }, []);
 
   const fetchCustomerData = async () => {
-    setLoading(true);
     try {
       const adminToken = localStorage.getItem('adminToken');
       if (!adminToken) {
@@ -117,7 +118,7 @@ const CustomerReport = () => {
         error(err.response?.data?.message || 'Failed to fetch customer data');
       }
     } finally {
-      setLoading(false);
+      // loading managed by run()
     }
   };
 
@@ -127,7 +128,7 @@ const CustomerReport = () => {
   };
 
   const handleApplyFilters = () => {
-    fetchCustomerData();
+    run(fetchCustomerData);
   };
 
   const handleClearFilters = () => {
@@ -270,6 +271,14 @@ const CustomerReport = () => {
       year: 'numeric', month: 'short', day: 'numeric' 
     });
   };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <DashboardSkeleton title="Loading Customer Report" />
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -457,12 +466,7 @@ const CustomerReport = () => {
             <p>Showing {customerData.length} of {pagination.totalUsers} customers</p>
           </div>
 
-          {loading ? (
-            <div className="table-loading">
-              <div className="spinner"></div>
-              <p>Loading customer data...</p>
-            </div>
-          ) : customerData.length > 0 ? (
+          {customerData.length > 0 ? (
             <>
               <div className="table-wrapper">
                 <table className="report-table">

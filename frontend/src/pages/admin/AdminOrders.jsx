@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
+import DashboardSkeleton from '../../components/DashboardSkeleton';
+import useAdminLoader from '../../hooks/useAdminLoader';
 import API from '../../services/api';
 import './AdminOrders.css';
 
@@ -9,14 +11,14 @@ import './AdminOrders.css';
  */
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrders, setExpandedOrders] = useState({});
+  const { loading, run } = useAdminLoader();
 
   useEffect(() => {
-    fetchOrders();
+    run(fetchOrders);
   }, []);
 
   const fetchOrders = async () => {
@@ -25,8 +27,6 @@ const AdminOrders = () => {
       setOrders(data.orders);
     } catch (error) {
       console.error('Error fetching orders:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -127,9 +127,7 @@ const AdminOrders = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-          Loading orders...
-        </div>
+        <DashboardSkeleton title="Loading Orders" />
       </AdminLayout>
     );
   }

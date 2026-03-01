@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
+import DashboardSkeleton from '../../components/DashboardSkeleton';
+import useAdminLoader from '../../hooks/useAdminLoader';
 import useToast from '../../hooks/useToast';
 import api from '../../services/api';
 import './ReportStyles.css';
@@ -10,7 +12,7 @@ const PaymentReport = () => {
   const navigate = useNavigate();
   const { success, error } = useToast();
   
-  const [loading, setLoading] = useState(true);
+  const { loading, run } = useAdminLoader();
   const [exporting, setExporting] = useState(false);
   const [paymentData, setPaymentData] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -45,12 +47,10 @@ const PaymentReport = () => {
       console.log('💳 Using cached payment data');
       setPaymentData(cacheRef.current.data);
       setAnalytics(cacheRef.current.analytics);
-      setLoading(false);
       return;
     }
     
     isFetchingRef.current = true;
-    setLoading(true);
     setErrorMessage('');
 
     try {
@@ -108,7 +108,6 @@ const PaymentReport = () => {
       setErrorMessage(errorMsg);
       error(errorMsg);
     } finally {
-      setLoading(false);
       isFetchingRef.current = false;
     }
   }, [filters, navigate, error]);
@@ -117,7 +116,7 @@ const PaymentReport = () => {
     let mounted = true;
     
     if (mounted) {
-      fetchPaymentData();
+      run(fetchPaymentData);
     }
 
     return () => {
@@ -134,7 +133,7 @@ const PaymentReport = () => {
 
   const handleApplyFilters = () => {
     cacheRef.current = null;
-    fetchPaymentData(true);
+    run(() => fetchPaymentData(true));
   };
 
   const handleClearFilters = () => {
@@ -256,6 +255,14 @@ const PaymentReport = () => {
       year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
   };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <DashboardSkeleton title="Loading Payment Report" />
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -403,12 +410,7 @@ const PaymentReport = () => {
             <p>Showing {paymentData.length} transactions</p>
           </div>
 
-          {loading ? (
-            <div className="table-loading">
-              <div className="spinner"></div>
-              <p>Loading payment data...</p>
-            </div>
-          ) : paymentData.length > 0 ? (
+          {paymentData.length > 0 ? (
             <div className="table-wrapper">
               <table className="report-table">
                 <thead>
