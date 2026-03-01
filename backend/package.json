@@ -7,6 +7,8 @@
     "start": "node --openssl-legacy-provider server.js",
     "dev": "node validate-startup.js && nodemon --exec node --openssl-legacy-provider server.js",
     "seed": "node --openssl-legacy-provider seeder.js",
+    "seed:catalog": "node --openssl-legacy-provider seed-catalog.js",
+    "seed:catalog:reset": "node --openssl-legacy-provider seed-catalog.js -d",
     "seed:services": "node --openssl-legacy-provider seed-services.js",
     "seed:pipes": "node --openssl-legacy-provider seed-pipes.js",
     "validate": "node validate-startup.js",
