@@ -7,6 +7,7 @@ const {
   validateSpecifications,
   getSpecLabel
 } = require('../config/specificationSchemas');
+const { processProductImages, processProductsImages } = require('../utils/imageUrl');
 
 // Mock data for fallback when database is unavailable
 const MOCK_PRODUCTS = [
@@ -119,13 +120,16 @@ exports.getProducts = async (req, res) => {
       // Get total count for pagination
       const total = await Product.countDocuments(query);
 
+      // Process products to add full image URLs
+      const processedProducts = processProductsImages(products);
+
       return res.status(200).json({
         success: true,
-        count: products.length,
+        count: processedProducts.length,
         total,
         totalPages: Math.ceil(total / limit),
         currentPage: Number(page),
-        products,
+        products: processedProducts,
         source: 'database'
       });
     } catch (dbError) {
@@ -174,13 +178,16 @@ exports.getProducts = async (req, res) => {
       const paginatedProducts = filteredProducts.slice(skip, skip + limitNum);
       const total = filteredProducts.length;
 
+      // Process products to add full image URLs
+      const processedProducts = processProductsImages(paginatedProducts);
+
       return res.status(200).json({
         success: true,
-        count: paginatedProducts.length,
+        count: processedProducts.length,
         total,
         totalPages: Math.ceil(total / limitNum),
         currentPage: pageNum,
-        products: paginatedProducts,
+        products: processedProducts,
         source: 'mock-data',
         message: 'Database unavailable - showing sample products'
       });
@@ -214,9 +221,12 @@ exports.getProduct = async (req, res) => {
           specsKeys: product.specifications ? Object.keys(product.specifications) : []
         });
         
+        // Process product to add full image URL
+        const processedProduct = processProductImages(product);
+        
         return res.status(200).json({
           success: true,
-          product,
+          product: processedProduct,
           source: 'database'
         });
       }
@@ -233,9 +243,12 @@ exports.getProduct = async (req, res) => {
       });
     }
 
+    // Process product to add full image URL
+    const processedProduct = processProductImages(product);
+
     res.status(200).json({
       success: true,
-      product,
+      product: processedProduct,
       source: 'mock-data'
     });
   } catch (error) {
@@ -260,10 +273,13 @@ exports.getFeaturedProducts = async (req, res) => {
         .sort('-createdAt');
       
       if (products && products.length > 0) {
+        // Process products to add full image URLs
+        const processedProducts = processProductsImages(products);
+        
         return res.status(200).json({
           success: true,
-          count: products.length,
-          products,
+          count: processedProducts.length,
+          products: processedProducts,
           source: 'database'
         });
       }
@@ -274,10 +290,13 @@ exports.getFeaturedProducts = async (req, res) => {
     // Fallback to mock data
     const products = MOCK_PRODUCTS.filter(p => p.featured && p.status === 'active');
     
+    // Process products to add full image URLs
+    const processedProducts = processProductsImages(products);
+    
     res.status(200).json({
       success: true,
-      count: products.length,
-      products,
+      count: processedProducts.length,
+      products: processedProducts,
       source: 'mock-data',
       message: 'Database unavailable - showing sample featured products'
     });
@@ -371,10 +390,13 @@ exports.createProduct = async (req, res) => {
       specsKeys: product.specifications ? Object.keys(product.specifications) : []
     });
 
+    // Process product to add full image URL
+    const processedProduct = processProductImages(product);
+
     res.status(201).json({
       success: true,
       message: 'Product created successfully',
-      product
+      product: processedProduct
     });
   } catch (error) {
     console.error('❌ Error creating product:', error);
@@ -435,10 +457,13 @@ exports.updateProduct = async (req, res) => {
       specsKeys: product.specifications ? Object.keys(product.specifications) : []
     });
 
+    // Process product to add full image URL
+    const processedProduct = processProductImages(product);
+
     res.status(200).json({
       success: true,
       message: 'Product updated successfully',
-      product
+      product: processedProduct
     });
   } catch (error) {
     console.error('❌ Error updating product:', error);
@@ -509,10 +534,13 @@ exports.toggleProductStatus = async (req, res) => {
     product.status = status;
     await product.save();
 
+    // Process product to add full image URL
+    const processedProduct = processProductImages(product);
+
     res.status(200).json({
       success: true,
       message: `Product status updated to ${status}`,
-      product
+      product: processedProduct
     });
   } catch (error) {
     res.status(500).json({
