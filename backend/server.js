@@ -14,10 +14,15 @@ const app = express();
 // Create HTTP server
 const httpServer = http.createServer(app);
 
+// CORS origins - support both development and production
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',')
+  : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003', 'http://localhost:5000', 'http://localhost:5173'];
+
 // Initialize Socket.IO with CORS
 const io = new Server(httpServer, {
   cors: {
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003', 'http://localhost:5000', 'http://localhost:5173'],
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -25,7 +30,7 @@ const io = new Server(httpServer, {
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003', 'http://localhost:5000', 'http://localhost:5173'],
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -33,7 +38,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Simple request logger for debugging
+// Request logger
 app.use((req, res, next) => {
   const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
   const hasAuth = req.headers.authorization ? '🔐' : '🔓';
@@ -161,9 +166,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-/**
- * Health check endpoint
- */
+// Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -175,14 +178,25 @@ app.get('/api/health', (req, res) => {
 
 // Connect to MongoDB
 const mongoose = require('mongoose');
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.error("❌ MongoDB Error:", err));
+const mongoURI = process.env.MONGO_URI;
+
+if (!mongoURI) {
+  console.error('❌ MONGO_URI environment variable is not defined');
+  process.exit(1);
+}
+
+mongoose.connect(mongoURI)
+  .then(() => console.log('✅ MongoDB Connected'))
+  .catch(err => {
+    console.error('❌ MongoDB Connection Error:', err.message);
+    process.exit(1);
+  });
 
 // Start Server
 const PORT = process.env.PORT || 5000;
 
-httpServer.listen(PORT, "0.0.0.0", () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
