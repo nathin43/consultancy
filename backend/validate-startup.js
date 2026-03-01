@@ -14,7 +14,7 @@ let warnings = [];
 
 // Check environment variables
 const requiredEnv = [
-  'MONGODB_URI',
+  'MONGO_URI',
   'JWT_SECRET',
   'PORT'
 ];
@@ -43,11 +43,11 @@ optionalEnv.forEach(env => {
 });
 
 // Check MongoDB URI format
-if (process.env.MONGODB_URI) {
-  if (!process.env.MONGODB_URI.includes('mongodb')) {
-    errors.push('❌ MONGODB_URI does not look valid (should contain "mongodb")');
+if (process.env.MONGO_URI) {
+  if (!process.env.MONGO_URI.includes('mongodb')) {
+    errors.push('❌ MONGO_URI does not look valid (should contain "mongodb")');
   } else {
-    console.log('✅ MONGODB_URI format looks valid');
+    console.log('✅ MONGO_URI format looks valid');
   }
 }
 
