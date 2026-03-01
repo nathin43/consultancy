@@ -528,8 +528,8 @@
    ======================================== */
 .dash-quick-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
   margin-bottom: 24px;
   animation: fadeInUp 0.5s ease-out 0.3s backwards;
 }

@@ -7,10 +7,9 @@ import './ProductReviews.css';
  * Product Reviews Component
  * Displays and manages product reviews and ratings
  */
-const ProductReviews = ({ productId }) => {
+const ProductReviews = ({ productId, product }) => {
   const { isAuthenticated, user } = useContext(AuthContext);
   const [reviews, setReviews] = useState([]);
-  const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [canReview, setCanReview] = useState(true);
@@ -26,10 +25,14 @@ const ProductReviews = ({ productId }) => {
   const [formErrors, setFormErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
+  // Fetch reviews only when productId changes
   useEffect(() => {
     fetchReviews();
-    fetchProduct();
-    if (isAuthenticated) {
+  }, [productId]);
+
+  // Check review eligibility only when auth state changes
+  useEffect(() => {
+    if (isAuthenticated && productId) {
       checkIfUserCanReview();
     }
   }, [productId, isAuthenticated]);
@@ -43,15 +46,6 @@ const ProductReviews = ({ productId }) => {
       console.error('Error fetching reviews:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchProduct = async () => {
-    try {
-      const { data } = await API.get(`/products/${productId}`);
-      setProduct(data.product);
-    } catch (error) {
-      console.error('Error fetching product:', error);
     }
   };
 

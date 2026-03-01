@@ -55,7 +55,7 @@ const catalog = [
       warranty: '5 Years',
       color: 'White'
     },
-    ratings: { average: 4.5, count: 87 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -77,7 +77,7 @@ const catalog = [
       warranty: '5 Years',
       color: 'Black'
     },
-    ratings: { average: 4.3, count: 134 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -102,7 +102,7 @@ const catalog = [
       innerTankMaterial: 'Stainless Steel',
       warranty: '2 Years'
     },
-    ratings: { average: 4.1, count: 65 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -123,7 +123,7 @@ const catalog = [
       innerTankMaterial: 'Glasslined Steel',
       warranty: '5 Years'
     },
-    ratings: { average: 4.4, count: 198 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: true
   },
@@ -144,7 +144,7 @@ const catalog = [
       innerTankMaterial: 'Stainless Steel',
       warranty: '2 Years'
     },
-    ratings: { average: 4.3, count: 312 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -165,7 +165,7 @@ const catalog = [
       innerTankMaterial: 'Glasslined Tank',
       warranty: '5 Years'
     },
-    ratings: { average: 4.4, count: 224 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -186,7 +186,7 @@ const catalog = [
       innerTankMaterial: 'Glasslined Steel',
       warranty: '5 Years'
     },
-    ratings: { average: 4.2, count: 145 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -207,7 +207,7 @@ const catalog = [
       innerTankMaterial: 'Glass Coated Tank',
       warranty: '5 Years'
     },
-    ratings: { average: 4.5, count: 289 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: true
   },
@@ -233,7 +233,7 @@ const catalog = [
       numberOfBlades: 3,
       warranty: '2 Years'
     },
-    ratings: { average: 4.1, count: 167 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -256,7 +256,7 @@ const catalog = [
       numberOfBlades: 3,
       warranty: '3 Years'
     },
-    ratings: { average: 4.4, count: 203 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -279,7 +279,7 @@ const catalog = [
       remoteControl: 'Yes',
       warranty: '3 Years'
     },
-    ratings: { average: 4.7, count: 421 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: true
   },
@@ -301,7 +301,7 @@ const catalog = [
       numberOfBlades: 3,
       warranty: '2 Years'
     },
-    ratings: { average: 4.2, count: 356 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -323,7 +323,7 @@ const catalog = [
       numberOfBlades: 3,
       warranty: '2 Years'
     },
-    ratings: { average: 4.3, count: 256 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -345,7 +345,7 @@ const catalog = [
       numberOfBlades: 3,
       warranty: '2 Years'
     },
-    ratings: { average: 4.1, count: 178 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -371,7 +371,7 @@ const catalog = [
       mountingType: 'Foot Mounted',
       warranty: '1 Year'
     },
-    ratings: { average: 4.4, count: 187 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -393,7 +393,7 @@ const catalog = [
       mountingType: 'Foot Mounted',
       warranty: '1 Year'
     },
-    ratings: { average: 4.5, count: 98 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -415,7 +415,7 @@ const catalog = [
       insulationClass: 'B',
       warranty: '1 Year'
     },
-    ratings: { average: 4.0, count: 234 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -438,7 +438,7 @@ const catalog = [
       insulationClass: 'B',
       warranty: '1 Year'
     },
-    ratings: { average: 4.2, count: 112 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -460,7 +460,7 @@ const catalog = [
       motorType: 'Induction Motor',
       warranty: '1 Year'
     },
-    ratings: { average: 4.3, count: 76 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -486,7 +486,7 @@ const catalog = [
       baseType: 'B22',
       warranty: '1 Year'
     },
-    ratings: { average: 4.3, count: 512 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -508,7 +508,7 @@ const catalog = [
       baseType: 'B22',
       warranty: '1 Year'
     },
-    ratings: { average: 4.5, count: 445 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: true
   },
@@ -529,7 +529,7 @@ const catalog = [
       voltage: '220V',
       warranty: '1 Year'
     },
-    ratings: { average: 4.2, count: 289 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -554,7 +554,7 @@ const catalog = [
       plateIncluded: 'Yes',
       warranty: '2 Years'
     },
-    ratings: { average: 4.2, count: 134 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -575,7 +575,7 @@ const catalog = [
       plateIncluded: 'No',
       warranty: '2 Years'
     },
-    ratings: { average: 4.4, count: 567 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -596,7 +596,7 @@ const catalog = [
       plateIncluded: 'Yes',
       warranty: '2 Years'
     },
-    ratings: { average: 4.3, count: 178 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -617,7 +617,7 @@ const catalog = [
       plateIncluded: 'No',
       warranty: '2 Years'
     },
-    ratings: { average: 4.4, count: 324 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -642,7 +642,7 @@ const catalog = [
       usageType: 'Drainage',
       isiCertified: 'Yes'
     },
-    ratings: { average: 4.3, count: 89 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -663,7 +663,7 @@ const catalog = [
       usageType: 'Water Supply',
       isiCertified: 'Yes'
     },
-    ratings: { average: 4.6, count: 145 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: true
   },
@@ -684,7 +684,7 @@ const catalog = [
       usageType: 'Drainage',
       isiCertified: 'Yes'
     },
-    ratings: { average: 4.4, count: 112 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -705,7 +705,7 @@ const catalog = [
       usageType: 'Water Supply',
       isiCertified: 'Yes'
     },
-    ratings: { average: 4.2, count: 98 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   },
@@ -731,7 +731,7 @@ const catalog = [
       voltageRating: '1100V',
       isiCertified: 'Yes'
     },
-    ratings: { average: 4.8, count: 89 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: true
   },
@@ -753,7 +753,7 @@ const catalog = [
       voltageRating: '1100V',
       isiCertified: 'Yes'
     },
-    ratings: { average: 4.5, count: 120 },
+    ratings: { average: 0, count: 0 },
     status: 'active',
     featured: false
   }

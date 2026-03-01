@@ -115,19 +115,11 @@ const AdminDashboard = () => {
   const buildAreaPath = (data, W = 700, H = 260) => {
     if (!data || data.length < 2) return null;
     const max = Math.max(...data.map((d) => d.revenue || 0), 1);
-    if (max === 0) {
-      // Generate mock visualization when no revenue data
-      const mockPoints = data.map((d, i) => ({
-        x: (i / (data.length - 1)) * W,
-        y: H - 20 // Flat line at bottom
-      }));
-      const linePath = mockPoints.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-      const areaPath = linePath + ` L${W},${H} L0,${H} Z`;
-      return { line: linePath, area: areaPath };
-    }
     const pts = data.map((d, i) => ({
       x: (i / (data.length - 1)) * W,
-      y: H - Math.max(((d.revenue || 0) / max) * (H * 0.85), 10),
+      y: (d.revenue || 0) === 0
+        ? H  // zero-revenue day: point sits exactly at baseline
+        : H - Math.max(((d.revenue || 0) / max) * (H * 0.85), 8),
     }));
     const linePath = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
     const areaPath = linePath + ` L${W},${H} L0,${H} Z`;
@@ -300,6 +292,19 @@ const AdminDashboard = () => {
               <div className="dash-quick-stat__content">
                 <div className="dash-quick-stat__value">{stats?.lowStockCount || 0}</div>
                 <div className="dash-quick-stat__label">Low Stock</div>
+              </div>
+            </div>
+
+            <div className="dash-quick-stat" style={{ '--stat-color': '#dc2626' }}>
+              <div className="dash-quick-stat__icon">
+                <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width="24" height="24">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                </svg>
+              </div>
+              <div className="dash-quick-stat__content">
+                <div className="dash-quick-stat__value">{stats?.outOfStock || 0}</div>
+                <div className="dash-quick-stat__label">Out of Stock</div>
               </div>
             </div>
 
@@ -577,6 +582,7 @@ const AdminDashboard = () => {
                     <thead>
                       <tr>
                         <th>Order ID</th>
+                        <th>Product</th>
                         <th>Customer</th>
                         <th>Date</th>
                         <th className="dash-th-right">Amount</th>
@@ -586,25 +592,28 @@ const AdminDashboard = () => {
                     <tbody>
                       {recentOrders.map((o, i) => (
                         <tr key={o._id || i}>
-                          <td className="dash-td-mono">#{(o.orderId || "").slice(-8)}</td>
-                          <td className="dash-td-name">{o.user?.name || "Guest"}</td>
+                          <td className="dash-td-mono">#{(o.orderNumber || String(o._id || '').slice(-8))}</td>
+                          <td className="dash-td-name">{o.items?.[0]?.name || o.items?.[0]?.product?.name || '—'}{o.items?.length > 1 ? ` +${o.items.length - 1}` : ''}</td>
+                          <td className="dash-td-name">{o.user?.name || 'Guest'}</td>
                           <td className="dash-td-muted">
-                            {o.createdAt ? new Date(o.createdAt).toLocaleDateString("en-IN") : "-"}
+                            {o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN') : '-'}
                           </td>
-                          <td className="dash-td-right dash-td-bold">{fmt(o.totalAmount)}</td>
+                          <td className="dash-td-right dash-td-bold">{fmt(o.totalAmount || o.totalPrice)}</td>
                           <td>
                             <span 
                               className="dash-status" 
                               style={{
-                                background: o.status === "Delivered" ? "#d1fae5" : 
-                                          o.status === "Processing" ? "#fef3c7" : 
-                                          o.status === "Cancelled" ? "#fee2e2" : "#f3f4f6",
-                                color: o.status === "Delivered" ? "#059669" : 
-                                      o.status === "Processing" ? "#d97706" : 
-                                      o.status === "Cancelled" ? "#dc2626" : "#6b7280"
+                                background: o.orderStatus === 'delivered' ? '#d1fae5' : 
+                                          o.orderStatus === 'processing' ? '#fef3c7' :
+                                          o.orderStatus === 'shipped' ? '#dbeafe' :
+                                          o.orderStatus === 'cancelled' ? '#fee2e2' : '#f3f4f6',
+                                color: o.orderStatus === 'delivered' ? '#059669' : 
+                                      o.orderStatus === 'processing' ? '#d97706' :
+                                      o.orderStatus === 'shipped' ? '#2563eb' :
+                                      o.orderStatus === 'cancelled' ? '#dc2626' : '#6b7280'
                               }}
                             >
-                              {o.status || "Pending"}
+                              {o.orderStatus ? o.orderStatus.charAt(0).toUpperCase() + o.orderStatus.slice(1) : 'Pending'}
                             </span>
                           </td>
                         </tr>

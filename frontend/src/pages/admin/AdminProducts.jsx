@@ -411,15 +411,6 @@ const AdminProducts = () => {
                 key={product._id}
                 className={`product-card ${selectedProducts.has(product._id) ? 'selected' : ''}`}
               >
-                {/* Card Checkbox */}
-                <div className="card-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={selectedProducts.has(product._id)}
-                    onChange={() => toggleSelectProduct(product._id)}
-                    className="product-checkbox"
-                  />
-                </div>
 
                 {/* Product Image */}
                 <div className="card-image-wrapper">
@@ -488,7 +479,7 @@ const AdminProducts = () => {
                       <div className="stat-content">
                         <span className="stat-label">Stock</span>
                         <span className={`stat-value ${product.stock === 0 ? 'out' : product.stock < 10 ? 'low' : 'good'}`}>
-                          {product.stock} units
+                          {product.stock}
                         </span>
                       </div>
                     </div>

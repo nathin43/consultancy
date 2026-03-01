@@ -12,9 +12,14 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/products/');
   },
   filename: function(req, file, cb) {
-    // Generate unique filename: productname-timestamp.ext
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname));
+    // Use product name (slugified) + timestamp for traceability
+    const rawName = (req.body && req.body.name) ? req.body.name : 'product';
+    const slug = rawName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40);
+    cb(null, `${slug}-${Date.now()}${path.extname(file.originalname).toLowerCase()}`);
   }
 });
 

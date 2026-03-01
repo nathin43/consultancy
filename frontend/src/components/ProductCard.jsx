@@ -69,17 +69,21 @@ const ProductCard = ({ product, hideAddToCart = false }) => {
   const averageRating = product.ratings?.average || 0;
   const ratingCount = product.ratings?.count || 0;
 
+  // Inline SVG placeholder — no external dependency
+  const PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'400' height%3D'400' viewBox%3D'0 0 400 400'%3E%3Crect width%3D'400' height%3D'400' fill%3D'%23f1f5f9'%2F%3E%3Ctext x%3D'50%25' y%3D'50%25' dominant-baseline%3D'middle' text-anchor%3D'middle' font-family%3D'sans-serif' font-size%3D'18' fill%3D'%2394a3b8'%3ENo Image%3C%2Ftext%3E%3C%2Fsvg%3E`;
+
   return (
     <div className="product-card-premium">
       {/* Product Image Section */}
       <Link to={`/product/${product._id}`} className="product-image-link">
         <div className="product-image-container">
           <img
-            src={product.image}
+            src={product.image || PLACEHOLDER}
             alt={product.name}
             className="product-image"
             onError={(e) => {
-              e.target.src = 'https://via.placeholder.com/400x400?text=Product+Image';
+              e.target.onerror = null; // prevent infinite loop
+              e.target.src = PLACEHOLDER;
             }}
           />
           {/* Category Badge - Top Left Corner */}
@@ -104,7 +108,7 @@ const ProductCard = ({ product, hideAddToCart = false }) => {
         )}
 
         {/* Rating Section */}
-        {ratingCount > 0 && (
+        {ratingCount > 0 ? (
           <div className="rating-container">
             <div className="stars-display">
               {renderStars(averageRating)}
@@ -112,6 +116,10 @@ const ProductCard = ({ product, hideAddToCart = false }) => {
             <span className="rating-text">
               {averageRating.toFixed(1)} <span className="rating-reviews">({ratingCount} reviews)</span>
             </span>
+          </div>
+        ) : (
+          <div className="rating-container no-reviews">
+            <span className="no-reviews-text">No Reviews Yet</span>
           </div>
         )}
 

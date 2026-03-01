@@ -20,14 +20,14 @@ exports.getDashboard = async (req, res) => {
 
     // ========== SALES METRICS ==========
     // Total sales from delivered orders only
-    const deliveredOrders = await Order.find({ orderStatus: 'delivered' });
+    const deliveredOrders = await Order.find({ orderStatus: { $in: ['delivered', 'paid'] } });
     const totalSales = deliveredOrders.reduce((sum, order) => sum + (order.totalAmount || order.totalPrice || 0), 0);
     
     // Current week sales
     const currentWeekSales = await Order.aggregate([
       {
         $match: {
-          orderStatus: 'delivered',
+          orderStatus: { $in: ['delivered', 'paid'] },
           createdAt: { $gte: startOfWeek }
         }
       },
@@ -38,7 +38,7 @@ exports.getDashboard = async (req, res) => {
     const prevWeekSales = await Order.aggregate([
       {
         $match: {
-          orderStatus: 'delivered',
+          orderStatus: { $in: ['delivered', 'paid'] },
           createdAt: { $gte: prevWeekStart, $lt: startOfWeek }
         }
       },
@@ -92,7 +92,7 @@ exports.getDashboard = async (req, res) => {
       const dailySales = await Order.aggregate([
         {
           $match: {
-            orderStatus: 'delivered',
+            orderStatus: { $in: ['delivered', 'paid'] },
             $or: [
               { deliveredAt: { $gte: startOfDay, $lt: endOfDay } },
               { 
@@ -131,6 +131,7 @@ exports.getDashboard = async (req, res) => {
     // ========== RECENT ORDERS ==========
     const recentOrders = await Order.find()
       .populate('user', 'name email')
+      .populate('items.product', 'name image')
       .sort('-createdAt')
       .limit(5);
 
@@ -174,6 +175,7 @@ exports.getDashboard = async (req, res) => {
         inactiveProducts,
         outOfStock,
         lowStockItems,
+        lowStockCount: lowStockItems,
         
         // Users
         totalUsers,
