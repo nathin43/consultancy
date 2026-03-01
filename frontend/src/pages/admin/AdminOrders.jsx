@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '../../components/AdminLayout';
-import Loading from '../../components/Loading';
 import API from '../../services/api';
 import './AdminOrders.css';
 
@@ -128,7 +127,9 @@ const AdminOrders = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <Loading title="Loading Orders..." subtitle="Fetching order data..." />
+        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+          Loading orders...
+        </div>
       </AdminLayout>
     );
   }

@@ -1,7 +1,6 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import AdminLayout from "../../components/AdminLayout";
-import Loading from "../../components/Loading";
 import API from "../../services/api";
 import "./AdminDashboard.css";
 
@@ -157,7 +156,9 @@ const AdminDashboard = () => {
   if (loading && !stats) {
     return (
       <AdminLayout>
-        <Loading showProgress={false} showSkeletonCards={true} />
+        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+          Loading dashboard...
+        </div>
       </AdminLayout>
     );
   }

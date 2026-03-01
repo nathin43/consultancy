@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
-import Loading from '../../components/Loading';
 import API from '../../services/api';
 import './AdminProducts.css';
 
@@ -201,7 +200,9 @@ const AdminProducts = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <Loading title="Loading Products..." subtitle="Fetching product inventory..." />
+        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+          Loading products...
+        </div>
       </AdminLayout>
     );
   }

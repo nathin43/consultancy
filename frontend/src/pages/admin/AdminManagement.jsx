@@ -2,7 +2,6 @@ import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
-import Loading from '../../components/Loading';
 import API from '../../services/api';
 import { useToast } from '../../hooks/useToast';
 import './AdminManagement.css';
@@ -228,7 +227,9 @@ const AdminManagement = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <Loading title="Loading Admin Users..." subtitle="Fetching admin data..." />
+        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+          Loading admin users...
+        </div>
       </AdminLayout>
     );
   }

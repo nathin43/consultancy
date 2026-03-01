@@ -7,50 +7,62 @@ const Loading = ({
   showSkeletonCards = false 
 }) => {
   const [mounted, setMounted] = useState(false);
+  const [dots, setDots] = useState('');
 
   useEffect(() => {
     setMounted(true);
+    
+    // Animated ellipsis
+    const interval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? '' : prev + '.');
+    }, 500);
+    
+    return () => clearInterval(interval);
   }, []);
 
-  // Generate random bubble properties
-  const bubbles = Array.from({ length: 15 }, (_, i) => ({
+  // Generate rising water bubbles - different sizes and speeds
+  const bubbles = Array.from({ length: 12 }, (_, i) => ({
     id: i,
-    size: Math.random() * 30 + 15, // 15-45px
-    left: Math.random() * 85 + 5, // 5-90%
-    delay: Math.random() * 4, // 0-4s
-    duration: Math.random() * 3 + 4, // 4-7s
+    size: Math.random() * 25 + 12, // 12-37px
+    left: Math.random() * 90 + 5, // 5-95%
+    delay: Math.random() * 5, // 0-5s
+    duration: Math.random() * 2.5 + 3, // 3-5.5s
+    opacity: Math.random() * 0.4 + 0.4, // 0.4-0.8
   }));
 
   return (
-    <div className={`bubble-loading-container ${mounted ? 'mounted' : ''}`}>
-      {/* Animated Gradient Background */}
-      <div className="bubble-gradient-bg"></div>
+    <div className={`dashboard-loading-wrapper ${mounted ? 'mounted' : ''}`}>
+      {/* Soft Purple-Blue Gradient Background */}
+      <div className="dashboard-loading-bg"></div>
       
-      {/* Glass Card Container */}
-      <div className="bubble-glass-card">
-        {/* Bubbles Container */}
-        <div className="bubbles-container">
+      {/* Centered Glass Card */}
+      <div className="dashboard-glass-card">
+        {/* Water Effect - Rising Bubbles Container */}
+        <div className="water-bubbles-container">
           {bubbles.map((bubble) => (
             <div
               key={bubble.id}
-              className="bubble"
+              className="water-bubble"
               style={{
                 width: `${bubble.size}px`,
                 height: `${bubble.size}px`,
                 left: `${bubble.left}%`,
                 animationDelay: `${bubble.delay}s`,
                 animationDuration: `${bubble.duration}s`,
+                opacity: bubble.opacity,
               }}
             >
-              <div className="bubble-inner"></div>
+              <div className="bubble-glow"></div>
             </div>
           ))}
         </div>
         
-        {/* Loading Content */}
-        <div className="bubble-loading-content">
-          <h2 className="bubble-loading-text">Loading Dashboard</h2>
-          <p className="bubble-loading-subtitle">Please wait...</p>
+        {/* Loading Text Content */}
+        <div className="dashboard-loading-content">
+          <h2 className="dashboard-loading-title">
+            Loading Dashboard<span className="ellipsis-dots">{dots}</span>
+          </h2>
+          <p className="dashboard-loading-subtitle">Please wait a moment...</p>
         </div>
       </div>
     </div>

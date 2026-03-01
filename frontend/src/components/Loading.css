@@ -1,15 +1,10 @@
 /* ===============================================
-   LOADING COMPONENT - MODERN PROFESSIONAL DESIGN
-   Blue Gradient Theme with Smooth Animations
+   DASHBOARD LOADING SCREEN
+   Water Bubble Animation with Glassmorphism Card
    =============================================== */
 
-/* ===============================================
-   MODERN LOADING SCREEN
-   Clean Static Card + Animated Background
-   =============================================== */
-
-/* Main Container */
-.modern-loading-container {
+/* Main Wrapper - Content Area Only (Not Full Screen) */
+.dashboard-loading-wrapper {
   position: relative;
   display: flex;
   align-items: center;
@@ -20,380 +15,313 @@
   border-radius: 16px;
   overflow: hidden;
   opacity: 0;
-  animation: containerFadeIn 0.6s ease-out 0.1s forwards;
+  animation: wrapperFadeIn 0.6s ease-out forwards;
 }
 
-.modern-loading-container.mounted {
+.dashboard-loading-wrapper.mounted {
   opacity: 1;
 }
 
-@keyframes containerFadeIn {
+@keyframes wrapperFadeIn {
   from {
     opacity: 0;
+    transform: scale(0.98);
   }
   to {
     opacity: 1;
+    transform: scale(1);
   }
 }
 
 /* ===============================================
-   ANIMATED GRADIENT WAVES BACKGROUND
+   SOFT PURPLE-BLUE GRADIENT BACKGROUND
    =============================================== */
 
-.gradient-waves-bg {
+.dashboard-loading-bg {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  background: linear-gradient(
+    135deg, 
+    #e0c3fc 0%,
+    #8ec5fc 50%,
+    #b8d4ff 100%
+  );
+  animation: gradientShift 8s ease-in-out infinite;
+  background-size: 200% 200%;
   z-index: 0;
-  overflow: hidden;
 }
 
-/* Animated Wave Layers */
-.wave {
-  position: absolute;
-  width: 200%;
-  height: 200%;
-  top: -50%;
-  left: -50%;
-  border-radius: 40%;
-  opacity: 0.6;
-}
-
-.wave-1 {
-  background: radial-gradient(
-    ellipse at center,
-    rgba(59, 130, 246, 0.3) 0%,
-    rgba(96, 165, 250, 0.2) 30%,
-    transparent 70%
-  );
-  animation: waveRotate 20s linear infinite;
-}
-
-.wave-2 {
-  background: radial-gradient(
-    ellipse at center,
-    rgba(99, 102, 241, 0.25) 0%,
-    rgba(129, 140, 248, 0.15) 40%,
-    transparent 70%
-  );
-  animation: waveRotate 15s linear infinite reverse;
-  animation-delay: -5s;
-}
-
-.wave-3 {
-  background: radial-gradient(
-    ellipse at center,
-    rgba(139, 92, 246, 0.2) 0%,
-    rgba(167, 139, 250, 0.1) 35%,
-    transparent 70%
-  );
-  animation: waveRotate 25s linear infinite;
-  animation-delay: -10s;
-}
-
-@keyframes waveRotate {
-  0% {
-    transform: rotate(0deg) scale(1);
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
   }
   50% {
-    transform: rotate(180deg) scale(1.1);
-  }
-  100% {
-    transform: rotate(360deg) scale(1);
+    background-position: 100% 50%;
   }
 }
 
 /* ===============================================
-   CLEAN STATIC GLASS CARD
+   CENTERED GLASS CARD
    =============================================== */
 
-.static-glass-card {
+.dashboard-glass-card {
   position: relative;
   z-index: 10;
+  width: 450px;
+  max-width: 90vw;
+  height: 520px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 24px;
-  padding: 3.5rem 4rem;
-  min-width: 380px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 32px; /* rounded-3xl equivalent */
+  padding: 3rem 2.5rem;
   box-shadow: 
-    0 25px 50px -12px rgba(30, 64, 175, 0.25),
-    0 10px 20px -5px rgba(59, 130, 246, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  transform: translateY(-5vh);
-  animation: cardFadeInUp 0.8s ease-out 0.3s backwards;
+    0 0 60px rgba(139, 92, 246, 0.25),
+    0 25px 50px -12px rgba(59, 130, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  overflow: hidden;
+  animation: cardFloatIn 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  transform: translateY(30px);
+  opacity: 0;
 }
 
-@keyframes cardFadeInUp {
+@keyframes cardFloatIn {
   from {
     opacity: 0;
-    transform: translateY(calc(-5vh + 30px));
+    transform: translateY(30px);
   }
   to {
     opacity: 1;
-    transform: translateY(-5vh);
+    transform: translateY(0);
   }
 }
 
 /* ===============================================
-   LOADING ICON
+   WATER BUBBLES - RISING ANIMATION
    =============================================== */
 
-.loading-icon {
-  margin-bottom: 1.5rem;
-  animation: iconPulse 2s ease-in-out infinite;
+.water-bubbles-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
 }
 
-@keyframes iconPulse {
-  0%, 100% {
+.water-bubble {
+  position: absolute;
+  bottom: -50px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    rgba(96, 165, 250, 0.6) 0%,
+    rgba(59, 130, 246, 0.4) 50%,
+    rgba(147, 197, 253, 0.5) 100%
+  );
+  filter: blur(2px);
+  animation: bubbleRise infinite ease-in;
+  will-change: transform, opacity;
+}
+
+/* Bubble Glow Effect */
+.bubble-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255, 255, 255, 0.6) 0%,
+    transparent 60%
+  );
+  box-shadow: 
+    0 0 20px rgba(96, 165, 250, 0.5),
+    inset -2px -2px 8px rgba(255, 255, 255, 0.3);
+}
+
+/* Rising Water Bubble Keyframes */
+@keyframes bubbleRise {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0;
+  }
+  10% {
     opacity: 1;
-    transform: scale(1);
   }
   50% {
+    transform: translateY(-250px) translateX(calc(var(--drift, 0) * 1px)) scale(1.1);
+  }
+  90% {
     opacity: 0.8;
-    transform: scale(1.05);
+  }
+  100% {
+    transform: translateY(-550px) translateX(calc(var(--drift, 20) * 1px)) scale(0.6);
+    opacity: 0;
   }
 }
 
+/* Add horizontal drift variations */
+.water-bubble:nth-child(odd) {
+  --drift: 15;
+}
+
+.water-bubble:nth-child(even) {
+  --drift: -18;
+}
+
+.water-bubble:nth-child(3n) {
+  --drift: 25;
+}
+
 /* ===============================================
-   LOADING TEXT
+   LOADING TEXT CONTENT
    =============================================== */
 
-.static-loading-text {
-  font-size: 1.75rem;
+.dashboard-loading-content {
+  position: relative;
+  z-index: 5;
+  text-align: center;
+  animation: contentFadeInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s backwards;
+}
+
+@keyframes contentFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading Title with Gradient Text */
+.dashboard-loading-title {
+  font-size: 2rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 50%, #60A5FA 100%);
+  background: linear-gradient(
+    135deg,
+    #3b82f6 0%,
+    #6366f1 50%,
+    #8b5cf6 100%
+  );
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.02em;
   margin-bottom: 0.75rem;
-  text-align: center;
   line-height: 1.2;
+  animation: titlePulse 3s ease-in-out infinite;
+}
+
+@keyframes titlePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
 }
 
 /* Animated Ellipsis Dots */
-.animated-dots {
+.ellipsis-dots {
   display: inline-block;
   width: 1.5em;
   text-align: left;
-  font-family: monospace;
-  color: #3B82F6;
-  -webkit-text-fill-color: #3B82F6;
+  -webkit-text-fill-color: #6366f1;
+  animation: dotsFlicker 1.5s steps(4, end) infinite;
 }
 
-/* Loading Subtitle */
-.static-loading-subtitle {
-  font-size: 1rem;
+@keyframes dotsFlicker {
+  0%, 20% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.5;
+  }
+  60%, 100% {
+    opacity: 1;
+  }
+}
+
+/* Subtitle Text */
+.dashboard-loading-subtitle {
+  font-size: 1.05rem;
   color: #64748b;
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   text-align: center;
-  animation: subtitleFadeIn 1s ease-out 0.5s backwards;
+  text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8);
+  animation: subtitleFadeIn 1s ease-out 0.6s backwards;
 }
 
 @keyframes subtitleFadeIn {
   from {
     opacity: 0;
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* Progress Bar Container */
-.progress-container {
-  width: 300px;
-  max-width: 90vw;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background-color: #e2e8f0;
-  border-radius: 9999px;
-  overflow: hidden;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #1E40AF 0%, #3B82F6 50%, #60A5FA 100%);
-  border-radius: 9999px;
-  transition: width 0.3s ease;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-  animation: shimmerProgress 2s linear infinite;
-  background-size: 200% 100%;
-}
-
-@keyframes shimmerProgress {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.progress-text {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #1E40AF;
-}
-
-/* Skeleton Cards */
-.skeleton-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  width: 100%;
-  max-width: 1200px;
-  padding: 0 1rem;
-}
-
-.skeleton-card {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  min-height: 180px;
-}
-
-.skeleton-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.skeleton-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-}
-
-.skeleton-title {
-  flex: 1;
-  height: 20px;
-  border-radius: 6px;
-}
-
-.skeleton-value {
-  height: 36px;
-  width: 60%;
-  border-radius: 8px;
-  margin: 0.5rem 0;
-}
-
-.skeleton-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: auto;
-}
-
-.skeleton-badge {
-  width: 80px;
-  height: 24px;
-  border-radius: 12px;
-}
-
-.skeleton-text {
-  width: 120px;
-  height: 16px;
-  border-radius: 4px;
-}
-
-/* Shimmer Animation */
-.shimmer {
-  background: linear-gradient(
-    90deg,
-    #e2e8f0 0%,
-    #f1f5f9 50%,
-    #e2e8f0 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-/* Responsive Design */
 /* ===============================================
    RESPONSIVE DESIGN
    =============================================== */
 
 @media (max-width: 768px) {
-  .static-glass-card {
-    min-width: 320px;
-    padding: 3rem 3rem;
-    transform: translateY(-3vh);
+  .dashboard-loading-wrapper {
+    padding: 1.5rem;
+    margin: 15px;
+    min-height: calc(100vh - 160px);
   }
 
-  .static-loading-text {
-    font-size: 1.5rem;
+  .dashboard-glass-card {
+    width: 380px;
+    height: 460px;
+    padding: 2.5rem 2rem;
+    border-radius: 28px;
   }
 
-  .static-loading-subtitle {
-    font-size: 0.925rem;
+  .dashboard-loading-title {
+    font-size: 1.75rem;
   }
 
-  .loading-icon svg {
-    width: 40px;
-    height: 40px;
+  .dashboard-loading-subtitle {
+    font-size: 0.975rem;
   }
 }
 
 @media (max-width: 480px) {
-  .modern-loading-container {
+  .dashboard-loading-wrapper {
     padding: 1rem;
     margin: 10px;
+    min-height: calc(100vh - 140px);
   }
 
-  .static-glass-card {
-    min-width: 280px;
-    padding: 2.5rem 2rem;
-    border-radius: 20px;
-    transform: translateY(-2vh);
+  .dashboard-glass-card {
+    width: 320px;
+    height: 420px;
+    padding: 2rem 1.5rem;
+    border-radius: 24px;
   }
 
-  .static-loading-text {
-    font-size: 1.375rem;
+  .dashboard-loading-title {
+    font-size: 1.5rem;
   }
 
-  .static-loading-subtitle {
-    font-size: 0.875rem;
-  }
-
-  .loading-icon {
-    margin-bottom: 1.25rem;
-  }
-
-  .loading-icon svg {
-    width: 36px;
-    height: 36px;
+  .dashboard-loading-subtitle {
+    font-size: 0.9rem;
   }
 }
 
@@ -401,29 +329,33 @@
    FADE OUT TRANSITION
    =============================================== */
 
-.modern-loading-container.fade-out {
-  animation: containerFadeOut 0.5s ease-in forwards;
+.dashboard-loading-wrapper.fade-out {
+  animation: wrapperFadeOut 0.5s ease-in forwards;
 }
 
-@keyframes containerFadeOut {
+@keyframes wrapperFadeOut {
   from {
     opacity: 1;
+    transform: scale(1);
   }
   to {
     opacity: 0;
+    transform: scale(0.95);
   }
 }
 
-/* Fade Out Animation */
-.loading-container.fade-out {
-  animation: fadeOut 0.5s ease-out forwards;
+/* ===============================================
+   PERFORMANCE OPTIMIZATIONS
+   =============================================== */
+
+.water-bubble {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
+.dashboard-glass-card {
+  transform: translateZ(0);
+  will-change: transform, opacity;
 }
+

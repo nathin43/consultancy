@@ -197,7 +197,9 @@ const AdminContactMessages = () => {
   if (loading) {
     return (
       <AdminLayout>
-        <Loading title="Loading Messages..." subtitle="Fetching contact messages..." />
+        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+          Loading messages...
+        </div>
       </AdminLayout>
     );
   }
