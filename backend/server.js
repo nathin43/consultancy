@@ -5,7 +5,7 @@ const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
 
-// Load environment variables
+// Load environment variables (force reload)
 dotenv.config();
 
 // Initialize Express app
@@ -199,7 +199,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Connect to MongoDB
+// Connect to MongoDB with improved error handling
 const mongoose = require('mongoose');
 const mongoURI = process.env.MONGO_URI;
 
@@ -208,10 +208,37 @@ if (!mongoURI) {
   process.exit(1);
 }
 
+// Check for placeholder passwords
+if (mongoURI.includes('YOUR_NEW_PASSWORD') || 
+    mongoURI.includes('YOUR_PASSWORD') ||
+    mongoURI.includes('CHANGE_THIS') ||
+    mongoURI.includes('REPLACE_THIS')) {
+  console.error('\n❌ MongoDB Connection Failed: Placeholder password detected!\n');
+  console.error('📝 Fix: Update backend/.env file with your actual MongoDB Atlas password\n');
+  console.error('Steps:');
+  console.error('1. Go to https://cloud.mongodb.com/');
+  console.error('2. Database Access → Edit User → Reset Password');
+  console.error('3. Copy new password and update MONGO_URI in .env\n');
+  process.exit(1);
+}
+
 mongoose.connect(mongoURI)
   .then(() => console.log('✅ MongoDB Connected'))
   .catch(err => {
-    console.error('❌ MongoDB Connection Error:', err.message);
+    console.error('\n❌ MongoDB Connection Error:', err.message);
+    
+    if (err.message.includes('bad auth') || err.message.includes('authentication failed')) {
+      console.error('\n🔐 Authentication Issue Detected!\n');
+      console.error('Common causes:');
+      console.error('1. Wrong password in MONGO_URI');
+      console.error('2. MongoDB user doesn\'t exist');
+      console.error('3. User doesn\'t have access to the database\n');
+      console.error('Fix: Go to MongoDB Atlas → Database Access → Reset password for your user\n');
+    } else if (err.message.includes('ENOTFOUND') || err.message.includes('network')) {
+      console.error('\n🌐 Network Issue: Cannot reach MongoDB Atlas');
+      console.error('Check your internet connection\n');
+    }
+    
     process.exit(1);
   });
 

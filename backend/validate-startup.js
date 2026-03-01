@@ -46,6 +46,12 @@ optionalEnv.forEach(env => {
 if (process.env.MONGO_URI) {
   if (!process.env.MONGO_URI.includes('mongodb')) {
     errors.push('❌ MONGO_URI does not look valid (should contain "mongodb")');
+  } else if (process.env.MONGO_URI.includes('YOUR_NEW_PASSWORD') || 
+             process.env.MONGO_URI.includes('YOUR_PASSWORD') ||
+             process.env.MONGO_URI.includes('CHANGE_THIS') ||
+             process.env.MONGO_URI.includes('REPLACE_THIS')) {
+    errors.push('❌ MONGO_URI contains placeholder password! Update .env with your actual MongoDB password');
+    errors.push('   📝 Instructions: Go to MongoDB Atlas → Database Access → Edit User → Reset Password');
   } else {
     console.log('✅ MONGO_URI format looks valid');
   }
