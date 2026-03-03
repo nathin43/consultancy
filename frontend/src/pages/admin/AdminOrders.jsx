@@ -62,6 +62,11 @@ const AdminOrders = () => {
     return statusMap[status] || 'pending';
   };
 
+  const getPaymentStatusBadgeClass = (status) => {
+    const map = { pending: 'pending', paid: 'paid', failed: 'failed' };
+    return map[status] || 'pending';
+  };
+
   const toggleOrderExpand = (orderId) => {
     setExpandedOrders(prev => ({
       ...prev,
@@ -337,10 +342,26 @@ const AdminOrders = () => {
                         </div>
                         <div className="info-box">
                           <p className="info-label">Payment Status</p>
-                          <span className={`status-badge payment-${order.paymentStatus}`}>
+                          <span className={`status-badge payment-${getPaymentStatusBadgeClass(order.paymentStatus)}`}>
                             {order.paymentStatus?.toUpperCase()}
                           </span>
                         </div>
+                        {order.paymentMethod === 'RAZORPAY' && order.razorpayPaymentId && (
+                          <div className="info-box" style={{ gridColumn: '1 / -1' }}>
+                            <p className="info-label">🔗 Razorpay Payment ID</p>
+                            <p className="info-value" style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                              {order.razorpayPaymentId}
+                            </p>
+                          </div>
+                        )}
+                        {order.paymentMethod === 'RAZORPAY' && order.razorpayOrderId && (
+                          <div className="info-box" style={{ gridColumn: '1 / -1' }}>
+                            <p className="info-label">📋 Razorpay Order ID</p>
+                            <p className="info-value" style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                              {order.razorpayOrderId}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
 

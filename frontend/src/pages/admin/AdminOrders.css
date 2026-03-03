@@ -322,6 +322,11 @@
   color: #856404;
 }
 
+.payment-failed {
+  background: linear-gradient(135deg, #ffcdd2 0%, #ef9a9a 100%);
+  color: #b71c1c;
+}
+
 /* ===============================================
    ORDER META
    =============================================== */

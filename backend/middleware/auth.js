@@ -29,9 +29,15 @@ exports.protect = async (req, res, next) => {
     req.user = await User.findById(decoded.id).select('-password');
 
     if (!req.user) {
+      // This usually means an admin token was sent to a customer route,
+      // or the user account was deleted while the token was still valid.
+      console.error(
+        `[auth] protect: no User found for decoded.id=${decoded.id}. ` +
+        `Possible cause: admin token sent to customer route, or user was deleted.`
+      );
       return res.status(401).json({
         success: false,
-        message: 'User not found'
+        message: 'Session invalid. Please log out and log in again as a customer.'
       });
     }
 

@@ -31,31 +31,45 @@ API.interceptors.request.use((config) => {
   // Determine which token to use based on the route
   let token = null;
   const adminToken = localStorage.getItem('adminToken');
-  const userToken = localStorage.getItem('token');
+  const userToken  = localStorage.getItem('token');
 
-  // Admin routes - always use admin token
+  // Admin-only routes — always use admin token
   if (config.url.includes('/admin') || config.url.includes('/admin-management')) {
     token = adminToken;
-  } 
-  // Customer's own messages - use user token
-  else if (config.url.includes('/contact/my-messages')) {
-    token = userToken;
   }
-  // Other contact routes - use admin token for GET/PUT/DELETE (POST is public)
+  // Customer-only routes — ONLY use user token, never fall back to adminToken
+  // This prevents an admin's token being sent to customer APIs,
+  // which causes "User not found" because the admin ID doesn't exist in Users collection.
+  else if (
+    config.url.includes('/razorpay')          ||
+    config.url.includes('/cart')              ||
+    config.url.includes('/orders/myorders')   ||  // customer: view own orders
+    config.url.includes('/orders/') && config.url.includes('/cancel') || // customer: cancel own order
+    config.url.includes('/contact/my-messages')
+  ) {
+    token = userToken; // intentionally no adminToken fallback
+  }
+  // Other contact routes — admin token for read/update/delete (POST is public)
   else if (config.url.includes('/contact') && config.method.toLowerCase() !== 'post') {
     token = adminToken;
   }
-  // For /orders requests (with or without query params), prefer admin token if it exists
+  // /orders (admin: list all, update status, view by user) — use admin token
   else if (config.url.startsWith('/orders') && adminToken) {
     token = adminToken;
   }
-  // User routes or public routes - use user token
+  // Everything else (user profile, products, etc.) — use user token
   else {
     token = userToken;
   }
 
-  // If no appropriate token found, try the other one as fallback
-  if (!token) {
+  // Generic fallback ONLY for non-customer-critical routes
+  // (customer-only routes already returned above without this fallback)
+  const isCustomerOnlyRoute =
+    config.url.includes('/razorpay') ||
+    config.url.includes('/cart')     ||
+    config.url.includes('/orders/myorders') ||
+    (config.url.includes('/orders/') && config.url.includes('/cancel'));
+  if (!token && !isCustomerOnlyRoute) {
     token = adminToken || userToken;
   }
 

@@ -65,7 +65,20 @@ const orderSchema = new mongoose.Schema({
   paymentMethod: {
     type: String,
     required: true,
-    enum: ['Cash on Delivery', 'Credit Card', 'Debit Card', 'UPI']
+    enum: ['Cash on Delivery', 'Credit Card', 'Debit Card', 'UPI', 'RAZORPAY']
+  },
+  // Razorpay-specific fields (only populated for RAZORPAY orders)
+  razorpayOrderId: {
+    type: String,
+    default: null
+  },
+  razorpayPaymentId: {
+    type: String,
+    default: null
+  },
+  razorpaySignature: {
+    type: String,
+    default: null
   },
   paymentDetails: {
     creditCard: {

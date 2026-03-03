@@ -10,6 +10,24 @@ import API from '../../services/api';
 import './Checkout.css';
 
 /**
+ * Dynamically loads the Razorpay checkout script
+ * Returns a promise that resolves to true on success
+ */
+const loadRazorpayScript = () =>
+  new Promise((resolve) => {
+    if (document.getElementById('razorpay-script')) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = 'razorpay-script';
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+
+/**
  * Checkout Page Component
  * Order placement with selected items only
  */
@@ -93,6 +111,95 @@ const Checkout = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // ── Razorpay flow ──────────────────────────────────────────────────────
+  const handleRazorpayPayment = async (orderItems, shippingAddress) => {
+    const scriptLoaded = await loadRazorpayScript();
+    if (!scriptLoaded) {
+      setError('Failed to load Razorpay. Please check your internet connection.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Step 1: Create Razorpay order on backend
+      const { data } = await API.post('/razorpay/create-order', {
+        items: orderItems,
+        shippingAddress
+      });
+
+      if (!data.success) {
+        setError(data.message || 'Could not initiate payment.');
+        setLoading(false);
+        return;
+      }
+
+      const options = {
+        key: data.keyId,
+        amount: data.amount,            // paise
+        currency: data.currency,
+        name: 'Mani Electrical Shop',
+        description: 'Order Payment',
+        order_id: data.razorpayOrderId,
+        handler: async (response) => {
+          // Step 2: Verify signature and save order
+          try {
+            const verifyRes = await API.post('/razorpay/verify-payment', {
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              items: data.validatedItems,
+              shippingAddress: data.shippingAddress,
+              totalAmount: data.totalAmount
+            });
+
+            if (verifyRes.data.success) {
+              success('Payment successful! Order placed. 🎉');
+              setTimeout(() => navigate('/orders'), 1500);
+            } else {
+              setError('Payment verification failed. Please contact support.');
+              showError('Payment verification failed.');
+            }
+          } catch (verifyErr) {
+            setError(verifyErr.response?.data?.message || 'Payment verification error.');
+            showError('Payment verification error. Please contact support.');
+          } finally {
+            setLoading(false);
+          }
+        },
+        prefill: {
+          name: shippingAddress.name,
+          contact: shippingAddress.phone
+        },
+        theme: { color: '#f97316' },
+        modal: {
+          ondismiss: () => {
+            setError('Payment cancelled. Your order was NOT placed.');
+            showError('Payment cancelled.');
+            setLoading(false);
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (response) => {
+        setError(`Payment failed: ${response.error.description}`);
+        showError('Payment failed. Please try again.');
+        setLoading(false);
+      });
+      rzp.open();
+    } catch (err) {
+      // Show the actual server error message; fallback is generic
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to initiate Razorpay payment. Please try again.';
+      setError(msg);
+      showError(msg);
+      setLoading(false);
+    }
+  };
+  // ────────────────────────────────────────────────────────────────────────
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -157,21 +264,32 @@ const Checkout = () => {
         }
       }
 
+      const shippingAddress = {
+        name: formData.name,
+        phone: formData.phone,
+        street: formData.street,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        country: 'India'
+      };
+
+      const orderItems = selectedItems.map(item => ({
+        product: item.product._id,
+        quantity: item.quantity
+      }));
+
+      // ── Razorpay → separate two-step flow ─────────────────────────────
+      if (formData.paymentMethod === 'Online Payment (Razorpay)') {
+        await handleRazorpayPayment(orderItems, shippingAddress);
+        return; // loading state managed inside handleRazorpayPayment
+      }
+      // ─────────────────────────────────────────────────────────────────
+
       const orderData = {
         // Use ONLY selected items for order
-        items: selectedItems.map(item => ({
-          product: item.product._id,
-          quantity: item.quantity
-        })),
-        shippingAddress: {
-          name: formData.name,
-          phone: formData.phone,
-          street: formData.street,
-          city: formData.city,
-          state: formData.state,
-          zipCode: formData.zipCode,
-          country: 'India'
-        },
+        items: orderItems,
+        shippingAddress,
         paymentMethod: formData.paymentMethod,
         paymentDetails: {
           creditCard: formData.paymentMethod === 'Credit Card' ? {
@@ -299,7 +417,7 @@ const Checkout = () => {
                   <h2>Payment Method</h2>
 
                   <div className="payment-methods">
-                    {['Cash on Delivery', 'Credit Card', 'Debit Card', 'UPI'].map(method => (
+                    {['Cash on Delivery', 'Online Payment (Razorpay)', 'Credit Card', 'Debit Card', 'UPI'].map(method => (
                       <label key={method} className="payment-option">
                         <input
                           type="radio"
@@ -312,6 +430,24 @@ const Checkout = () => {
                       </label>
                     ))}
                   </div>
+
+                  {/* Razorpay Online Payment */}
+                  {formData.paymentMethod === 'Online Payment (Razorpay)' && (
+                    <div className="payment-details cod-message">
+                      <div className="cod-icon">💳</div>
+                      <h3>Pay Securely Online</h3>
+                      <p className="cod-description">
+                        You will be redirected to Razorpay's secure payment gateway.
+                      </p>
+                      <div className="cod-info">
+                        <p>✓ Credit / Debit Cards accepted</p>
+                        <p>✓ UPI (GPay, PhonePe, Paytm, BHIM)</p>
+                        <p>✓ Net Banking &amp; Wallets</p>
+                        <p>✓ 100% secure &amp; encrypted</p>
+                        <p>🔒 Order is saved ONLY after successful payment</p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Cash on Delivery Confirmation */}
                   {formData.paymentMethod === 'Cash on Delivery' && (
