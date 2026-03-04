@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import ProductCard from '../../components/ProductCard';
@@ -10,17 +11,31 @@ import './Products.css';
  * Professional product showcase with search and advanced filtering
  */
 const Products = () => {
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Filter states
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  // Filter states — pre-populate from URL params (set by navbar search)
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
+  const [selectedCategory, setSelectedCategory] = useState(
+    () => {
+      const cat = searchParams.get('category');
+      return cat && cat !== 'All' ? cat : 'all';
+    }
+  );
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [sortBy, setSortBy] = useState('latest');
   const [showInStockOnly, setShowInStockOnly] = useState(false);
+
+  // Sync URL params whenever they change (e.g. user searches again from navbar)
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || '';
+    const urlCategory = searchParams.get('category');
+    setSearchQuery(urlSearch);
+    setSelectedCategory(urlCategory && urlCategory !== 'All' ? urlCategory : 'all');
+  }, [searchParams]);
 
   // Fetch products on mount
   useEffect(() => {
