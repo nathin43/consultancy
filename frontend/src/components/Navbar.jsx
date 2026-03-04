@@ -58,10 +58,10 @@ const Navbar = () => {
               </NavLink>
             </li>
             <li>
-              <NavLink to="/services" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              <NavLink to="/cart" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                 onClick={() => setMenuOpen(false)}
               >
-                Services
+                Cart
               </NavLink>
             </li>
             <li>
@@ -74,21 +74,8 @@ const Navbar = () => {
           </ul>
         </div>
 
-        {/* RIGHT - Cart + Profile + Mobile Toggle */}
+        {/* RIGHT - Profile + Mobile Toggle */}
         <div className="nav-right">
-          <Link to="/cart" className="cart-button" aria-label="View cart">
-            <svg className="cart-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              <circle cx="9" cy="21" r="1" fill="#FFFFFF"/>
-              <circle cx="20" cy="21" r="1" fill="#FFFFFF"/>
-            </svg>
-            {cartCount > 0 && (
-              <span className="cart-badge" key={cartCount}>
-                {cartCount > 99 ? '99+' : cartCount}
-              </span>
-            )}
-          </Link>
-
           <div className="auth-dropdown-wrapper">
             <button
               className={`profile-chip ${dropdownOpen ? 'active' : ''}`}
@@ -97,14 +84,14 @@ const Navbar = () => {
             >
               <span className="avatar-circle">
                 {isAuthenticated && user?.name ? user.name.charAt(0).toUpperCase() : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
                   </svg>
                 )}
               </span>
               <span className="profile-name">{isAuthenticated ? user?.name?.split(' ')[0] : 'Sign In'}</span>
-              <svg className="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg className="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5">
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </button>

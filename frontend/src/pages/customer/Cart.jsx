@@ -7,7 +7,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import CheckoutModal from '../../components/CheckoutModal';
+import CartLoginRequired from '../../components/CartLoginRequired';
 import { CartContext } from '../../context/CartContext';
+import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import './Cart.css';
 
@@ -57,13 +59,25 @@ const fmt = (n) => (n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }
 const Cart = () => {
   const navigate = useNavigate();
   const { cart, updateCartItem, removeFromCart, loading } = useContext(CartContext);
-  const { info } = useToast();
+  const { isAuthenticated } = useContext(AuthContext);
+  const { info, error } = useToast();
 
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [updatingItems, setUpdatingItems] = useState(new Set());
   const [removingItems, setRemovingItems] = useState(new Set());
   const [giftInCart,    setGiftInCart]    = useState(null);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+
+  // Show animated login required screen if user is not authenticated
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Navbar />
+        <CartLoginRequired autoRedirect={true} redirectDelay={4000} />
+        <Footer />
+      </>
+    );
+  }
 
   /* ── Derived values ── */
   const items         = cart?.items || [];

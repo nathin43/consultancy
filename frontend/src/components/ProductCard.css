@@ -39,7 +39,7 @@
 
 .product-image-container {
   position: relative;
-  padding-top: 100%; /* 1:1 Aspect */
+  padding-top: 75%; /* Reduced aspect ratio for compact cards */
   overflow: hidden;
   background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
   display: flex;
@@ -55,7 +55,7 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  padding: 24px;
+  padding: 12px;
   transition: transform 0.5s ease-out;
   filter: drop-shadow(0 4px 12px rgba(15, 23, 42, 0.08));
 }
@@ -71,14 +71,14 @@
    ========================================== */
 .category-badge-overlay {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: 10px;
+  left: 10px;
   z-index: 10;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
-  padding: 8px 16px;
+  letter-spacing: 1px;
+  padding: 5px 12px;
   background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
   color: #ffffff;
   border-radius: 100px;
@@ -101,7 +101,7 @@
    PRODUCT INFO - CLEAN HIERARCHY
    ========================================== */
 .product-info {
-  padding: 20px;
+  padding: 14px;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
@@ -114,13 +114,13 @@
 .product-title-link {
   text-decoration: none;
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .product-title {
-  font-size: 16px;
+  font-size: 14.5px;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.35;
   color: #1e293b; /* Dark charcoal */
   margin: 0;
   display: -webkit-box;
@@ -129,7 +129,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-height: 2.8em;
+  min-height: 2.6em;
   transition: color 0.3s ease;
   font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
 }
@@ -142,27 +142,45 @@
    BRAND NAME - MUTED GREY
    ========================================== */
 .product-brand {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: #94a3b8; /* Muted grey */
-  margin: 0 0 14px 0;
+  margin: 0 0 6px 0;
   line-height: 1.3;
   font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
 }
 
-/* Rating Section */
+/* ==========================================
+   RATING SECTION - CENTERED STACKED (E-COMMERCE STYLE)
+   ========================================== */
 .rating-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  text-align: center;
+  padding: 0 10px;
 }
 
 .stars-display {
   display: flex;
+  align-items: center;
+  justify-content: center;
   color: #f59e0b;
   font-size: 14px;
   gap: 2px;
+  line-height: 1;
+}
+
+.star {
+  display: inline-block;
+  line-height: 1;
+}
+
+.star.filled {
+  color: #f59e0b;
 }
 
 .star.empty {
@@ -176,27 +194,28 @@
   background-clip: text;
 }
 
+.rating-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 1;
+}
+
 .rating-text {
   font-size: 13px;
-  color: #64748b;
-  font-weight: 600;
+  color: #1e293b;
+  font-weight: 700;
   font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
+  line-height: 1;
 }
 
-.no-reviews-text {
+.rating-count {
   font-size: 12px;
-  color: #94a3b8;
-  font-style: italic;
+  color: #64748b;
+  font-weight: 500;
   font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
-}
-
-.rating-container.no-reviews {
-  margin-bottom: 16px;
-}
-
-.rating-reviews {
-  color: #94a3b8;
-  font-weight: 400;
+  line-height: 1;
 }
 
 /* ==========================================
@@ -207,85 +226,109 @@
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
-  margin-bottom: 18px;
-  padding-top: 16px;
-  border-top: 2px solid #f1f5f9;
-  gap: 12px;
+  margin-bottom: 12px;
+  margin-left: 6px;
+  margin-right: 6px;
+  padding: 12px 10px 0;
+  border-top: 1px solid #f1f5f9;
+  gap: 10px;
 }
 
-/* Price Section */
+/* Price Section - Unified Pill Badge Design */
 .price-section {
-  flex: 1;
+  flex: 0 0 auto;
 }
 
 .price-display {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
 }
 
 .price-label {
-  font-size: 10px;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  font-weight: 700;
-  font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
+  display: none;
 }
 
 .price-amount {
-  font-size: 18px;
-  font-weight: bold;
-  color: #059669;
-  letter-spacing: -0.01em;
+  font-size: 14px;
+  font-weight: 700;
+  color: #166534;
+  letter-spacing: 0.2px;
   font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
-  background: #D1FAE5;
-  padding: 8px 16px;
-  border-radius: 100px;
+  background: #dcfce7;
+  padding: 6px 14px;
+  border-radius: 20px;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 5px;
   box-shadow: none;
-  transition: all 0.3s ease-in-out;
+  transition: all 0.25s ease;
+  border: 1px solid #86efac;
+  min-height: auto;
+  white-space: nowrap;
+  line-height: 1.3;
+  cursor: default;
+}
+
+.price-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #16a34a;
+  animation: pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
 .product-card-premium:hover .price-amount {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.15);
+  background: #bbf7d0;
+  border-color: #4ade80;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
 }
 
 /* Smaller rupee symbol */
 .price-amount::first-letter {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 /* ==========================================
-   STOCK INDICATOR - SOFT GREEN PILL
+   STOCK INDICATOR - UNIFIED PILL BADGE DESIGN
    ========================================== */
 .stock-indicator {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: #DCFCE7;
-  color: #16A34A;
-  padding: 6px 12px;
-  border-radius: 100px;
-  font-size: 11px;
+  gap: 5px;
+  background: #dcfce7;
+  color: #166534;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border: none;
+  text-transform: capitalize;
+  letter-spacing: 0.2px;
+  border: 1px solid #86efac;
   box-shadow: none;
   font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+  min-height: auto;
+  cursor: default;
 }
 
 .stock-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: currentColor;
+  background-color: #16a34a;
   animation: pulse 2s ease-in-out infinite;
+}
+
+.product-card-premium:hover .stock-indicator {
+  background: #bbf7d0;
+  border-color: #4ade80;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2);
 }
 
 @keyframes pulse {
@@ -303,18 +346,18 @@
 .product-actions-premium {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 4px;
+  gap: 8px;
+  margin-top: 0;
 }
 
 .btn-add-to-cart,
 .btn-view-details {
   border: none;
   border-radius: 100px;
-  padding: 13px 28px;
-  font-size: 14px;
+  padding: 14px 28px;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.3px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -325,7 +368,7 @@
   text-align: center;
   position: relative;
   overflow: hidden;
-  min-height: 44px;
+  min-height: 48px;
   font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
 }
 
@@ -340,26 +383,27 @@
   color: #ffffff;
   
   /* Soft glow effect */
-  box-shadow: 0 2px 8px rgba(30, 58, 138, 0.25),
-              0 0 20px rgba(37, 99, 235, 0.15),
-              0 4px 12px rgba(30, 58, 138, 0.2);
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3),
+              0 0 24px rgba(37, 99, 235, 0.2),
+              0 6px 16px rgba(30, 58, 138, 0.25);
   
   /* Perfect pill shape */
   border: none;
   border-radius: 50px;
   
-  /* Compact size with minimal spacing */
-  padding: 11px 24px;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+  /* Larger size */
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
   
   /* Smooth transitions */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
   /* Continuous animations */
   animation: addToCartFloat 2.8s ease-in-out infinite,
-             addToCartGradientFlow 3s ease-in-out infinite;
+             addToCartGradientFlow 3s ease-in-out infinite,
+             addToCartPulseGlow 2s ease-in-out infinite;
 }
 
 /* Gentle floating animation */
@@ -368,7 +412,7 @@
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
   }
 }
 
@@ -382,17 +426,31 @@
   }
 }
 
-/* Button Icons - Small, minimal cart icon */
+/* Pulse glow animation */
+@keyframes addToCartPulseGlow {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3),
+                0 0 24px rgba(37, 99, 235, 0.2),
+                0 6px 16px rgba(30, 58, 138, 0.25);
+  }
+  50% {
+    box-shadow: 0 6px 18px rgba(30, 58, 138, 0.4),
+                0 0 32px rgba(37, 99, 235, 0.3),
+                0 8px 22px rgba(30, 58, 138, 0.35);
+  }
+}
+
+/* Button Icons */
 .btn-icon {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   transition: transform 0.25s ease-in-out, opacity 0.25s ease-in-out;
 }
 
 /* Spinner for loading state */
 .btn-spinner {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: #ffffff;
   border-radius: 50%;
@@ -612,7 +670,9 @@
   color: #374151;
   border: 1px solid #E5E7EB;
   border-radius: 100px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  padding: 14px 28px;
+  font-size: 15px;
   animation: viewDetailsFloat 2.5s ease-in-out infinite,
              viewDetailsGradientShift 3s ease-in-out infinite;
 }
@@ -623,7 +683,7 @@
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
   }
 }
 
@@ -701,42 +761,66 @@
   }
 
   .product-info {
-    padding: 16px;
+    padding: 12px;
   }
 
   .category-badge-overlay {
-    font-size: 9px;
-    padding: 6px 12px;
-    top: 12px;
-    left: 12px;
+    font-size: 8px;
+    padding: 4px 10px;
+    top: 8px;
+    left: 8px;
   }
 
   .product-image {
-    padding: 20px;
+    padding: 10px;
   }
 
   .product-title {
-    font-size: 15px;
+    font-size: 13.5px;
   }
 
   .product-brand {
+    font-size: 11px;
+    margin-bottom: 5px;
+  }
+
+  .rating-container {
+    margin-bottom: 12px;
+    gap: 5px;
+  }
+
+  .stars-display {
+    font-size: 13px;
+  }
+
+  .rating-text {
     font-size: 12px;
   }
 
+  .rating-count {
+    font-size: 11px;
+  }
+
   .price-amount {
-    font-size: 20px;
+    font-size: 12px;
+    padding: 5px 12px;
   }
 
   .stock-indicator {
-    font-size: 10px;
-    padding: 5px 10px;
+    font-size: 12px;
+    padding: 5px 12px;
+  }
+
+  .stock-dot {
+    width: 5px;
+    height: 5px;
   }
 
   .btn-add-to-cart,
   .btn-view-details {
-    padding: 12px 18px;
+    padding: 12px 22px;
     font-size: 13px;
-    min-height: 42px;
+    min-height: 44px;
   }
 
   .btn-icon {
@@ -747,21 +831,58 @@
 
 @media (max-width: 480px) {
   .price-stock-wrapper {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-left: 4px;
+    margin-right: 4px;
+    padding-left: 8px;
+    padding-right: 8px;
   }
 
   .product-actions-premium {
-    gap: 8px;
+    gap: 6px;
   }
 
   .product-title {
-    font-size: 14px;
+    font-size: 13px;
+  }
+
+  .product-brand {
+    margin-bottom: 4px;
+  }
+
+  .rating-container {
+    margin-bottom: 10px;
+    gap: 4px;
+  }
+
+  .stars-display {
+    font-size: 12px;
+  }
+
+  .rating-text {
+    font-size: 11px;
+  }
+
+  .rating-count {
+    font-size: 10px;
   }
 
   .price-amount {
-    font-size: 18px;
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  .stock-indicator {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  .stock-dot {
+    width: 5px;
+    height: 5px;
   }
 }
 

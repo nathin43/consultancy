@@ -107,19 +107,16 @@ const ProductCard = ({ product, hideAddToCart = false }) => {
           <p className="product-brand">by {product.brand}</p>
         )}
 
-        {/* Rating Section */}
-        {ratingCount > 0 ? (
+        {/* Rating Section - Centered Stacked Design */}
+        {ratingCount > 0 && (
           <div className="rating-container">
             <div className="stars-display">
               {renderStars(averageRating)}
             </div>
-            <span className="rating-text">
-              {averageRating.toFixed(1)} <span className="rating-reviews">({ratingCount} reviews)</span>
-            </span>
-          </div>
-        ) : (
-          <div className="rating-container no-reviews">
-            <span className="no-reviews-text">No Reviews Yet</span>
+            <div className="rating-info">
+              <span className="rating-text">{averageRating.toFixed(1)}</span>
+              <span className="rating-count">({ratingCount} {ratingCount === 1 ? 'review' : 'reviews'})</span>
+            </div>
           </div>
         )}
 
@@ -133,7 +130,7 @@ const ProductCard = ({ product, hideAddToCart = false }) => {
               </div>
             ) : (
               <div className="price-display">
-                <span className="price-amount">{formatPrice(product.price)}</span>
+                <span className="price-amount"><span className="price-dot"></span>{formatPrice(product.price)}</span>
               </div>
             )}
           </div>

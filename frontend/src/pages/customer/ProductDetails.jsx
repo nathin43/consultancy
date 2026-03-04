@@ -129,7 +129,7 @@ const ProductDetails = () => {
                 </div>
                 <div className="stock-status">
                   {product.stock > 0 ? (
-                    <span className="in-stock">In Stock: {product.stock} units</span>
+                    <span className="in-stock">In Stock: {product.stock}</span>
                   ) : (
                     <span className="out-of-stock-text">Out of Stock</span>
                   )}

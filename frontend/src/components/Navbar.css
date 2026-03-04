@@ -339,91 +339,108 @@
    PROFILE CHIP - PREMIUM INDIGO-VIOLET GRADIENT
    =========================================== */
 .profile-chip {
-    height: 48px;
-    padding: 6px 18px 6px 6px;
-    border-radius: 24px;
-    /* Rounded pill shape */
-    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
-    /* Indigo to Violet gradient */
-    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    height: 42px;
+    padding: 5px 20px 5px 5px;
+    border-radius: 30px;
+    /* Modern rounded pill shape */
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    /* Premium indigo gradient */
+    border: none;
     color: #FFFFFF !important;
-    /* White text */
     display: flex;
     align-items: center;
     gap: 10px;
     cursor: pointer;
-    font-weight: 700;
-    /* Bold username */
-    font-size: 15px;
-    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    backdrop-filter: blur(12px) saturate(180%);
-    /* Enhanced glassmorphism */
-    -webkit-backdrop-filter: blur(12px) saturate(180%);
-    box-shadow:
-        0 6px 24px rgba(79, 70, 229, 0.4),
-        0 0 20px rgba(124, 58, 237, 0.3),
-        inset 0 2px 4px rgba(255, 255, 255, 0.15);
-    /* Soft inner shadow */
+    font-weight: 600;
+    font-size: 14.5px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+        0 6px 15px rgba(79, 70, 229, 0.3),
+        0 2px 6px rgba(79, 70, 229, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shine effect on hover */
+.profile-chip::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.profile-chip:hover::before {
+    left: 100%;
 }
 
 .profile-chip:hover {
-    transform: translateY(-3px) scale(1.05);
-    /* Enhanced hover transition */
-    background: linear-gradient(135deg, #4338CA 0%, #7C3AED 100%);
-    border-color: rgba(255, 255, 255, 0.3);
-    box-shadow:
-        0 10px 36px rgba(79, 70, 229, 0.55),
-        0 0 28px rgba(124, 58, 237, 0.4),
-        inset 0 2px 4px rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px) scale(1.05);
+    background: linear-gradient(135deg, #5855e5 0%, #4338ca 100%);
+    box-shadow: 
+        0 10px 25px rgba(79, 70, 229, 0.45),
+        0 4px 12px rgba(79, 70, 229, 0.25),
+        0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+.profile-chip:active {
+    transform: translateY(0) scale(1.02);
+    box-shadow: 
+        0 4px 12px rgba(79, 70, 229, 0.35),
+        0 2px 6px rgba(79, 70, 229, 0.2);
 }
 
 .profile-chip.active {
-    background: linear-gradient(135deg, #3730A3 0%, #6D28D9 100%);
-    border-color: rgba(255, 255, 255, 0.25);
-    color: #FFFFFF !important;
-    box-shadow:
-        0 8px 32px rgba(79, 70, 229, 0.65),
-        0 0 24px rgba(109, 40, 217, 0.5),
-        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    box-shadow: 
+        0 8px 20px rgba(79, 70, 229, 0.5),
+        0 3px 10px rgba(79, 70, 229, 0.3),
+        0 0 24px rgba(99, 102, 241, 0.35);
 }
 
 .avatar-circle {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.25);
-    /* Glassmorphism background */
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
-    font-weight: 800;
-    color: #FFFFFF !important;
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFFFFF;
     text-transform: uppercase;
-    backdrop-filter: blur(10px);
-    border: 2px solid rgba(255, 255, 255, 0.35);
-    /* Gradient glow ring */
-    box-shadow:
-        0 4px 16px rgba(139, 92, 246, 0.3),
-        0 0 16px rgba(139, 92, 246, 0.2),
-        inset 0 2px 4px rgba(255, 255, 255, 0.3);
-    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.1),
+        inset 0 1px 2px rgba(255, 255, 255, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .profile-chip:hover .avatar-circle {
-    transform: scale(1.08);
+    transform: scale(1.1) rotate(5deg);
     background: rgba(255, 255, 255, 0.25);
-    box-shadow:
-        0 6px 16px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.15),
+        inset 0 1px 3px rgba(255, 255, 255, 0.3);
 }
 
 .profile-name {
-    font-weight: 700;
-    /* Bold username text */
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    color: #FFFFFF !important;
+    transition: all 0.3s ease;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.profile-chip:hover .profile-name {
     letter-spacing: 0.3px;
     color: #FFFFFF !important;
-    transition: all 0.3s ease-in-out;
 }
 
 .profile-chip.active .profile-name {
@@ -431,12 +448,14 @@
 }
 
 .dropdown-arrow {
-    color: rgba(255, 255, 255, 0.8) !important;
-    transition: all 0.3s ease-in-out;
+    color: rgba(255, 255, 255, 0.85) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 12px;
 }
 
 .profile-chip:hover .dropdown-arrow {
     color: #FFFFFF !important;
+    transform: translateY(1px);
 }
 
 .profile-chip.active .dropdown-arrow {
@@ -712,11 +731,11 @@
 
     .cart-button,
     .profile-chip {
-        height: 50px;
+        height: 44px;
     }
 
     .cart-button {
-        width: 50px;
+        width: 44px;
         border-radius: 12px;
     }
 }
@@ -1193,92 +1212,118 @@
 }
 
 /* ===========================================
-   PROFILE CHIP - GLASSMORPHISM (ALTERNATE)
+   PROFILE CHIP - MODERN PREMIUM DESIGN
    =========================================== */
 .profile-chip {
-    height: 48px;
-    padding: 6px 18px 6px 6px;
-    border-radius: 24px;
-    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #FFFFFF !important;
+    height: 42px;
+    padding: 5px 20px 5px 5px;
+    border-radius: 30px;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border: none;
+    color: #FFFFFF;
     display: flex;
     align-items: center;
     gap: 10px;
     cursor: pointer;
-    font-weight: 700;
-    font-size: 15px;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    backdrop-filter: blur(10px);
-    box-shadow:
-        0 4px 20px rgba(79, 70, 229, 0.35),
-        inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+    font-size: 14.5px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+        0 6px 15px rgba(79, 70, 229, 0.3),
+        0 2px 6px rgba(79, 70, 229, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-chip::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.profile-chip:hover::before {
+    left: 100%;
 }
 
 .profile-chip:hover {
-    transform: translateY(-2px) scale(1.04);
-    background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
-    border-color: rgba(255, 255, 255, 0.25);
-    box-shadow:
-        0 8px 32px rgba(79, 70, 229, 0.5),
-        inset 0 1px 2px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px) scale(1.05);
+    background: linear-gradient(135deg, #5855e5 0%, #4338ca 100%);
+    box-shadow: 
+        0 10px 25px rgba(79, 70, 229, 0.45),
+        0 4px 12px rgba(79, 70, 229, 0.25),
+        0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+.profile-chip:active {
+    transform: translateY(0) scale(1.02);
+    box-shadow: 
+        0 4px 12px rgba(79, 70, 229, 0.35),
+        0 2px 6px rgba(79, 70, 229, 0.2);
 }
 
 .profile-chip.active {
-    background: linear-gradient(135deg, #3730a3 0%, #4338ca 100%);
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow:
-        0 6px 28px rgba(79, 70, 229, 0.6),
-        inset 0 1px 2px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    box-shadow: 
+        0 8px 20px rgba(79, 70, 229, 0.5),
+        0 3px 10px rgba(79, 70, 229, 0.3),
+        0 0 24px rgba(99, 102, 241, 0.35);
 }
 
 .avatar-circle {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
-    color: #FFFFFF !important;
+    color: #FFFFFF;
     text-transform: uppercase;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow:
-        0 4px 12px rgba(0, 0, 0, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
-    transition: all 0.3s ease-in-out;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.1),
+        inset 0 1px 2px rgba(255, 255, 255, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .profile-chip:hover .avatar-circle {
-    transform: scale(1.08);
+    transform: scale(1.1) rotate(5deg);
     background: rgba(255, 255, 255, 0.25);
-    box-shadow:
-        0 6px 16px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.15),
+        inset 0 1px 3px rgba(255, 255, 255, 0.3);
 }
 
 .profile-name {
-    color: #FFFFFF !important;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    transition: all 0.3s ease-in-out;
+    color: #FFFFFF;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    transition: all 0.3s ease;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .profile-chip:hover .profile-name {
-    text-shadow: none;
+    letter-spacing: 0.3px;
 }
 
 .dropdown-arrow {
-    color: rgba(255, 255, 255, 0.8) !important;
-    transition: all 0.3s ease-in-out;
-    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 12px;
 }
 
 .profile-chip:hover .dropdown-arrow {
     color: #FFFFFF !important;
+    transform: translateY(1px);
 }
 
 .profile-chip.active .dropdown-arrow {
@@ -1616,11 +1661,11 @@
     .cart-button,
     .login-btn,
     .profile-chip {
-        height: 46px;
+        height: 42px;
     }
 
     .cart-button {
-        width: 46px;
+        width: 42px;
     }
 
     .login-btn {
