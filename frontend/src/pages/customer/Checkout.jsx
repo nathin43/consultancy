@@ -2,7 +2,6 @@ import { useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import UPIPayment from '../../components/UPIPayment';
 import { CartContext } from '../../context/CartContext';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
@@ -34,7 +33,7 @@ const loadRazorpayScript = () =>
 const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cart } = useContext(CartContext);
+  const { cart, fetchCart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
   const { success, error: showError } = useToast();
 
@@ -48,20 +47,7 @@ const Checkout = () => {
     city: user?.address?.city || '',
     state: user?.address?.state || '',
     zipCode: user?.address?.zipCode || '',
-    paymentMethod: 'Cash on Delivery',
-    // Credit Card fields
-    cardholderName: '',
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    // Debit Card fields
-    debitCardholderName: '',
-    debitCardNumber: '',
-    debitExpiryDate: '',
-    debitCvv: '',
-    // UPI fields
-    upiId: '',
-    upiProvider: 'gpay'
+    paymentMethod: 'Cash on Delivery'
   });
 
   const [loading, setLoading] = useState(false);
@@ -154,6 +140,7 @@ const Checkout = () => {
 
             if (verifyRes.data.success) {
               success('Payment successful! Order placed. 🎉');
+              await fetchCart();
               setTimeout(() => navigate('/orders'), 1500);
             } else {
               setError('Payment verification failed. Please contact support.');
@@ -206,64 +193,6 @@ const Checkout = () => {
     setLoading(true);
 
     try {
-      // Validate payment details based on selected method
-      if (formData.paymentMethod === 'Credit Card') {
-        if (!formData.cardholderName || !formData.cardNumber || !formData.expiryDate || !formData.cvv) {
-          setError('Please fill all credit card details');
-          setLoading(false);
-          return;
-        }
-        const cleanCardNumber = formData.cardNumber.replace(/\s/g, '');
-        if (cleanCardNumber.length !== 16) {
-          setError('Card number must be 16 digits');
-          setLoading(false);
-          return;
-        }
-        if (!formData.cvv.match(/^\d{3,4}$/)) {
-          setError('CVV must be 3-4 digits');
-          setLoading(false);
-          return;
-        }
-        if (!formData.expiryDate.match(/^(0[1-9]|1[0-2])\/\d{2}$/)) {
-          setError('Expiry date must be in MM/YY format');
-          setLoading(false);
-          return;
-        }
-      } else if (formData.paymentMethod === 'Debit Card') {
-        if (!formData.debitCardholderName || !formData.debitCardNumber || !formData.debitExpiryDate || !formData.debitCvv) {
-          setError('Please fill all debit card details');
-          setLoading(false);
-          return;
-        }
-        const cleanCardNumber = formData.debitCardNumber.replace(/\s/g, '');
-        if (cleanCardNumber.length !== 16) {
-          setError('Card number must be 16 digits');
-          setLoading(false);
-          return;
-        }
-        if (!formData.debitCvv.match(/^\d{3,4}$/)) {
-          setError('CVV must be 3-4 digits');
-          setLoading(false);
-          return;
-        }
-        if (!formData.debitExpiryDate.match(/^(0[1-9]|1[0-2])\/\d{2}$/)) {
-          setError('Expiry date must be in MM/YY format');
-          setLoading(false);
-          return;
-        }
-      } else if (formData.paymentMethod === 'UPI') {
-        if (!formData.upiId) {
-          setError('Please enter UPI ID');
-          setLoading(false);
-          return;
-        }
-        if (!formData.upiId.match(/^[a-zA-Z0-9._-]+@[a-zA-Z]+$/)) {
-          setError('Please enter valid UPI ID (e.g., username@upi)');
-          setLoading(false);
-          return;
-        }
-      }
-
       const shippingAddress = {
         name: formData.name,
         phone: formData.phone,
@@ -291,31 +220,14 @@ const Checkout = () => {
         items: orderItems,
         shippingAddress,
         paymentMethod: formData.paymentMethod,
-        paymentDetails: {
-          creditCard: formData.paymentMethod === 'Credit Card' ? {
-            cardholderName: formData.cardholderName,
-            cardNumber: formData.cardNumber.replace(/\s/g, '').slice(-4), // Only store last 4 digits for security
-            expiryDate: formData.expiryDate
-          } : null,
-          debitCard: formData.paymentMethod === 'Debit Card' ? {
-            cardholderName: formData.debitCardholderName,
-            cardNumber: formData.debitCardNumber.replace(/\s/g, '').slice(-4),
-            expiryDate: formData.debitExpiryDate
-          } : null,
-          upi: formData.paymentMethod === 'UPI' ? {
-            upiId: formData.upiId,
-            provider: formData.upiProvider
-          } : null
-        }
+        paymentDetails: {}
       };
 
       const { data } = await API.post('/orders', orderData);
 
       if (data.success) {
-        // DO NOT clear cart - items persist for easy re-ordering
-        // Order has been created with copies of cart items
-        // Cart and Order are independent - user can place new orders without losing cart
         success('Order placed successfully! 🎉');
+        await fetchCart();
         setTimeout(() => navigate('/orders'), 1500);
       }
     } catch (err) {
@@ -417,7 +329,7 @@ const Checkout = () => {
                   <h2>Payment Method</h2>
 
                   <div className="payment-methods">
-                    {['Cash on Delivery', 'Online Payment (Razorpay)', 'Credit Card', 'Debit Card', 'UPI'].map(method => (
+                    {['Cash on Delivery', 'Online Payment (Razorpay)'].map(method => (
                       <label key={method} className="payment-option">
                         <input
                           type="radio"
@@ -463,173 +375,7 @@ const Checkout = () => {
                     </div>
                   )}
 
-                  {/* Credit Card Details */}
-                  {formData.paymentMethod === 'Credit Card' && (
-                    <div className="payment-details card-details">
-                      <div className="card-header">
-                        <div className="card-icon">💳</div>
-                        <h3>Credit Card Details</h3>
-                      </div>
-                      <div className="form-group">
-                        <label>Cardholder Name *</label>
-                        <input
-                          type="text"
-                          name="cardholderName"
-                          placeholder="John Doe"
-                          value={formData.cardholderName}
-                          onChange={handleChange}
-                          required
-                        />
-                        <small>Enter name as on card</small>
-                      </div>
-                      <div className="form-group">
-                        <label>Card Number *</label>
-                        <input
-                          type="text"
-                          name="cardNumber"
-                          placeholder="1234 5678 9012 3456"
-                          value={formData.cardNumber}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/\s/g, '').replace(/\D/g, '');
-                            const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
-                            setFormData({ ...formData, cardNumber: formatted });
-                          }}
-                          maxLength="19"
-                          required
-                        />
-                        <small>16-digit card number</small>
-                      </div>
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label>Expiry Date (MM/YY) *</label>
-                          <input
-                            type="text"
-                            name="expiryDate"
-                            placeholder="12/25"
-                            value={formData.expiryDate}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, '');
-                              let formatted = value;
-                              if (value.length >= 2) {
-                                formatted = value.slice(0, 2) + '/' + value.slice(2, 4);
-                              }
-                              setFormData({ ...formData, expiryDate: formatted });
-                            }}
-                            maxLength="5"
-                            required
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>CVV *</label>
-                          <input
-                            type="password"
-                            name="cvv"
-                            placeholder="123"
-                            value={formData.cvv}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, '');
-                              setFormData({ ...formData, cvv: value });
-                            }}
-                            maxLength="4"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="card-security-info">
-                        <p>🔒 Your card details are encrypted and secure</p>
-                      </div>
-                    </div>
-                  )}
 
-                  {/* Debit Card Details */}
-                  {formData.paymentMethod === 'Debit Card' && (
-                    <div className="payment-details card-details">
-                      <div className="card-header">
-                        <div className="card-icon">💳</div>
-                        <h3>Debit Card Details</h3>
-                      </div>
-                      <div className="form-group">
-                        <label>Cardholder Name *</label>
-                        <input
-                          type="text"
-                          name="debitCardholderName"
-                          placeholder="John Doe"
-                          value={formData.debitCardholderName}
-                          onChange={handleChange}
-                          required
-                        />
-                        <small>Enter name as on card</small>
-                      </div>
-                      <div className="form-group">
-                        <label>Card Number *</label>
-                        <input
-                          type="text"
-                          name="debitCardNumber"
-                          placeholder="1234 5678 9012 3456"
-                          value={formData.debitCardNumber}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/\s/g, '').replace(/\D/g, '');
-                            const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
-                            setFormData({ ...formData, debitCardNumber: formatted });
-                          }}
-                          maxLength="19"
-                          required
-                        />
-                        <small>16-digit card number</small>
-                      </div>
-                      <div className="form-row">
-                        <div className="form-group">
-                          <label>Expiry Date (MM/YY) *</label>
-                          <input
-                            type="text"
-                            name="debitExpiryDate"
-                            placeholder="12/25"
-                            value={formData.debitExpiryDate}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, '');
-                              let formatted = value;
-                              if (value.length >= 2) {
-                                formatted = value.slice(0, 2) + '/' + value.slice(2, 4);
-                              }
-                              setFormData({ ...formData, debitExpiryDate: formatted });
-                            }}
-                            maxLength="5"
-                            required
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>CVV *</label>
-                          <input
-                            type="password"
-                            name="debitCvv"
-                            placeholder="123"
-                            value={formData.debitCvv}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, '');
-                              setFormData({ ...formData, debitCvv: value });
-                            }}
-                            maxLength="4"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="card-security-info">
-                        <p>🔒 Your card details are encrypted and secure</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* UPI Payment Methods */}
-                  {formData.paymentMethod === 'UPI' && (
-                    <div className="payment-details upi-details">
-                      <UPIPayment
-                        upiId={formData.upiId}
-                        onUpiIdChange={(value) => setFormData({ ...formData, upiId: value })}
-                        selectedUpiProvider={formData.upiProvider}
-                        onProviderChange={(provider) => setFormData({ ...formData, upiProvider: provider })}
-                      />
-                    </div>
-                  )}
                 </div>
 
                 <button

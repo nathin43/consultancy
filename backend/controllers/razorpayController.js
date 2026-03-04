@@ -132,6 +132,24 @@ exports.verifyAndSaveOrder = async (req, res) => {
 
     await order.save();
 
+    // Remove only the ordered items from the cart; leave other items intact
+    try {
+      const Cart = require('../models/Cart');
+      const orderedProductIds = items.map(item => item.product.toString());
+      const userCart = await Cart.findOne({ user: req.user.id });
+      if (userCart) {
+        userCart.items = userCart.items.filter(
+          cartItem => !orderedProductIds.includes(cartItem.product.toString())
+        );
+        userCart.totalAmount = userCart.items.reduce(
+          (sum, cartItem) => sum + (cartItem.price * cartItem.quantity), 0
+        );
+        await userCart.save();
+      }
+    } catch (cartError) {
+      console.error('Error removing ordered items from cart (non-fatal):', cartError.message);
+    }
+
     // Auto-generate report
     try {
       const User = require('../models/User');

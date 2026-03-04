@@ -112,9 +112,22 @@ exports.createOrder = async (req, res) => {
       console.error('Error syncing user report summary after order creation:', summaryError.message);
     }
 
-    // DO NOT clear cart - cart persists for easy re-ordering
-    // Cart and Order are independent collections
-    // User can reference cart items or place a new order
+    // Remove only the ordered items from the cart; leave other items intact
+    try {
+      const orderedProductIds = orderItems.map(item => item.product.toString());
+      const userCart = await Cart.findOne({ user: req.user.id });
+      if (userCart) {
+        userCart.items = userCart.items.filter(
+          cartItem => !orderedProductIds.includes(cartItem.product.toString())
+        );
+        userCart.totalAmount = userCart.items.reduce(
+          (sum, cartItem) => sum + (cartItem.price * cartItem.quantity), 0
+        );
+        await userCart.save();
+      }
+    } catch (cartError) {
+      console.error('Error removing ordered items from cart (non-fatal):', cartError.message);
+    }
 
     res.status(201).json({
       success: true,
@@ -137,10 +150,6 @@ exports.createOrder = async (req, res) => {
 exports.getMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user.id })
-      .populate({
-        path: 'items.product',
-        select: 'name image price'
-      })
       .sort('-createdAt');
 
     res.status(200).json({
@@ -165,8 +174,7 @@ exports.getMyOrders = async (req, res) => {
 exports.getOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
-      .populate('user', 'name email phone')
-      .populate('items.product');
+      .populate('user', 'name email phone');
 
     if (!order) {
       return res.status(404).json({
@@ -206,10 +214,6 @@ exports.getAllOrders = async (req, res) => {
     
     const orders = await Order.find()
       .populate('user', 'name email phone')
-      .populate({
-        path: 'items.product',
-        select: 'name image price'
-      })
       .sort('-createdAt');
 
     console.log(`✅ Found ${orders.length} orders`);
@@ -410,7 +414,6 @@ exports.cancelOrder = async (req, res) => {
 exports.getOrdersByUserId = async (req, res) => {
   try {
     const orders = await Order.find({ user: req.params.userId })
-      .populate('items.product', 'name image')
       .sort('-createdAt');
 
     res.status(200).json({

@@ -6,6 +6,7 @@ import { useContext, useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import CheckoutModal from '../../components/CheckoutModal';
 import { CartContext } from '../../context/CartContext';
 import { useToast } from '../../hooks/useToast';
 import './Cart.css';
@@ -62,6 +63,7 @@ const Cart = () => {
   const [updatingItems, setUpdatingItems] = useState(new Set());
   const [removingItems, setRemovingItems] = useState(new Set());
   const [giftInCart,    setGiftInCart]    = useState(null);
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
 
   /* ── Derived values ── */
   const items         = cart?.items || [];
@@ -130,7 +132,15 @@ const Cart = () => {
 
   const handleCheckout = () => {
     if (selectedCount === 0) { info('Please select at least one item to proceed'); return; }
-    navigate('/checkout', { state: { selectedItems: Array.from(selectedItems) } });
+    setIsCheckoutModalOpen(true);
+  };
+
+  const handleCloseCheckoutModal = () => {
+    setIsCheckoutModalOpen(false);
+  };
+
+  const getSelectedItemsData = () => {
+    return items.filter(item => selectedItems.has(item.product._id));
   };
 
   /* ════════════════ LOADING ════════════════ */
@@ -425,6 +435,13 @@ const Cart = () => {
       </div>
 
       <Footer />
+
+      {/* Checkout Modal */}
+      <CheckoutModal
+        isOpen={isCheckoutModalOpen}
+        onClose={handleCloseCheckoutModal}
+        selectedItems={getSelectedItemsData()}
+      />
     </>
   );
 };

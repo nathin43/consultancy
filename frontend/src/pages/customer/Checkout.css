@@ -1,510 +1,537 @@
-/* ==========================================
-   MANI ELECTRICAL - CHECKOUT PAGE
-   High Contrast & Readable Design
-   ========================================== */
+/* =====================================================
+   MANI ELECTRICAL — CHECKOUT PAGE (REDESIGN)
+   Modern, clean, professional e-commerce checkout
+   ===================================================== */
 
-:root {
-  --bg-page-top: #F8FAFF;
-  --bg-page-bottom: #EEF3FF;
-  --bg-white: #FFFFFF;
-
-  /* TEXT COLORS (SOLID - NO GRADIENTS ON TEXT) */
-  --text-heading: #0F172A;
-  /* Slate 900 - DARK NAVY */
-  --text-label: #0F172A;
-  /* Slate 900 - DARK NAVY (Requested change) */
-  --text-input: #111827;
-  /* Gray 900 - CHARCOAL BLACK */
-  --text-placeholder: #64748B;
-  /* Slate 500 - DARK GRAY (Not light) */
-  --text-price: #0D6EFD;
-  /* Solid Blue */
-  --text-white: #FFFFFF;
-
-  /* BORDERS */
-  --border-light: #E2E8F0;
-  --border-focus: #2563EB;
-  /* Solid Blue */
-
-  /* GRADIENTS (HIGHLIGHTS ONLY) */
-  --gradient-title: linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%);
-  /* For Headers BG/Text */
-  --gradient-primary: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
-  /* Buttons */
-  --gradient-hover: linear-gradient(135deg, #1E40AF 0%, #172554 100%);
-  --gradient-accent-border: linear-gradient(to right, #2563EB, #1E40AF);
-  /* Input Accents */
-
-  /* PAYMENT SELECTED */
-  --bg-selected: #EFF6FF;
-  --border-selected: #2563EB;
-}
-
-.checkout-page {
-  padding: 40px 0 80px;
+/*  Page shell  */
+.co-page {
   min-height: 100vh;
-  background: #F8FAFF;
-  /* Cleaner background */
+  background: #f5f7fb;
+  padding: 36px 0 80px;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  color: var(--text-input);
 }
 
-.container {
-  max-width: 1200px;
+.co-container {
+  max-width: 1180px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-/* Page Title */
-.checkout-page h1 {
-  font-size: 32px;
-  font-weight: 800;
-  color: var(--text-heading);
+/*  Progress bar  */
+.co-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
   margin-bottom: 32px;
-  text-align: center;
-  letter-spacing: -0.02em;
 }
 
-/* ========================================
-   LAYOUT
-   ======================================== */
-.checkout-grid {
+.co-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+}
+
+.co-progress-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.co-progress-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.co-progress-line {
+  width: 56px;
+  height: 2px;
+  background: #e2e8f0;
+  margin: 0 10px;
+  flex-shrink: 0;
+}
+
+.co-progress-line--done { background: #22c55e; }
+
+.co-progress-step--done .co-progress-dot {
+  background: #22c55e;
+  color: #fff;
+}
+
+.co-progress-step--active .co-progress-dot {
+  background: #0f172a;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(15,23,42,0.12);
+}
+
+.co-progress-step--active .co-progress-label {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+/*  Page header  */
+.co-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.co-header-icon { font-size: 28px; }
+
+.co-title {
+  font-size: 30px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+/*  Error banner  */
+.co-error-banner {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+/*  Grid  */
+.co-grid {
   display: grid;
-  grid-template-columns: 1.8fr 1.2fr;
-  gap: 32px;
+  grid-template-columns: 1fr 380px;
+  gap: 28px;
   align-items: flex-start;
 }
 
-/* ========================================
-   FORM SECTIONS (Left Side)
-   ======================================== */
-.checkout-form-section {
-  background: var(--bg-white);
-  padding: 40px;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+.co-left {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.form-section {
-  margin-bottom: 40px;
+/*  Card  */
+.co-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 28px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.04);
 }
 
-.form-section:last-child {
-  margin-bottom: 0;
+.co-card--sticky {
+  position: sticky;
+  top: 24px;
 }
 
-/* Section Header Styles - Gradient TEXT or BG? Request said "Gradient Text" for titles */
-/* "Section titles... Bold... Dark navy gradient text" */
-.form-section h2 {
-  font-size: 22px;
+.co-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
   font-weight: 800;
-  background: var(--gradient-title);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: var(--text-heading);
-  /* Fallback */
-  margin-bottom: 24px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid var(--border-light);
+  color: #0f172a;
+  margin: 0 0 22px 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
 }
 
-/* ========================================
-   INPUT FIELDS
-   ======================================== */
-.form-group {
-  margin-bottom: 22px;
-}
+.co-card-title-icon { font-size: 18px; }
 
-.form-group label {
+/*  Form field  */
+.co-field { margin-bottom: 18px; }
+.co-field:last-child { margin-bottom: 0; }
+
+.co-field label {
   display: block;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  /* Semi-bold to bold */
-  color: var(--text-label);
-  /* Solid Dark Navy */
-  margin-bottom: 8px;
-  letter-spacing: 0.01em;
+  color: #374151;
+  margin-bottom: 7px;
+  letter-spacing: 0.02em;
 }
 
-.form-group input,
-.form-group select {
-  display: block;
+.co-required { color: #ef4444; }
+
+.co-input-wrap { position: relative; }
+
+.co-input-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  transition: color 0.2s;
+}
+
+.co-input-wrap input {
   width: 100%;
-  padding: 14px 16px;
-  font-size: 15px;
+  box-sizing: border-box;
+  padding: 12px 14px 12px 42px;
+  font-size: 14.5px;
   font-weight: 500;
-  color: var(--text-input);
-  /* Pure black/charcoal */
-  background: #F8FAFC;
-  /* Soft light blue-gray background */
-  border: 1px solid var(--border-light);
-  border-radius: 12px;
-  /* Rounded 12-14px */
-  transition: all 0.2s ease-in-out;
-
-  /* Left Gradient Border Accent */
-  border-left: 4px solid transparent;
-  /* This trick for gradient border needs specific handling or just solid color. 
-     Lets use solid color accent for now or box-shadow. 
-     Request: "Left border OR top border gradient"
-  */
-  border-left-color: #CBD5E1;
-}
-
-.form-group input::placeholder {
-  color: var(--text-placeholder);
-  /* Darker gray */
-}
-
-/* Focus State */
-.form-group input:focus,
-.form-group select:focus {
+  color: #111827;
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
   outline: none;
-  background: #FFFFFF;
-  border-color: var(--border-focus);
-  /* Solid Blue border */
-  border-left-color: var(--border-focus);
-  /* Solid highlight */
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
-  /* Light blue shadow */
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-.form-row {
+.co-input-wrap input::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.co-input-wrap input:focus {
+  background: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+.co-input-wrap:focus-within .co-input-icon { color: #3b82f6; }
+
+.co-field-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 14px;
 }
 
-/* ========================================
-   PAYMENT METHODS
-   ======================================== */
-.payment-methods {
+/*  Payment cards  */
+.co-payment-grid {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.payment-option {
+.co-payment-card {
   display: flex;
   align-items: center;
-  padding: 18px 20px;
-  background: #ffffff;
-  border: 2px solid var(--border-light);
+  gap: 16px;
+  padding: 16px 20px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
   border-radius: 12px;
   cursor: pointer;
+  text-align: left;
+  width: 100%;
   transition: all 0.2s ease;
 }
 
-.payment-option:hover {
-  background: #F8FAFC;
-  border-color: #94A3B8;
+.co-payment-card:hover {
+  border-color: #94a3b8;
+  background: #f1f5f9;
 }
 
-/* Radio Button Highlight */
-.payment-option input[type="radio"] {
-  width: 20px;
-  height: 20px;
-  margin-right: 16px;
-  accent-color: var(--border-focus);
+.co-payment-card--active {
+  border-color: #3b82f6;
+  background: #eff6ff;
 }
 
-.payment-option span {
+.co-payment-emoji { font-size: 26px; flex-shrink: 0; }
+
+.co-payment-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.co-payment-title {
   font-size: 15px;
   font-weight: 700;
-  /* Bolder */
-  color: var(--text-heading);
+  color: #0f172a;
 }
 
-/* Active Payment State */
-.payment-option:has(input:checked) {
-  border-color: var(--border-selected);
-  background: #F0F9FF;
-  /* Very light blue */
-  /* "Active input highlight (focus state)" - gradient accent? */
-  position: relative;
-  overflow: hidden;
+.co-payment-sub {
+  font-size: 12.5px;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 2px;
 }
 
-.payment-option:has(input:checked)::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  background: var(--gradient-accent-border);
-}
-
-/* Payment Details Box */
-.payment-details {
-  margin-top: 24px;
-  padding: 24px;
-  background: #F1F5F9;
-  /* Darker than white */
-  border: 1px solid var(--border-light);
-  border-radius: 12px;
-  animation: fadeIn 0.3s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.payment-details h3 {
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--text-heading);
-  margin-bottom: 12px;
+.co-payment-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #fff;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-/* ========================================
-   ORDER SUMMARY (Right Side)
-   ======================================== */
-.checkout-summary {
-  background: var(--bg-white);
-  padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  /* Slightly stronger shadow */
-  position: sticky;
-  top: 40px;
-  border: 1px solid rgba(0, 0, 0, 0.04);
-}
-
-.checkout-summary h2 {
-  font-size: 22px;
-  font-weight: 800;
-  background: var(--gradient-title);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: var(--text-heading);
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid var(--border-light);
-}
-
-.selected-info {
-  font-size: 14px;
-  color: var(--text-placeholder);
-  /* Dark Gray */
-  margin-bottom: 16px;
-  font-weight: 600;
-}
-
-.summary-items {
-  max-height: 380px;
-  overflow-y: auto;
-  margin-bottom: 24px;
-  padding-right: 8px;
-}
-
-.summary-item {
+.co-payment-detail {
+  margin-top: 16px;
+  padding: 16px 18px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  animation: co-fade-in 0.25s ease;
   display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #E2E8F0;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.summary-item:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-.summary-item img {
-  width: 70px;
-  height: 70px;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid var(--border-light);
-  background: white;
-}
-
-.item-name {
-  font-size: 15px;
-  font-weight: 700;
-  /* Bold */
-  color: var(--text-heading);
-  /* Solid Navy */
-  line-height: 1.4;
-  margin-bottom: 4px;
-}
-
-.item-qty {
-  font-size: 13px;
-  color: var(--text-placeholder);
-  /* Dark Gray */
+.co-payment-detail-row {
+  font-size: 13.5px;
+  color: #475569;
   font-weight: 500;
 }
 
-.item-price {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-price);
-  /* Solid Blue */
+@keyframes co-fade-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Totals */
-.summary-totals {
-  background: #F8FAFC;
-  padding: 24px;
-  border-radius: 12px;
-}
-
-.summary-row {
+/*  Place Order Button  */
+.co-place-btn {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  font-size: 15px;
-  color: var(--text-label);
-  /* Solid Dark */
-  font-weight: 600;
-}
-
-.summary-total {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 2px solid #CBD5E1;
-  /* Darker divider */
-
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--text-heading);
-  /* Solid Dark Navy */
-}
-
-/* ========================================
-   PRIMARY BUTTON
-   ======================================== */
-.btn-primary {
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   width: 100%;
-  margin-top: 24px;
-  padding: 16px;
-  background: var(--gradient-primary);
-  color: var(--text-white);
+  height: 52px;
+  background: #0f172a;
+  color: #ffffff;
   border: none;
   border-radius: 12px;
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  letter-spacing: 0.01em;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px rgba(15,23,42,0.3);
 }
 
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  background: var(--gradient-hover);
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+.co-place-btn:hover:not(:disabled) {
+  background: #1e293b;
+  transform: translateY(-1px) scale(1.005);
+  box-shadow: 0 8px 22px rgba(15,23,42,0.4);
 }
 
-.btn-primary:disabled {
-  background: #CBD5E1;
-  color: #94A3B8;
+.co-place-btn:active:not(:disabled) { transform: scale(0.99); }
+
+.co-place-btn:disabled {
+  background: #94a3b8;
   cursor: not-allowed;
   box-shadow: none;
 }
 
-/* ========================================
-   CANCELLATION POLICY NOTICE
-   ======================================== */
-.checkout-policy-notice {
-  margin-top: 24px;
-  padding: 20px;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border: 1px solid #fbbf24;
-  border-radius: 12px;
+.co-place-btn-lock {
+  display: flex;
+  align-items: center;
+  opacity: 0.8;
 }
 
-.checkout-policy-notice .policy-header {
+/*  Trust row  */
+.co-trust-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  font-size: 12.5px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.co-trust-row span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/*  Order Summary  */
+.co-summary-count {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+  margin: -14px 0 16px 0;
+}
+
+.co-summary-items {
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  padding-right: 4px;
+}
+
+.co-summary-items::-webkit-scrollbar { width: 4px; }
+.co-summary-items::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 4px;
+}
+
+.co-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.co-summary-item:last-child { border-bottom: none; }
+
+.co-summary-item img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  flex-shrink: 0;
+}
+
+.co-summary-item-info { flex: 1; min-width: 0; }
+
+.co-summary-item-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0 0 3px 0;
+}
+
+.co-summary-item-qty {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+}
+
+.co-summary-item-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1d4ed8;
+  flex-shrink: 0;
+}
+
+/*  Totals  */
+.co-summary-totals {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+.co-summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 10px;
+}
+
+.co-summary-row:last-child { margin-bottom: 0; }
+
+.co-free { color: #16a34a; font-weight: 700; }
+
+.co-summary-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 12px 0;
+}
+
+.co-summary-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 12px;
+}
+
+/*  Policy notice  */
+.co-policy {
+  background: #fff7e6;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.co-policy-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
-.checkout-policy-notice .policy-icon {
-  font-size: 18px;
-}
-
-.checkout-policy-notice .policy-header strong {
-  font-size: 15px;
+.co-policy-header strong {
+  font-size: 13.5px;
   font-weight: 700;
   color: #92400e;
 }
 
-.checkout-policy-notice p {
-  font-size: 13px;
+.co-policy p {
+  font-size: 12.5px;
   color: #78350f;
   line-height: 1.6;
-  margin: 0 0 12px 0;
+  margin: 0 0 10px 0;
 }
 
-.checkout-policy-notice p strong {
-  color: #92400e;
-}
+.co-policy p strong { color: #92400e; }
 
-.checkout-policy-notice .policy-contact {
+.co-policy-contact {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   font-size: 12px;
   color: #78350f;
-  background: rgba(255, 255, 255, 0.5);
-  padding: 10px 12px;
-  border-radius: 8px;
+  font-weight: 600;
 }
 
-/* ========================================
-   RESPONSIVE
-   ======================================== */
+/*  Empty state  */
+.co-empty {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.co-empty h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+.co-empty p { color: #64748b; margin-bottom: 24px; }
+
+/*  Responsive  */
 @media (max-width: 1024px) {
-  .checkout-grid {
-    grid-template-columns: 1fr;
-    gap: 32px;
-  }
+  .co-grid { grid-template-columns: 1fr; }
+  .co-card--sticky { position: static; }
 }
 
 @media (max-width: 768px) {
-  .checkout-page {
-    padding: 30px 16px 80px;
-  }
-
-  .checkout-form-section,
-  .checkout-summary {
-    padding: 24px;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .checkout-policy-notice {
-    padding: 16px;
-  }
-
-  .checkout-policy-notice .policy-contact {
-    font-size: 11px;
-  }
+  .co-page { padding: 24px 0 60px; }
+  .co-title { font-size: 24px; }
+  .co-card { padding: 20px; }
+  .co-field-row { grid-template-columns: 1fr; gap: 18px; }
+  .co-progress-line { width: 32px; }
+  .co-progress-label { display: none; }
+  .co-progress-step--active .co-progress-label { display: block; }
+  .co-trust-row { gap: 14px; flex-wrap: wrap; }
 }
