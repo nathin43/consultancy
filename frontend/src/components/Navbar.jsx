@@ -89,16 +89,14 @@ const Navbar = () => {
                   aria-label="Select category"
                 >
                   <option value="All">All Categories</option>
-                  <option value="Wires & Cables">Wires &amp; Cables</option>
-                  <option value="Motors">Motors</option>
                   <option value="Pipes">Pipes</option>
-                  <option value="Water Tanks">Water Tanks</option>
-                  <option value="Fans">Fans</option>
+                  <option value="Motors">Motors</option>
+                  <option value="Fan">Fan</option>
+                  <option value="Lights">Lights</option>
+                  <option value="Tank">Tank</option>
+                  <option value="Water Heater">Water Heater</option>
                   <option value="Switches">Switches</option>
-                  <option value="Pumps">Pumps</option>
-                  <option value="Lighting">Lighting</option>
-                  <option value="Plumbing">Plumbing</option>
-                  <option value="Tools">Tools</option>
+                  <option value="Wire & Cables">Wire &amp; Cables</option>
                 </select>
                 <svg className="search-category-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 12 15 18 9"></polyline>

@@ -1,5 +1,6 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import ToastContainer from './components/ToastContainer';
+import SupportWidget from './components/SupportWidget';
 
 // Customer Pages
 import Home from './pages/customer/Home';
@@ -9,6 +10,7 @@ import Services from './pages/customer/Services';
 import ServiceDetails from './pages/customer/ServiceDetails';
 import Contact from './pages/customer/Contact';
 import EasyReturn from './pages/customer/EasyReturn';
+import Refund from './pages/customer/Refund';
 import Cart from './pages/customer/Cart';
 import Checkout from './pages/customer/Checkout';
 import Login from './pages/customer/Login';
@@ -49,9 +51,13 @@ import MainAdminRoute from './components/MainAdminRoute';
  * Future flags enabled for v7 compatibility
  */
 function App() {
+  const location = useLocation();
+  const isAdminPage = location.pathname.startsWith('/admin');
+
   return (
     <>
       <ToastContainer />
+      {!isAdminPage && <SupportWidget />}
       <Routes>
         {/* Customer Routes */}
         <Route path="/" element={<Home />} />
@@ -61,6 +67,7 @@ function App() {
         <Route path="/service/:serviceId" element={<ServiceDetails />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/easy-return" element={<EasyReturn />} />
+        <Route path="/refund" element={<Refund />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />

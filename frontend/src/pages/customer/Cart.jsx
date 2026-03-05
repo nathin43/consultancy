@@ -68,18 +68,7 @@ const Cart = () => {
   const [giftInCart,    setGiftInCart]    = useState(null);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
 
-  // Show animated login required screen if user is not authenticated
-  if (!isAuthenticated) {
-    return (
-      <>
-        <Navbar />
-        <CartLoginRequired autoRedirect={true} redirectDelay={4000} />
-        <Footer />
-      </>
-    );
-  }
-
-  /* ── Derived values ── */
+  /* ── Derived values (computed before any early return so hook count stays constant) ── */
   const items         = cart?.items || [];
   const selectedCount = selectedItems.size;
   const isAllSelected = items.length > 0 && selectedCount === items.length;
@@ -94,8 +83,9 @@ const Cart = () => {
   const giftProgressPercent = Math.min((selectedSubtotal / FREE_GIFT_THRESHOLD) * 100, 100);
   const finalTotal          = selectedSubtotal;
 
-  /* ── Auto gift logic ── */
+  /* ── Auto gift logic (must be before any early return) ── */
   useEffect(() => {
+    if (!isAuthenticated) return;
     if (hasUnlockedFreeGift && !giftInCart && selectedCount > 0) {
       setGiftInCart(AUTO_GIFT);
       info(`🎉 Free Gift Added: ${AUTO_GIFT.name}!`);
@@ -105,7 +95,18 @@ const Cart = () => {
       info('Free gift removed (order below ₹10,000)');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSubtotal, selectedCount]);
+  }, [selectedSubtotal, selectedCount, isAuthenticated]);
+
+  // Show animated login required screen if user is not authenticated
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Navbar />
+        <CartLoginRequired autoRedirect={true} redirectDelay={4000} />
+        <Footer />
+      </>
+    );
+  }
 
   /* ── Helpers ── */
   const setItemUpdating = (id, val) =>

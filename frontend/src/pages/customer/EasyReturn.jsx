@@ -125,8 +125,35 @@ const EasyReturn = () => {
       <Navbar />
       
       <div className="easy-return-container">
+        <button
+          onClick={() => window.history.back()}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "8px 14px",
+            borderRadius: "8px",
+            background: "#f3f4f6",
+            color: "#111827",
+            fontWeight: 500,
+            border: "none",
+            cursor: "pointer",
+            fontSize: "14px",
+            marginBottom: "16px",
+            transition: "background 0.2s ease",
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "#e5e7eb"}
+          onMouseLeave={e => e.currentTarget.style.background = "#f3f4f6"}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5"/>
+            <path d="m12 19-7-7 7-7"/>
+          </svg>
+          Back
+        </button>
+
         <div className="easy-return-header">
-          <h1>Easy Return & Support</h1>
+          <h1>Return & Support</h1>
           <p>We make returns simple and hassle-free. Tell us about your issue.</p>
         </div>
 

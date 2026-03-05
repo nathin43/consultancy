@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import Navbar from '../../components/Navbar';
@@ -14,8 +14,15 @@ const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
  */
 const Register = () => {
   const navigate = useNavigate();
-  const { register, loginWithGoogle } = useContext(AuthContext);
+  const { register, loginWithGoogle, isAuthenticated } = useContext(AuthContext);
   const { success, error: showError, warning } = useToast();
+
+  // If already logged in, redirect to home
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
