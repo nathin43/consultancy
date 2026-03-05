@@ -1,69 +1,69 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import './LogoutTransition.css';
 
 /**
  * LogoutTransition Component
- * Full-screen animated overlay for smooth logout experience
+ * Centered card popup with smooth animations for logout experience
  */
 const LogoutTransition = ({ isActive, onComplete }) => {
+  const [phase, setPhase] = useState('loading'); // 'loading' | 'success'
+
   useEffect(() => {
     if (isActive) {
-      // Prevent scrolling during animation
       document.body.style.overflow = 'hidden';
-      
-      // Complete animation after duration
-      const timer = setTimeout(() => {
+      setPhase('loading');
+
+      // After 1s switch to success message
+      const successTimer = setTimeout(() => {
+        setPhase('success');
+      }, 1000);
+
+      // After 2s complete and redirect
+      const completeTimer = setTimeout(() => {
         onComplete();
         document.body.style.overflow = '';
-      }, 1200); // Match animation duration
+      }, 2000);
 
       return () => {
-        clearTimeout(timer);
+        clearTimeout(successTimer);
+        clearTimeout(completeTimer);
         document.body.style.overflow = '';
       };
+    } else {
+      setPhase('loading');
     }
   }, [isActive, onComplete]);
 
   if (!isActive) return null;
 
   return (
-    <div className="logout-transition-overlay">
-      {/* Animated Background Elements */}
-      <div className="logout-animated-bg">
-        <div className="logout-gradient-orb orb-1"></div>
-        <div className="logout-gradient-orb orb-2"></div>
-        <div className="logout-gradient-orb orb-3"></div>
-      </div>
-
-      {/* Floating Particles */}
-      <div className="logout-particles">
-        {[...Array(15)].map((_, i) => (
-          <div key={i} className={`logout-particle particle-${i + 1}`}></div>
-        ))}
-      </div>
-
-      {/* Electric Pulse Ring */}
-      <div className="logout-pulse-container">
-        <div className="logout-pulse-ring ring-1"></div>
-        <div className="logout-pulse-ring ring-2"></div>
-        <div className="logout-pulse-ring ring-3"></div>
-        <div className="logout-pulse-ring ring-4"></div>
-      </div>
-
-      {/* Content */}
-      <div className="logout-content">
-        <div className="logout-icon-wrapper">
-          <div className="logout-icon">
-            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
+    <div className="lt-overlay">
+      <div className="lt-card">
+        {/* Icon area */}
+        <div className={`lt-icon-wrap ${phase === 'success' ? 'lt-icon-wrap--success' : ''}`}>
+          {phase === 'loading' ? (
+            <div className="lt-spinner-ring" />
+          ) : (
+            <svg className="lt-checkmark" viewBox="0 0 52 52" fill="none">
+              <circle className="lt-checkmark-circle" cx="26" cy="26" r="24" stroke="#22c55e" strokeWidth="3" fill="none" />
+              <path className="lt-checkmark-path" d="M14 26l8 8 16-16" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
             </svg>
-          </div>
+          )}
         </div>
-        <h2 className="logout-text">Logging out...</h2>
-        <div className="logout-spinner">
-          <div className="spinner-circle"></div>
+
+        {/* Text */}
+        <div className="lt-text-wrap">
+          {phase === 'loading' ? (
+            <>
+              <p className="lt-title">Logging you out...</p>
+              <p className="lt-subtitle">Please wait a moment</p>
+            </>
+          ) : (
+            <>
+              <p className="lt-title lt-title--success">Logout successful</p>
+              <p className="lt-subtitle">You have been logged out successfully.</p>
+            </>
+          )}
         </div>
       </div>
     </div>

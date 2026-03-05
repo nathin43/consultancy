@@ -223,28 +223,52 @@ if (mongoURI.includes('YOUR_NEW_PASSWORD') ||
   process.exit(1);
 }
 
-mongoose.connect(mongoURI)
-  .then(() => console.log('✅ MongoDB Connected'))
-  .catch(err => {
-    console.error('\n❌ MongoDB Connection Error:', err.message);
-    
-    if (err.message.includes('bad auth') || err.message.includes('authentication failed')) {
-      console.error('\n🔐 Authentication Issue Detected!\n');
-      console.error('Common causes:');
-      console.error('1. Wrong password in MONGO_URI');
-      console.error('2. MongoDB user doesn\'t exist');
-      console.error('3. User doesn\'t have access to the database\n');
-      console.error('Fix: Go to MongoDB Atlas → Database Access → Reset password for your user\n');
-    } else if (err.message.includes('ENOTFOUND') || err.message.includes('network')) {
-      console.error('\n🌐 Network Issue: Cannot reach MongoDB Atlas');
-      console.error('Check your internet connection\n');
-    }
-    
-    process.exit(1);
-  });
+const connectWithRetry = (retries = 5, delay = 5000) => {
+  mongoose.connect(mongoURI)
+    .then(() => console.log('✅ MongoDB Connected'))
+    .catch(err => {
+      console.error('\n❌ MongoDB Connection Error:', err.message);
+
+      if (err.message.includes('bad auth') || err.message.includes('authentication failed')) {
+        console.error('\n🔐 Authentication failed — check MONGO_URI password in .env\n');
+        process.exit(1);
+      } else if (err.message.includes('whitelist') || err.message.includes('IP') || err.message.includes('ENOTFOUND') || err.message.includes('ECONNREFUSED')) {
+        if (retries > 0) {
+          console.error(`🔄 Retrying in ${delay / 1000}s... (${retries} attempts left)`);
+          console.error('   Tip: Make sure your IP is whitelisted on MongoDB Atlas → Network Access\n');
+          setTimeout(() => connectWithRetry(retries - 1, delay), delay);
+        } else {
+          console.error('\n❌ Could not connect after multiple attempts. Please whitelist your IP on MongoDB Atlas:\n');
+          console.error('   https://www.mongodb.com/docs/atlas/security-whitelist/\n');
+          console.error(`   Your public IP: run  curl ifconfig.me  to find it\n`);
+          process.exit(1);
+        }
+      } else {
+        if (retries > 0) {
+          console.error(`🔄 Retrying in ${delay / 1000}s... (${retries} attempts left)\n`);
+          setTimeout(() => connectWithRetry(retries - 1, delay), delay);
+        } else {
+          process.exit(1);
+        }
+      }
+    });
+};
+
+connectWithRetry();
 
 // Start Server
 const PORT = process.env.PORT || 5000;
+
+httpServer.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ Port ${PORT} is already in use.`);
+    console.error(`   Run this to fix it:  npx kill-port ${PORT}`);
+    console.error(`   Or in PowerShell:    Stop-Process -Id (netstat -ano | Select-String ":${PORT}\\s").ToString().Trim().Split()[-1] -Force\n`);
+    process.exit(1);
+  } else {
+    throw err;
+  }
+});
 
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import API from '../../services/api';
+import { useToast } from '../../hooks/useToast';
 import './AdminAddProduct.css';
 
 /**
@@ -9,6 +10,7 @@ import './AdminAddProduct.css';
  */
 const AdminAddProduct = () => {
   const navigate = useNavigate();
+  const { success } = useToast();
   const categories = ['Wire & Cables', 'Fan', 'Pipes', 'Motors', 'Heater', 'Lights', 'Switches', 'Tank', 'Water Heater', 'Other'];
 
   const [formData, setFormData] = useState({
@@ -261,8 +263,8 @@ const AdminAddProduct = () => {
         }
       });
 
-      alert('Product added successfully!');
-      navigate('/admin/products');
+      success('Product added successfully!');
+      setTimeout(() => navigate('/admin/products'), 1500);
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to add product');
     } finally {

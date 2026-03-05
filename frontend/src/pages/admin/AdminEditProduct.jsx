@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import API from '../../services/api';
+import { useToast } from '../../hooks/useToast';
 import '../admin/AdminAddProduct.css';
 
 /**
@@ -10,6 +11,7 @@ import '../admin/AdminAddProduct.css';
 const AdminEditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { success } = useToast();
   const categories = ['Wire & Cables', 'Fan', 'Pipes', 'Motors', 'Heater', 'Lights', 'Switches', 'Tank', 'Water Heater', 'Other'];
 
   const [formData, setFormData] = useState({
@@ -332,8 +334,8 @@ const AdminEditProduct = () => {
         }
       });
 
-      alert('Product updated successfully!');
-      navigate('/admin/products');
+      success('Product updated successfully!');
+      setTimeout(() => navigate('/admin/products'), 1500);
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to update product');
     } finally {

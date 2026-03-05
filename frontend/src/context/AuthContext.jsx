@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutCallback, setLogoutCallback] = useState(null);
+  const [logoutType, setLogoutType] = useState(null); // 'user' | 'admin'
 
   // Restore session from localStorage on component mount
   useEffect(() => {
@@ -129,7 +130,13 @@ export const AuthProvider = ({ children }) => {
     // Prevent multiple logout attempts
     if (isLoggingOut) return;
 
+    // Clear user state and storage IMMEDIATELY so navbar updates right away
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+
     // Trigger logout animation
+    setLogoutType('user');
     setIsLoggingOut(true);
     
     // Store callback to execute after animation
@@ -141,17 +148,12 @@ export const AuthProvider = ({ children }) => {
   // Handle logout completion after animation
   const handleLogoutComplete = async () => {
     try {
-      // Call logout endpoint to clear session
+      // Call logout endpoint to clear server session
       await API.post('/auth/logout');
     } catch (error) {
       console.error('Error during logout:', error);
     } finally {
-      // Clear local storage and state
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      // DO NOT clear cart - cart is persisted in MongoDB linked to user ID
-      // When user logs back in, cart will be restored from database
-      setUser(null);
+      // State and storage already cleared in logout(), just finish up
       setIsLoggingOut(false);
       
       // Execute callback if provided
@@ -186,7 +188,13 @@ export const AuthProvider = ({ children }) => {
     // Prevent multiple logout attempts
     if (isLoggingOut) return;
 
+    // Clear admin state and storage IMMEDIATELY so UI updates right away
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('admin');
+    setAdmin(null);
+
     // Trigger logout animation
+    setLogoutType('admin');
     setIsLoggingOut(true);
     
     // Store callback to execute after animation
@@ -198,15 +206,12 @@ export const AuthProvider = ({ children }) => {
   // Handle admin logout completion after animation
   const handleAdminLogoutComplete = async () => {
     try {
-      // Call admin logout endpoint
+      // Call admin logout endpoint to clear server session
       await API.post('/auth/admin/logout');
     } catch (error) {
       console.error('Error during admin logout:', error);
     } finally {
-      // Clear local storage and state regardless of API call result
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('admin');
-      setAdmin(null);
+      // State and storage already cleared in adminLogout(), just finish up
       setIsLoggingOut(false);
       
       // Execute callback if provided
@@ -254,7 +259,8 @@ export const AuthProvider = ({ children }) => {
 
   // Determine which logout completion handler to use
   const handleLogoutAnimationComplete = () => {
-    if (admin) {
+    setLogoutType(null);
+    if (logoutType === 'admin') {
       handleAdminLogoutComplete();
     } else {
       handleLogoutComplete();

@@ -13,16 +13,6 @@ import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import './Cart.css';
 
-/* ─── Free Gift Data ─────────────────────────────────────────── */
-const FREE_GIFT_PRODUCTS = [
-  { id: 'gift-led-bulb',      name: '9W LED Bulb',           image: '/api/placeholder/120/120', description: 'Energy-efficient LED bulb',  originalPrice: 299 },
-  { id: 'gift-extension-box', name: '4-Socket Extension Box', image: '/api/placeholder/120/120', description: 'Surge protected extension',  originalPrice: 399 },
-  { id: 'gift-mobile-charger',name: 'USB Mobile Charger',     image: '/api/placeholder/120/120', description: 'Fast charging adapter',      originalPrice: 249 },
-  { id: 'gift-mini-torch',    name: 'LED Mini Torch',         image: '/api/placeholder/120/120', description: 'Rechargeable torch light',   originalPrice: 199 },
-];
-const AUTO_GIFT           = FREE_GIFT_PRODUCTS[0];
-const FREE_GIFT_THRESHOLD = 10000;
-
 /* ─── SVG Icons ──────────────────────────────────────────────── */
 const CheckIcon = () => (
   <svg viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -65,7 +55,6 @@ const Cart = () => {
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [updatingItems, setUpdatingItems] = useState(new Set());
   const [removingItems, setRemovingItems] = useState(new Set());
-  const [giftInCart,    setGiftInCart]    = useState(null);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
 
   /* ── Derived values (computed before any early return so hook count stays constant) ── */
@@ -78,24 +67,8 @@ const Cart = () => {
     return acc + ((item.price || item.product.price || 0) * item.quantity);
   }, 0);
 
-  const amountToFreeGift    = Math.max(0, FREE_GIFT_THRESHOLD - selectedSubtotal);
-  const hasUnlockedFreeGift = selectedSubtotal >= FREE_GIFT_THRESHOLD;
-  const giftProgressPercent = Math.min((selectedSubtotal / FREE_GIFT_THRESHOLD) * 100, 100);
-  const finalTotal          = selectedSubtotal;
+  const finalTotal = selectedSubtotal;
 
-  /* ── Auto gift logic (must be before any early return) ── */
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    if (hasUnlockedFreeGift && !giftInCart && selectedCount > 0) {
-      setGiftInCart(AUTO_GIFT);
-      info(`🎉 Free Gift Added: ${AUTO_GIFT.name}!`);
-    }
-    if (!hasUnlockedFreeGift && giftInCart) {
-      setGiftInCart(null);
-      info('Free gift removed (order below ₹10,000)');
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSubtotal, selectedCount, isAuthenticated]);
 
   // Show animated login required screen if user is not authenticated
   if (!isAuthenticated) {
@@ -219,28 +192,6 @@ const Cart = () => {
             </div>
           </div>
 
-          {/* ── Gift Banners ── */}
-          {hasUnlockedFreeGift && giftInCart ? (
-            <div className="gift-unlocked-strip">
-              <span>🎉</span>
-              <span>
-                <strong>Free Gift Unlocked!</strong> {giftInCart.name} (worth ₹{giftInCart.originalPrice}) added to your order
-              </span>
-            </div>
-          ) : selectedCount > 0 && !hasUnlockedFreeGift ? (
-            <div className="gift-progress-strip">
-              <span className="gift-strip-emoji">🎁</span>
-              <div className="gift-strip-center">
-                <p className="gift-strip-text">
-                  Add <strong>₹{fmt(amountToFreeGift)} more</strong> to unlock a FREE gift (on orders above ₹10,000)
-                </p>
-                <div className="gift-progress-bar">
-                  <div className="gift-progress-fill" style={{ width: `${giftProgressPercent}%` }} />
-                </div>
-              </div>
-              <span className="gift-strip-amount">{Math.round(giftProgressPercent)}%</span>
-            </div>
-          ) : null}
 
           {/* ── Main 2-Column Grid ── */}
           <div className="cart-grid">
@@ -379,12 +330,7 @@ const Cart = () => {
                     <span className="summary-label">Subtotal</span>
                     <span className="summary-value">₹{fmt(selectedSubtotal)}</span>
                   </div>
-                  {giftInCart && (
-                    <div className="summary-row summary-row--gift">
-                      <span className="summary-label">🎁 Free Gift</span>
-                      <span className="summary-gift-value">FREE</span>
-                    </div>
-                  )}
+
                 </div>
 
                 <div className="summary-divider" />
