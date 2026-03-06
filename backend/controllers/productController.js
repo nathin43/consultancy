@@ -68,12 +68,17 @@ const MOCK_PRODUCTS = [
  */
 exports.getProducts = async (req, res) => {
   try {
-    const { category, search, minPrice, maxPrice, sort, page = 1, limit = 12 } = req.query;
+    const { category, search, minPrice, maxPrice, sort, page = 1, limit = 12, status } = req.query;
 
     // Try to fetch from database
     try {
       // Build query
       let query = {};
+
+      // Status filter (pass status=active to restrict to active products only)
+      if (status && status !== 'all') {
+        query.status = status;
+      }
 
       // Category filter
       if (category && category !== 'all') {

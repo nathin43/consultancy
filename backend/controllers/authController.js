@@ -295,6 +295,26 @@ exports.getMe = async (req, res) => {
 };
 
 /**
+ * Get Current Admin Profile (token validation)
+ * @route GET /api/auth/admin/me
+ * @access Private (Admin)
+ */
+exports.adminGetMe = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.admin.id).select('-password');
+    res.status(200).json({
+      success: true,
+      admin
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
  * Customer Logout
  * @route POST /api/auth/logout
  * @access Private

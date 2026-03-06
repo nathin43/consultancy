@@ -42,12 +42,14 @@ const Products = () => {
     fetchProducts();
   }, []);
 
-  const fetchProducts = async () => {
-    try {
+  const fetchProducts = async (attempt = 0) => {
+    if (attempt === 0) {
       setLoading(true);
       setError('');
+    }
 
-      const { data } = await API.get('/products?limit=100');
+    try {
+      const { data } = await API.get('/products?limit=100&status=active');
 
       const fetchedProducts = Array.isArray(data.products) ? data.products : [];
 
@@ -58,14 +60,19 @@ const Products = () => {
         setError('No products available at the moment');
       }
     } catch (err) {
+      // Auto-retry once after 2s for server/network errors (e.g. backend still starting up)
+      if (attempt === 0 && (!err.response || err.response.status >= 500)) {
+        setTimeout(() => fetchProducts(1), 2000);
+        return; // keep loading spinner until retry completes
+      }
       console.error('Error fetching products:', err);
       const errorMsg = err.response?.data?.message || 'Failed to load products';
       setError(errorMsg);
       setProducts([]);
       setFilteredProducts([]);
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   // Apply filters whenever any filter changes

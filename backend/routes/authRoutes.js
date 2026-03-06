@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, adminLogin, getMe, logout, adminLogout, forgotPassword } = require('../controllers/authController');
+const { register, login, adminLogin, getMe, adminGetMe, logout, adminLogout, forgotPassword } = require('../controllers/authController');
 const { googleAuth } = require('../controllers/googleAuthController');
 const { protect, adminProtect } = require('../middleware/auth');
 
@@ -19,6 +19,7 @@ router.post('/logout', protect, logout);
 
 // Admin routes
 router.post('/admin/login', adminLogin);
+router.get('/admin/me', adminProtect, adminGetMe);
 router.post('/admin/logout', adminProtect, adminLogout);
 
 module.exports = router;

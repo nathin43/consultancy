@@ -30,35 +30,70 @@ export const AuthProvider = ({ children }) => {
 
   // Restore session from localStorage on component mount
   useEffect(() => {
-    const restoreSession = () => {
+    const restoreSession = async () => {
       try {
-        // Check for customer session
-        const token = localStorage.getItem('token');
-        const userData = localStorage.getItem('user');
+        // sessionStorage flag acts as a "session active" gate.
+        // sessionStorage is cleared when the browser tab/window is closed,
+        // so a fresh browser open always starts as guest.
+        const sessionActive = sessionStorage.getItem('sessionActive');
 
-        if (token && userData) {
+        if (!sessionActive) {
+          // No active session — clear any stale localStorage data and stay as guest
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('admin');
+          return;
+        }
+
+        // Snapshot tokens BEFORE any async call so we can detect if a
+        // concurrent login replaced them while validation was in-flight.
+        const snapshotToken = localStorage.getItem('token');
+        const snapshotAdminToken = localStorage.getItem('adminToken');
+
+        // Validate customer token against the backend
+        if (snapshotToken) {
           try {
-            const parsedUser = JSON.parse(userData);
-            setUser(parsedUser);
-            console.log('Customer session restored from storage');
-          } catch (parseError) {
-            console.error('Error parsing stored user data:', parseError);
-            localStorage.removeItem('user');
+            const { data } = await API.get('/auth/me');
+            // Only act if the token hasn't been replaced by a concurrent login
+            if (localStorage.getItem('token') === snapshotToken) {
+              if (data.success && data.user) {
+                setUser(data.user);
+                localStorage.setItem('user', JSON.stringify(data.user));
+              } else {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+              }
+            }
+          } catch {
+            // 401 or network error — only clear if no concurrent login replaced the token
+            if (localStorage.getItem('token') === snapshotToken) {
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+            }
           }
         }
 
-        // Check for admin session
-        const adminToken = localStorage.getItem('adminToken');
-        const adminData = localStorage.getItem('admin');
-
-        if (adminToken && adminData) {
+        // Validate admin token against the backend
+        if (snapshotAdminToken) {
           try {
-            const parsedAdmin = JSON.parse(adminData);
-            setAdmin(parsedAdmin);
-            console.log('Admin session restored from storage');
-          } catch (parseError) {
-            console.error('Error parsing stored admin data:', parseError);
-            localStorage.removeItem('admin');
+            const { data } = await API.get('/auth/admin/me');
+            // Only act if the token hasn't been replaced by a concurrent login
+            if (localStorage.getItem('adminToken') === snapshotAdminToken) {
+              if (data.success && data.admin) {
+                setAdmin(data.admin);
+                localStorage.setItem('admin', JSON.stringify(data.admin));
+              } else {
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('admin');
+              }
+            }
+          } catch {
+            // 401 or network error — only clear if no concurrent login replaced the token
+            if (localStorage.getItem('adminToken') === snapshotAdminToken) {
+              localStorage.removeItem('adminToken');
+              localStorage.removeItem('admin');
+            }
           }
         }
       } catch (error) {
@@ -78,6 +113,7 @@ export const AuthProvider = ({ children }) => {
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
+      sessionStorage.setItem('sessionActive', 'true');
       setUser(data.user);
 
       return { success: true, message: data.message };
@@ -114,6 +150,7 @@ export const AuthProvider = ({ children }) => {
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
+      sessionStorage.setItem('sessionActive', 'true');
       setUser(data.user);
 
       return { success: true, message: data.message };
@@ -193,6 +230,7 @@ export const AuthProvider = ({ children }) => {
     // Clear user state and storage IMMEDIATELY so navbar updates right away
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    sessionStorage.removeItem('sessionActive');
     setUser(null);
 
     // Trigger logout animation
@@ -231,6 +269,7 @@ export const AuthProvider = ({ children }) => {
 
       localStorage.setItem('adminToken', data.token);
       localStorage.setItem('admin', JSON.stringify(data.admin));
+      sessionStorage.setItem('sessionActive', 'true');
       setAdmin(data.admin);
 
       return { success: true, message: data.message };
@@ -254,6 +293,7 @@ export const AuthProvider = ({ children }) => {
     // Clear admin state and storage IMMEDIATELY so UI updates right away
     localStorage.removeItem('adminToken');
     localStorage.removeItem('admin');
+    sessionStorage.removeItem('sessionActive');
     setAdmin(null);
 
     // Trigger logout animation
@@ -301,6 +341,7 @@ export const AuthProvider = ({ children }) => {
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
+      sessionStorage.setItem('sessionActive', 'true');
       setUser(data.user);
 
       return { success: true, message: data.message };

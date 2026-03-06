@@ -17,6 +17,7 @@ import Login from './pages/customer/Login';
 import Register from './pages/customer/Register';
 import ForgotPassword from './pages/customer/ForgotPassword';
 import Orders from './pages/customer/Orders';
+import OrderConfirmation from './pages/customer/OrderConfirmation';
 import Profile from './pages/customer/Profile';
 import SupportMessages from './pages/customer/SupportMessages';
 
@@ -76,6 +77,7 @@ function App() {
         
         {/* Protected Customer Routes */}
         <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />
+        <Route path="/order-confirmation" element={<PrivateRoute><OrderConfirmation /></PrivateRoute>} />
         <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
         <Route path="/support-messages" element={<PrivateRoute><SupportMessages /></PrivateRoute>} />

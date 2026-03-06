@@ -52,6 +52,7 @@ const Checkout = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
 
   // Validate selected items exist
   useEffect(() => {
@@ -99,10 +100,13 @@ const Checkout = () => {
 
   // ── Razorpay flow ──────────────────────────────────────────────────────
   const handleRazorpayPayment = async (orderItems, shippingAddress) => {
+    setPaymentProcessing(true);
+
     const scriptLoaded = await loadRazorpayScript();
     if (!scriptLoaded) {
       setError('Failed to load Razorpay. Please check your internet connection.');
       setLoading(false);
+      setPaymentProcessing(false);
       return;
     }
 
@@ -116,6 +120,7 @@ const Checkout = () => {
       if (!data.success) {
         setError(data.message || 'Could not initiate payment.');
         setLoading(false);
+        setPaymentProcessing(false);
         return;
       }
 
@@ -123,8 +128,9 @@ const Checkout = () => {
         key: data.keyId,
         amount: data.amount,            // paise
         currency: data.currency,
-        name: 'Mani Electrical Shop',
-        description: 'Order Payment',
+        name: 'Mani Electricals',
+        description: 'Secure Checkout',
+        image: `${window.location.origin}/logo.png`,
         order_id: data.razorpayOrderId,
         handler: async (response) => {
           // Step 2: Verify signature and save order
@@ -141,7 +147,15 @@ const Checkout = () => {
             if (verifyRes.data.success) {
               success('Payment successful! Order placed. 🎉');
               await fetchCart();
-              setTimeout(() => navigate('/orders'), 1500);
+              navigate('/order-confirmation', {
+                state: {
+                  order: verifyRes.data.order,
+                  items: data.validatedItems,
+                  totalAmount: data.totalAmount,
+                  paymentId: response.razorpay_payment_id
+                },
+                replace: true
+              });
             } else {
               setError('Payment verification failed. Please contact support.');
               showError('Payment verification failed.');
@@ -155,10 +169,28 @@ const Checkout = () => {
         },
         prefill: {
           name: shippingAddress.name,
+          email: user?.email || '',
           contact: shippingAddress.phone
         },
-        theme: { color: '#f97316' },
+        notes: {
+          address: `${shippingAddress.street}, ${shippingAddress.city}`,
+          total_items: `${orderItems.length} item(s)`,
+          total_amount: `INR ${data.totalAmount}`
+        },
+        theme: { color: '#2563eb' },
+        config: {
+          display: {
+            blocks: {
+              banks: { name: 'Pay via UPI or Netbanking', instruments: [{ method: 'upi' }, { method: 'netbanking' }] },
+              cards: { name: 'Pay via Card',             instruments: [{ method: 'card' }] }
+            },
+            sequence: ['block.banks', 'block.cards'],
+            preferences: { show_default_blocks: false }
+          }
+        },
         modal: {
+          backdropclose: false,
+          animation: true,
           ondismiss: () => {
             setError('Payment cancelled. Your order was NOT placed.');
             showError('Payment cancelled.');
@@ -166,6 +198,9 @@ const Checkout = () => {
           }
         }
       };
+
+      // Hide loading overlay before Razorpay modal appears
+      setPaymentProcessing(false);
 
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', (response) => {
@@ -183,6 +218,7 @@ const Checkout = () => {
       setError(msg);
       showError(msg);
       setLoading(false);
+      setPaymentProcessing(false);
     }
   };
   // ────────────────────────────────────────────────────────────────────────
@@ -446,6 +482,21 @@ const Checkout = () => {
           </div>
         </div>
       </div>
+
+      {/* Payment Processing Overlay — shown while backend creates the Razorpay order */}
+      {paymentProcessing && (
+        <div className="payment-processing-overlay">
+          <div className="payment-processing-modal">
+            <div className="payment-spinner"></div>
+            <h3>Preparing Secure Checkout</h3>
+            <p>Please wait while we set up your secure payment…</p>
+            <div className="payment-trust-badges">
+              <span>🔒 256-bit SSL</span>
+              <span>🛡️ Secured by Razorpay</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </>
