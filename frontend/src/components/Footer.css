@@ -447,6 +447,22 @@
   text-decoration: underline;
 }
 
+.footer-admin-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #888 !important;
+  text-decoration: none;
+  font-weight: 400;
+  letter-spacing: 0.2px;
+  transition: color 0.2s ease;
+}
+
+.footer-admin-link:hover {
+  color: #2563eb !important;
+  text-decoration: underline;
+}
+
 /* ===========================================
    RESPONSIVE DESIGN
    =========================================== */

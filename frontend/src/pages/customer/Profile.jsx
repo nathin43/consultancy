@@ -117,21 +117,21 @@ const Profile = () => {
   const toggleShow = (field) => setShowPasswords(p => ({ ...p, [field]: !p[field] }));
 
   const infoFields = [
-    { icon: '👤', label: 'Full Name', value: user?.name },
+    { icon: '👤', label: 'Full Name',    value: user?.name },
     { icon: '✉️', label: 'Email Address', value: user?.email },
     { icon: '📱', label: 'Phone Number', value: user?.phone || '—' },
-    { icon: '📍', label: 'Street', value: user?.address?.street || '—' },
-    { icon: '🏙️', label: 'City', value: user?.address?.city || '—' },
-    { icon: '🗺️', label: 'State', value: user?.address?.state || '—' },
-    { icon: '📮', label: 'PIN Code', value: user?.address?.zipCode || '—' },
-    { icon: '🇮🇳', label: 'Country', value: 'India' },
+    { icon: '📍', label: 'Street',       value: user?.address?.street  || '—' },
+    { icon: '🏙️', label: 'City',         value: user?.address?.city    || '—' },
+    { icon: '🗺️', label: 'State',        value: user?.address?.state   || '—' },
+    { icon: '📮', label: 'PIN Code',     value: user?.address?.zipCode || '—' },
+    { icon: '🇮🇳', label: 'Country',     value: 'India' },
   ];
 
   return (
     <>
       <Navbar />
 
-      {/* Toast Notification */}
+      {/* ── Toast ── */}
       {toast.show && (
         <div className={`pf-toast pf-toast--${toast.type}`}>
           <span className="pf-toast__icon">{toast.type === 'success' ? '✓' : '✕'}</span>
@@ -141,42 +141,46 @@ const Profile = () => {
 
       <div className="pf-page">
 
-        {/* ── Hero Banner (matches site hero style) ── */}
-        <div className="pf-hero">
-          {/* Floating orbs — same as Home hero */}
-          <div className="pf-hero__orb pf-hero__orb--1" />
-          <div className="pf-hero__orb pf-hero__orb--2" />
-          <div className="pf-hero__orb pf-hero__orb--3" />
-          <div className="pf-hero__grid-overlay" />
-          <div className="pf-hero__content">
-            <div className="pf-avatar">
-              {getInitials(user?.name)}
-              <span className="pf-avatar__ring" />
+        {/* ── Profile Header ── */}
+        <div className="pf-header">
+          <div className="pf-header__inner">
+            {/* Left: avatar + info */}
+            <div className="pf-header__left">
+              <div className="pf-avatar">{getInitials(user?.name)}</div>
+              <div className="pf-header__info">
+                <h1 className="pf-header__name">{user?.name || 'User'}</h1>
+                <p className="pf-header__email">{user?.email}</p>
+                <span className="pf-header__badge">
+                  <span className="pf-header__badge-dot" />
+                  Active Account
+                </span>
+              </div>
             </div>
-            <div className="pf-hero__text">
-              <h1 className="pf-hero__name">{user?.name || 'User'}</h1>
-              <p className="pf-hero__email">{user?.email}</p>
-              <span className="pf-hero__badge">
-                <span className="pf-hero__badge-dot" />
-                Active Account
-              </span>
+            {/* Right: action buttons */}
+            <div className="pf-header__actions">
+              {!editing && (
+                <button className="pf-hbtn pf-hbtn--edit" onClick={() => { setEditing(true); setChangingPassword(false); }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Edit Profile
+                </button>
+              )}
+              {!changingPassword && (
+                <button className="pf-hbtn pf-hbtn--password" onClick={() => { setChangingPassword(true); setEditing(false); }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  Change Password
+                </button>
+              )}
             </div>
-            {!editing && (
-              <button className="pf-hero__edit-btn" onClick={() => setEditing(true)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                Edit Profile
-              </button>
-            )}
           </div>
         </div>
 
         <div className="pf-body">
 
-          {/* ── Profile Info ── */}
-          <section className="pf-section">
+          {/* ── Profile Information ── */}
+          <section className="pf-section" style={{ '--sec-delay': '0.05s' }}>
             <div className="pf-section__header">
               <div className="pf-section__icon-wrap">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
               <div>
                 <h2 className="pf-section__title">Profile Information</h2>
@@ -219,7 +223,7 @@ const Profile = () => {
                 </div>
                 <div className="pf-form__actions">
                   <button type="submit" className="pf-btn pf-btn--primary" disabled={saving}>
-                    {saving ? <span className="pf-btn__spinner" /> : null}
+                    {saving && <span className="pf-btn__spinner" />}
                     {saving ? 'Saving…' : 'Save Changes'}
                   </button>
                   <button type="button" className="pf-btn pf-btn--ghost" onClick={() => setEditing(false)}>Cancel</button>
@@ -240,18 +244,19 @@ const Profile = () => {
             )}
           </section>
 
-          {/* ── Change Password ── */}
-          <section className="pf-section">
-            <div className="pf-section__header pf-section__header--dark">
-              <div className="pf-section__icon-wrap pf-section__icon-wrap--dark">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          {/* ── Security & Password ── */}
+          <section className="pf-section" style={{ '--sec-delay': '0.12s' }}>
+            <div className="pf-section__header pf-section__header--security">
+              <div className="pf-section__icon-wrap pf-section__icon-wrap--security">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               </div>
-              <div>
+              <div className="pf-section__header-text">
                 <h2 className="pf-section__title">Security &amp; Password</h2>
                 <p className="pf-section__sub">Keep your account secure with a strong password</p>
               </div>
               {!changingPassword && (
-                <button className="pf-btn pf-btn--outline-white pf-btn--sm" onClick={() => setChangingPassword(true)}>
+                <button className="pf-btn pf-btn--outline pf-btn--sm" onClick={() => { setChangingPassword(true); setEditing(false); }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                   Change Password
                 </button>
               )}
@@ -303,7 +308,7 @@ const Profile = () => {
                 </div>
                 <div className="pf-form__actions">
                   <button type="submit" className="pf-btn pf-btn--primary" disabled={updatingPw}>
-                    {updatingPw ? <span className="pf-btn__spinner" /> : null}
+                    {updatingPw && <span className="pf-btn__spinner" />}
                     {updatingPw ? 'Updating…' : 'Update Password'}
                   </button>
                   <button type="button" className="pf-btn pf-btn--ghost" onClick={() => { setChangingPassword(false); setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' }); }}>Cancel</button>
@@ -313,10 +318,10 @@ const Profile = () => {
           </section>
 
           {/* ── Account Actions ── */}
-          <section className="pf-section pf-section--actions">
+          <section className="pf-section" style={{ '--sec-delay': '0.19s' }}>
             <div className="pf-section__header">
               <div className="pf-section__icon-wrap pf-section__icon-wrap--danger">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               </div>
               <div>
                 <h2 className="pf-section__title">Account Actions</h2>
@@ -327,10 +332,10 @@ const Profile = () => {
               <div className="pf-action-card">
                 <div className="pf-action-card__info">
                   <span className="pf-action-card__title">Sign Out</span>
-                  <span className="pf-action-card__desc">Logout from your current session on all devices</span>
+                  <span className="pf-action-card__desc">Logout from your current session</span>
                 </div>
                 <button className="pf-btn pf-btn--logout" onClick={logout}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                   Logout
                 </button>
               </div>

@@ -5,16 +5,14 @@ import useAdminLoader from '../../hooks/useAdminLoader';
 import API from '../../services/api';
 import './AdminOrders.css';
 
-/**
- * Admin Orders Page
- * Modern dashboard for managing all customer orders
- */
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrders, setExpandedOrders] = useState({});
+  const [cardFilter, setCardFilter] = useState('all'); // 'all' | 'active' | 'cancelled'
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'active' | 'delivered' | 'cancelled'
   const { loading, run } = useAdminLoader();
 
   useEffect(() => {
@@ -33,33 +31,30 @@ const AdminOrders = () => {
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       const { data } = await API.put(`/orders/${orderId}/status`, { orderStatus: newStatus });
-      
-      // Immediately update the local state with the returned order
       if (data.success && data.order) {
-        setOrders(prevOrders => 
-          prevOrders.map(order => 
-            order._id === orderId ? data.order : order
-          )
-        );
-        console.log(`Order ${orderId} status updated to ${newStatus}, amount: ₹${data.order.totalAmount}`);
+        setOrders(prev => prev.map(o => (o._id === orderId ? data.order : o)));
       }
     } catch (error) {
       console.error('Failed to update order status:', error);
-      // Refresh orders to ensure we have latest data
       fetchOrders();
     }
   };
 
+  const handleCancelOrder = (orderId) => {
+    if (window.confirm('Are you sure you want to cancel this order?')) {
+      handleStatusChange(orderId, 'cancelled');
+    }
+  };
+
   const getStatusBadgeClass = (status) => {
-    const statusMap = {
+    const map = {
       pending: 'pending',
       confirmed: 'confirmed',
-      processing: 'processing',
       shipped: 'shipped',
       delivered: 'delivered',
-      cancelled: 'cancelled'
+      cancelled: 'cancelled',
     };
-    return statusMap[status] || 'pending';
+    return map[status] || 'pending';
   };
 
   const getPaymentStatusBadgeClass = (status) => {
@@ -68,52 +63,78 @@ const AdminOrders = () => {
   };
 
   const toggleOrderExpand = (orderId) => {
-    setExpandedOrders(prev => ({
-      ...prev,
-      [orderId]: !prev[orderId]
-    }));
+    setExpandedOrders(prev => ({ ...prev, [orderId]: !prev[orderId] }));
+  };
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setDateFilter('all');
+    setCardFilter('all');
+    setActiveTab('all');
+  };
+
+  const handleCardClick = (filter) => {
+    setCardFilter(prev => prev === filter ? 'all' : filter);
+    setStatusFilter('all');
+    setSearchQuery('');
+    setDateFilter('all');
+    // Sync tab with card click
+    const tabMap = { all: 'all', active: 'active', cancelled: 'cancelled' };
+    setActiveTab(tabMap[filter] || 'all');
+  };
+
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+    setCardFilter('all');
+    setStatusFilter('all');
+    setSearchQuery('');
+    setDateFilter('all');
   };
 
   const filterOrders = () => {
-    let filtered = orders;
+    let filtered = [...orders];
 
-    // Filter by status
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(order => order.orderStatus === statusFilter);
+    // Tab filter takes highest priority, then card filter, then dropdown
+    if (activeTab === 'active') {
+      filtered = filtered.filter(o =>
+        ['pending', 'confirmed', 'shipped'].includes(o.orderStatus)
+      );
+    } else if (activeTab === 'delivered') {
+      filtered = filtered.filter(o => o.orderStatus === 'delivered');
+    } else if (activeTab === 'cancelled') {
+      filtered = filtered.filter(o => o.orderStatus === 'cancelled');
+    } else if (cardFilter === 'active') {
+      filtered = filtered.filter(o =>
+        ['pending', 'confirmed', 'shipped'].includes(o.orderStatus)
+      );
+    } else if (cardFilter === 'cancelled') {
+      filtered = filtered.filter(o => o.orderStatus === 'cancelled');
+    } else if (statusFilter !== 'all') {
+      filtered = filtered.filter(o => o.orderStatus === statusFilter);
     }
 
-    // Filter by date
     if (dateFilter !== 'all') {
       const now = new Date();
-      const orderDate = new Date();
-      
-      switch(dateFilter) {
-        case 'today':
-          filtered = filtered.filter(order => {
-            const oDate = new Date(order.createdAt);
-            return oDate.toDateString() === now.toDateString();
-          });
-          break;
-        case 'week':
-          orderDate.setDate(orderDate.getDate() - 7);
-          filtered = filtered.filter(order => new Date(order.createdAt) >= orderDate);
-          break;
-        case 'month':
-          orderDate.setMonth(orderDate.getMonth() - 1);
-          filtered = filtered.filter(order => new Date(order.createdAt) >= orderDate);
-          break;
-        default:
-          break;
+      const cutoff = new Date();
+      if (dateFilter === 'today') {
+        filtered = filtered.filter(o => new Date(o.createdAt).toDateString() === now.toDateString());
+      } else if (dateFilter === 'week') {
+        cutoff.setDate(cutoff.getDate() - 7);
+        filtered = filtered.filter(o => new Date(o.createdAt) >= cutoff);
+      } else if (dateFilter === 'month') {
+        cutoff.setMonth(cutoff.getMonth() - 1);
+        filtered = filtered.filter(o => new Date(o.createdAt) >= cutoff);
       }
     }
 
-    // Filter by search query
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(order => 
-        order.orderNumber.toLowerCase().includes(query) ||
-        order.user?.name.toLowerCase().includes(query) ||
-        order.user?.email.toLowerCase().includes(query)
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        o =>
+          o.orderNumber.toLowerCase().includes(q) ||
+          o.user?.name?.toLowerCase().includes(q) ||
+          o.user?.email?.toLowerCase().includes(q)
       );
     }
 
@@ -124,10 +145,16 @@ const AdminOrders = () => {
 
   const totalOrders = orders.length;
   const totalSales = orders.reduce((sum, o) => sum + (o.totalAmount || o.totalPrice || 0), 0);
-  // Count all active orders (not delivered or cancelled) as pending
-  const pendingOrders = orders.filter(o => 
-    o.orderStatus !== 'delivered' && o.orderStatus !== 'cancelled'
+  const activeOrders = orders.filter(o =>
+    ['pending', 'confirmed', 'shipped'].includes(o.orderStatus)
   ).length;
+  const deliveredOrders = orders.filter(o => o.orderStatus === 'delivered').length;
+  const cancelledOrders = orders.filter(o => o.orderStatus === 'cancelled').length;
+
+  const TABS = [
+    { key: 'all',    label: 'All Orders',   count: totalOrders },
+    { key: 'active', label: 'Active Orders', count: activeOrders },
+  ];
 
   if (loading) {
     return (
@@ -139,76 +166,108 @@ const AdminOrders = () => {
 
   return (
     <AdminLayout>
-      <div className="admin-orders-container">
-        {/* Header */}
-        <div className="orders-header">
-          <h1>Orders Management</h1>
-          <p>Manage and track all customer orders</p>
-        </div>
+      <div className="ao-container">
 
-        {/* Summary Metrics */}
-        <div className="metrics-grid">
-          <div className="metric-card">
-            <div className="metric-icon orders-icon">📦</div>
-            <div className="metric-content">
-              <p className="metric-label">Total Orders</p>
-              <h3 className="metric-value">{totalOrders}</h3>
-            </div>
+        {/* ── PAGE HEADER ── */}
+        <div className="ao-header">
+          <div className="ao-header-left">
+            <h1 className="ao-title">Orders Management</h1>
+            <p className="ao-subtitle">Manage and track all customer orders</p>
           </div>
-
-          <div className="metric-card">
-            <div className="metric-icon sales-icon">💰</div>
-            <div className="metric-content">
-              <p className="metric-label">Total Sales</p>
-              <h3 className="metric-value">₹{totalSales.toLocaleString()}</h3>
-            </div>
-          </div>
-
-          <div className="metric-card">
-            <div className="metric-icon pending-icon">⏳</div>
-            <div className="metric-content">
-              <p className="metric-label">Active Orders</p>
-              <h3 className="metric-value">{pendingOrders}</h3>
-            </div>
+          <div className="ao-header-right">
+            <button className="ao-btn ao-btn-refresh" onClick={() => run(fetchOrders)}>
+              <span className="ao-btn-icon">🔄</span>
+              Refresh
+            </button>
           </div>
         </div>
 
-        {/* Sticky Filter Bar */}
-        <div className="filter-bar">
-          <div className="filter-search">
+        {/* ── SUMMARY CARDS ── */}
+        <div className="ao-metrics-grid">
+          <div
+            className={`ao-metric-card ao-metric-card--clickable${cardFilter === 'all' ? ' ao-metric-card--active' : ''}`}
+            style={{ '--card-delay': '0s' }}
+            onClick={() => handleCardClick('all')}
+            title="Show all orders"
+          >
+            <div className="ao-metric-icon ao-icon-blue">📦</div>
+            <div className="ao-metric-body">
+              <span className="ao-metric-label">Total Orders</span>
+              <span className="ao-metric-value">{totalOrders}</span>
+            </div>
+          </div>
+
+          <div className="ao-metric-card" style={{ '--card-delay': '0.08s' }}>
+            <div className="ao-metric-icon ao-icon-purple">💰</div>
+            <div className="ao-metric-body">
+              <span className="ao-metric-label">Total Sales</span>
+              <span className="ao-metric-value">₹{totalSales.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <div
+            className={`ao-metric-card ao-metric-card--clickable${cardFilter === 'active' ? ' ao-metric-card--active ao-metric-card--active-orange' : ''}`}
+            style={{ '--card-delay': '0.16s' }}
+            onClick={() => handleCardClick('active')}
+            title="Show active orders"
+          >
+            <div className="ao-metric-icon ao-icon-orange">⏳</div>
+            <div className="ao-metric-body">
+              <span className="ao-metric-label">Active Orders</span>
+              <span className="ao-metric-value">{activeOrders}</span>
+            </div>
+          </div>
+
+          <div
+            className={`ao-metric-card ao-metric-card--clickable${cardFilter === 'cancelled' ? ' ao-metric-card--active ao-metric-card--active-red' : ''}`}
+            style={{ '--card-delay': '0.24s' }}
+            onClick={() => handleCardClick('cancelled')}
+            title="Show cancelled orders"
+          >
+            <div className="ao-metric-icon ao-icon-red">🚫</div>
+            <div className="ao-metric-body">
+              <span className="ao-metric-label">Cancelled Orders</span>
+              <span className="ao-metric-value">{cancelledOrders}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── FILTER TOOLBAR ── */}
+        <div className="ao-filter-bar">
+          <div className="ao-filter-search-wrap">
+            <span className="ao-filter-search-icon">🔍</span>
             <input
               type="text"
-              placeholder="🔍 Search by Order ID or Customer Name..."
+              className="ao-search-input"
+              placeholder="Search by Order ID or Customer Name..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
+              onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className="filter-controls">
-            <div className="filter-group">
-              <label>Status</label>
-              <select 
-                value={statusFilter} 
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="filter-select"
+          <div className="ao-filter-right">
+            <div className="ao-select-wrap">
+              <span className="ao-select-icon">📋</span>
+              <select
+                className="ao-filter-select"
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
               >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
                 <option value="confirmed">Confirmed</option>
-                <option value="processing">Processing</option>
                 <option value="shipped">Shipped</option>
                 <option value="delivered">Delivered</option>
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
 
-            <div className="filter-group">
-              <label>Date Range</label>
-              <select 
-                value={dateFilter} 
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="filter-select"
+            <div className="ao-select-wrap">
+              <span className="ao-select-icon">📅</span>
+              <select
+                className="ao-filter-select"
+                value={dateFilter}
+                onChange={e => setDateFilter(e.target.value)}
               >
                 <option value="all">All Time</option>
                 <option value="today">Today</option>
@@ -216,183 +275,230 @@ const AdminOrders = () => {
                 <option value="month">Last 30 Days</option>
               </select>
             </div>
+
+            <button className="ao-btn-clear" onClick={clearFilters}>
+              ✕ Clear Filters
+            </button>
           </div>
         </div>
 
-        {/* Orders List */}
-        <div className="orders-container">
-          {filteredOrders.length > 0 ? (
-            filteredOrders.map((order) => (
-              <div key={order._id} className="order-card">
-                {/* Order Header */}
-                <div className="order-header-section" onClick={() => toggleOrderExpand(order._id)}>
-                  <div className="order-header-left">
-                    <div className="order-number">
-                      <h3>Order #{order.orderNumber}</h3>
-                      <span className={`status-badge status-${getStatusBadgeClass(order.orderStatus)}`}>
-                        {order.orderStatus.charAt(0).toUpperCase() + order.orderStatus.slice(1)}
-                      </span>
-                    </div>
-                    <div className="order-meta">
-                      <span className="meta-item">
-                        <span className="icon">📅</span>
-                        {new Date(order.createdAt).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </span>
-                      <span className="meta-item">
-                        <span className="icon">👤</span>
-                        {order.user?.name}
-                      </span>
-                      <span className="meta-item highlight">
-                        ₹{(order.totalAmount || order.totalPrice || 0).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
+        {/* ── STATUS TABS ── */}
+        <div className="ao-tabs">
+          {TABS.map(tab => (
+            <button
+              key={tab.key}
+              className={`ao-tab${activeTab === tab.key ? ' ao-tab--active' : ''}`}
+              onClick={() => handleTabClick(tab.key)}
+            >
+              {tab.label}
+              <span className="ao-tab-count">{tab.count}</span>
+            </button>
+          ))}
+        </div>
 
-                  <div className="expand-toggle">
-                    <span className={`toggle-icon ${expandedOrders[order._id] ? 'expanded' : ''}`}>
-                      ▼
+        {/* ── RESULTS LABEL ── */}
+        <div className="ao-results-bar">
+          <p className="ao-results-count">
+            <span className={`ao-filter-label ao-filter-label--${activeTab === 'all' ? 'blue' : activeTab === 'active' ? 'orange' : activeTab === 'delivered' ? 'green' : 'red'}`}>
+              {activeTab === 'all' && '📦 All Orders'}
+              {activeTab === 'active' && '⏳ Active Orders'}
+              {activeTab === 'delivered' && '✅ Delivered'}
+              {activeTab === 'cancelled' && '🚫 Cancelled'}
+            </span>
+            <span className="ao-results-text">— Showing <strong>{filteredOrders.length}</strong> of <strong>{totalOrders}</strong> orders</span>
+          </p>
+          {activeTab !== 'all' && (
+            <button className="ao-btn-clear" onClick={clearFilters}>✕ Show All</button>
+          )}
+        </div>
+
+        {/* ── ORDERS LIST ── */}
+        <div className="ao-orders-list">
+          {filteredOrders.length > 0 ? (
+            filteredOrders.map((order, index) => (
+              <div
+                key={order._id}
+                className={`ao-order-card${expandedOrders[order._id] ? ' ao-order-card--expanded' : ''}`}
+                style={{ animationDelay: `${Math.min(index * 0.05, 0.5).toFixed(2)}s` }}
+              >
+                {/* Top row: Order ID + Status + Price */}
+                <div className="ao-card-top">
+                  <div className="ao-card-id-group">
+                    <span className="ao-order-label">Order</span>
+                    <span className="ao-order-number">#{order.orderNumber}</span>
+                    <span className={`ao-badge ao-badge-${getStatusBadgeClass(order.orderStatus)}`}>
+                      {order.orderStatus.charAt(0).toUpperCase() + order.orderStatus.slice(1)}
                     </span>
                   </div>
+                  <span className="ao-card-price">
+                    ₹{(order.totalAmount || order.totalPrice || 0).toLocaleString()}
+                  </span>
                 </div>
 
-                {/* Expandable Content */}
+                {/* Second row: Meta info */}
+                <div className="ao-card-meta">
+                  <span className="ao-meta-item">
+                    <span className="ao-meta-icon">👤</span>
+                    {order.user?.name || 'Unknown Customer'}
+                  </span>
+                  <span className="ao-meta-item">
+                    <span className="ao-meta-icon">📅</span>
+                    {new Date(order.createdAt).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </span>
+                  <span className="ao-meta-item">
+                    <span className="ao-meta-icon">📦</span>
+                    {order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                {/* Action bar */}
+                <div className="ao-card-actions">
+                  <button
+                    className="ao-action-btn ao-action-view"
+                    onClick={() => toggleOrderExpand(order._id)}
+                  >
+                    <span>👁</span>
+                    {expandedOrders[order._id] ? 'Hide Details' : 'View Order'}
+                  </button>
+
+                  {order.orderStatus !== 'cancelled' && order.orderStatus !== 'delivered' && (
+                    <div className="ao-status-select-wrap">
+                      <span className="ao-action-label">✏ Status:</span>
+                      <select
+                        className="ao-inline-status-select"
+                        value={order.orderStatus}
+                        onChange={e => handleStatusChange(order._id, e.target.value)}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {order.orderStatus !== 'cancelled' && (
+                    <button
+                      className="ao-action-btn ao-action-cancel"
+                      onClick={() => handleCancelOrder(order._id)}
+                    >
+                      <span>🗑</span> Cancel
+                    </button>
+                  )}
+                </div>
+
+                {/* ── EXPANDED DETAILS ── */}
                 {expandedOrders[order._id] && (
-                  <div className="order-details">
-                    {/* Customer Details */}
-                    <div className="detail-section">
-                      <h4 className="section-title">👤 Customer Details</h4>
-                      <div className="customer-info">
-                        <div className="info-row">
-                          <span className="icon">📧</span>
+                  <div className="ao-expanded">
+                    <div className="ao-expanded-grid">
+
+                      {/* Customer Details */}
+                      <div className="ao-detail-section">
+                        <h4 className="ao-section-title"><span>👤</span> Customer Details</h4>
+                        <div className="ao-detail-item">
+                          <span className="ao-detail-icon">📧</span>
                           <div>
-                            <p className="info-label">Email</p>
-                            <p className="info-value">{order.user?.email}</p>
+                            <p className="ao-detail-label">Email</p>
+                            <p className="ao-detail-value">{order.user?.email || 'N/A'}</p>
                           </div>
                         </div>
-                        <div className="info-row">
-                          <span className="icon">📞</span>
+                        <div className="ao-detail-item">
+                          <span className="ao-detail-icon">📞</span>
                           <div>
-                            <p className="info-label">Phone</p>
-                            <p className="info-value">{order.user?.phone}</p>
+                            <p className="ao-detail-label">Phone</p>
+                            <p className="ao-detail-value">{order.user?.phone || 'N/A'}</p>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Shipping Address */}
-                    <div className="detail-section">
-                      <h4 className="section-title">📍 Shipping Address</h4>
-                      <div className="address-info">
-                        <p><strong>{order.shippingAddress.name}</strong></p>
-                        <p>{order.shippingAddress.street}, {order.shippingAddress.city}</p>
-                        <p>{order.shippingAddress.state} - {order.shippingAddress.zipCode}</p>
+                      {/* Shipping Address */}
+                      <div className="ao-detail-section">
+                        <h4 className="ao-section-title"><span>📍</span> Shipping Address</h4>
+                        <div className="ao-address-box">
+                          <p className="ao-address-name">{order.shippingAddress?.name}</p>
+                          <p>{order.shippingAddress?.street}, {order.shippingAddress?.city}</p>
+                          <p>{order.shippingAddress?.state} – {order.shippingAddress?.zipCode}</p>
+                        </div>
+                      </div>
+
+                      {/* Payment Details */}
+                      <div className="ao-detail-section">
+                        <h4 className="ao-section-title"><span>💳</span> Payment Details</h4>
+                        <div className="ao-detail-item">
+                          <span className="ao-detail-icon">🏦</span>
+                          <div>
+                            <p className="ao-detail-label">Method</p>
+                            <p className="ao-detail-value">{order.paymentMethod}</p>
+                          </div>
+                        </div>
+                        <div className="ao-detail-item">
+                          <span className="ao-detail-icon">✅</span>
+                          <div>
+                            <p className="ao-detail-label">Payment Status</p>
+                            <span className={`ao-badge ao-pay-${getPaymentStatusBadgeClass(order.paymentStatus)}`}>
+                              {order.paymentStatus?.toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                        {order.paymentMethod === 'RAZORPAY' && order.razorpayPaymentId && (
+                          <div className="ao-detail-item">
+                            <span className="ao-detail-icon">🔗</span>
+                            <div>
+                              <p className="ao-detail-label">Payment ID</p>
+                              <p className="ao-detail-value ao-mono">{order.razorpayPaymentId}</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     {/* Order Items */}
-                    <div className="detail-section">
-                      <h4 className="section-title">📦 Order Items</h4>
-                      <div className="items-list">
-                        {order.items.map((item, index) => (
-                          <div key={index} className="item-row">
-                            <img 
-                              src={item.image} 
+                    <div className="ao-items-section">
+                      <h4 className="ao-section-title"><span>📦</span> Order Items</h4>
+                      <div className="ao-items-list">
+                        {order.items?.map((item, idx) => (
+                          <div key={idx} className="ao-item-row">
+                            <img
+                              src={item.image}
                               alt={item.name}
-                              onError={(e) => {
-                                e.target.src = 'https://via.placeholder.com/50x50?text=Product';
+                              className="ao-item-img"
+                              onError={e => {
+                                e.target.src = 'https://via.placeholder.com/52x52?text=IMG';
                               }}
-                              className="item-image"
                             />
-                            <div className="item-info">
-                              <p className="item-name">{item.name}</p>
-                              <p className="item-qty">Qty: {item.quantity}</p>
+                            <div className="ao-item-info">
+                              <p className="ao-item-name">{item.name}</p>
+                              <p className="ao-item-qty">Qty: {item.quantity}</p>
                             </div>
-                            <div className="item-price">
+                            <span className="ao-item-price">
                               ₹{(item.price * item.quantity).toLocaleString()}
-                            </div>
+                            </span>
                           </div>
                         ))}
                       </div>
-                    </div>
-
-                    {/* Order Summary */}
-                    <div className="detail-section">
-                      <div className="summary-box">
-                        <div className="summary-row">
-                          <span>Items Total:</span>
-                          <span>₹{order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString()}</span>
-                        </div>
-                        <div className="summary-row total">
-                          <span>Total Amount:</span>
-                          <span>₹{order.totalAmount?.toLocaleString() || order.totalPrice?.toLocaleString() || '0'}</span>
-                        </div>
+                      <div className="ao-items-total">
+                        <span>Total Amount</span>
+                        <span className="ao-items-total-price">
+                          ₹{(order.totalAmount || order.totalPrice || 0).toLocaleString()}
+                        </span>
                       </div>
-                    </div>
-
-                    {/* Payment Info */}
-                    <div className="detail-section">
-                      <div className="info-grid">
-                        <div className="info-box">
-                          <p className="info-label">Payment Method</p>
-                          <p className="info-value">{order.paymentMethod}</p>
-                        </div>
-                        <div className="info-box">
-                          <p className="info-label">Payment Status</p>
-                          <span className={`status-badge payment-${getPaymentStatusBadgeClass(order.paymentStatus)}`}>
-                            {order.paymentStatus?.toUpperCase()}
-                          </span>
-                        </div>
-                        {order.paymentMethod === 'RAZORPAY' && order.razorpayPaymentId && (
-                          <div className="info-box" style={{ gridColumn: '1 / -1' }}>
-                            <p className="info-label">🔗 Razorpay Payment ID</p>
-                            <p className="info-value" style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
-                              {order.razorpayPaymentId}
-                            </p>
-                          </div>
-                        )}
-                        {order.paymentMethod === 'RAZORPAY' && order.razorpayOrderId && (
-                          <div className="info-box" style={{ gridColumn: '1 / -1' }}>
-                            <p className="info-label">📋 Razorpay Order ID</p>
-                            <p className="info-value" style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
-                              {order.razorpayOrderId}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="detail-section action-section">
-                      {order.orderStatus !== 'cancelled' && order.orderStatus !== 'delivered' && (
-                        <div className="status-update-control">
-                          <label>Update Status</label>
-                          <select
-                            value={order.orderStatus}
-                            onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                            className="status-select"
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="confirmed">Confirmed</option>
-                            <option value="processing">Processing</option>
-                            <option value="shipped">Shipped</option>
-                            <option value="delivered">Delivered</option>
-                            <option value="cancelled">Cancelled</option>
-                          </select>
-                        </div>
-                      )}
-                      <button className="btn-action">View Full Details</button>
                     </div>
                   </div>
                 )}
               </div>
             ))
           ) : (
-            <div className="no-orders">
-              <p>No orders found</p>
+            <div className="ao-empty">
+              <div className="ao-empty-icon">📭</div>
+              <p className="ao-empty-title">No orders found</p>
+              <p className="ao-empty-sub">Try adjusting your filters or search query.</p>
+              <button className="ao-btn-clear" onClick={clearFilters}>✕ Clear Filters</button>
             </div>
           )}
         </div>

@@ -113,6 +113,7 @@ const Footer = () => {
       {/* Footer Bottom */}
       <div className="footer-bottom">
         <p>&copy; {new Date().getFullYear()} Mani Electrical. All rights reserved.</p>
+        <Link to="/admin/login" className="footer-admin-link">Admin Login</Link>
       </div>
     </footer>
   );

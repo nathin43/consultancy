@@ -228,7 +228,10 @@ const AdminCustomers = () => {
                   </td>
                   <td className="ac-date">{fmtDate(c.createdAt)}</td>
                   <td className="ac-th--center">
-                    <span className="ac-badge ac-badge--active">Active</span>
+                    <span className="ac-badge ac-badge--active">
+                      <span className="ac-badge__dot"></span>
+                      Active
+                    </span>
                   </td>
                   <td className="ac-th--center">
                     <div className="ac-actions">
