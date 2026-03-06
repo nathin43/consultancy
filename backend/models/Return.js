@@ -68,4 +68,9 @@ const returnSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes
+returnSchema.index({ status: 1, createdAt: -1 });
+returnSchema.index({ orderId: 1 }, { sparse: true });
+returnSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model("Return", returnSchema);

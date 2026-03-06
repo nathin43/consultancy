@@ -2,6 +2,10 @@ const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const Report = require('../models/Report');
+const Payment = require('../models/Payment');
+const User = require('../models/User');
+const Admin = require('../models/Admin');
+const NotificationService = require('../services/notificationService');
 const { upsertUserReportSummary } = require('../services/userReportSummaryService');
 
 /**
@@ -54,6 +58,27 @@ exports.createOrder = async (req, res) => {
       // Update product stock
       product.stock -= item.quantity;
       await product.save();
+
+      // Notify admin if stock is critical after this order
+      try {
+        const mainAdmin = await Admin.findOne({ role: 'MAIN_ADMIN' }).select('_id').lean();
+        if (mainAdmin) {
+          if (product.stock === 0) {
+            await NotificationService.notifyOutOfStock(mainAdmin._id, {
+              productId: product._id,
+              productName: product.name,
+            });
+          } else if (product.stock <= 5) {
+            await NotificationService.notifyLowStock(mainAdmin._id, {
+              productId: product._id,
+              productName: product.name,
+              stock: product.stock,
+            });
+          }
+        }
+      } catch (notifError) {
+        console.error('Stock notification error (non-fatal):', notifError.message);
+      }
     }
 
     // Create order (use new + save to trigger pre-save hook for orderNumber)
@@ -68,6 +93,19 @@ exports.createOrder = async (req, res) => {
     });
 
     await order.save();
+
+    // Create Payment record
+    try {
+      await Payment.create({
+        order: order._id,
+        user: req.user.id,
+        amount: totalPrice,
+        paymentMethod: paymentMethod,
+        paymentStatus: paymentMethod === 'Cash on Delivery' ? 'pending' : 'pending',
+      });
+    } catch (payErr) {
+      console.error('Payment record creation error (non-fatal):', payErr.message);
+    }
 
     // AUTO-GENERATE REPORT WHEN ORDER IS PLACED
     try {
@@ -127,6 +165,23 @@ exports.createOrder = async (req, res) => {
       }
     } catch (cartError) {
       console.error('Error removing ordered items from cart (non-fatal):', cartError.message);
+    }
+
+    // Notify admin of new order
+    try {
+      const customer = await User.findById(req.user.id).select('name').lean();
+      const mainAdmin = await Admin.findOne({ role: 'MAIN_ADMIN' }).select('_id').lean();
+      if (mainAdmin) {
+        await NotificationService.notifyNewOrder(mainAdmin._id, {
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          customerId: req.user.id,
+          customerName: customer?.name || 'Customer',
+          amount: totalPrice,
+        });
+      }
+    } catch (notifError) {
+      console.error('New order notification error (non-fatal):', notifError.message);
     }
 
     res.status(201).json({
@@ -211,8 +266,21 @@ exports.getOrder = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
   try {
     console.log('📦 Fetching all orders for admin...');
-    
-    const orders = await Order.find()
+
+    const { fromDate, toDate } = req.query;
+    const query = {};
+
+    if (fromDate || toDate) {
+      query.createdAt = {};
+      if (fromDate) query.createdAt.$gte = new Date(fromDate);
+      if (toDate) {
+        const end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
+    }
+
+    const orders = await Order.find(query)
       .populate('user', 'name email phone')
       .sort('-createdAt');
 
@@ -392,6 +460,22 @@ exports.cancelOrder = async (req, res) => {
 
     order.orderStatus = 'cancelled';
     await order.save();
+
+    // Notify admin of cancelled order
+    try {
+      const customer = await User.findById(order.user).select('name').lean();
+      const mainAdmin = await Admin.findOne({ role: 'MAIN_ADMIN' }).select('_id').lean();
+      if (mainAdmin) {
+        await NotificationService.notifyOrderCancelled(mainAdmin._id, {
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          customerId: order.user,
+          customerName: customer?.name || 'Customer',
+        });
+      }
+    } catch (notifError) {
+      console.error('Cancel order notification error (non-fatal):', notifError.message);
+    }
 
     res.status(200).json({
       success: true,

@@ -4,7 +4,9 @@ const {
   getProfile,
   updateProfile,
   updatePassword,
-  getUserById
+  getUserById,
+  verifyProfileUpdate,
+  getUserDataForModules
 } = require('../controllers/userController');
 const {
   blockUser,
@@ -27,12 +29,16 @@ router.put('/:userId/suspend', adminProtect, suspendUser);
 router.put('/:userId/activate', adminProtect, activateUser);
 router.get('/:userId/status', adminProtect, getUserStatus);
 
-// Admin route to get user by ID (must come first, before protect middleware)
-router.get('/:userId', adminProtect, getUserById);
-
-// Customer routes (require authentication)
+// Customer routes — MUST come before /:userId wildcard to avoid shadowing
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, updateProfile);
+router.get('/profile/verify', protect, verifyProfileUpdate);
 router.put('/password', protect, updatePassword);
+
+// Admin route to get user by ID (wildcard — must come AFTER all literal routes)
+router.get('/:userId', adminProtect, getUserById);
+
+// Get user data for related modules (used by Cart, Orders, Reports, etc)
+router.get('/:userId/data', protect, getUserDataForModules);
 
 module.exports = router;

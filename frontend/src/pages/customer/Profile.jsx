@@ -1,8 +1,9 @@
-import { useState, useContext, useMemo } from 'react';
+import { useState, useContext, useMemo, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { AuthContext } from '../../context/AuthContext';
 import API from '../../services/api';
+import profileService from '../../services/profileService';
 import './Profile.css';
 
 const getInitials = (name) => {
@@ -28,7 +29,7 @@ const getPasswordStrength = (password) => {
 };
 
 const Profile = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user, refreshUser, logout } = useContext(AuthContext);
   const [editing, setEditing] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
@@ -52,6 +53,20 @@ const Profile = () => {
 
   const [toast, setToast] = useState({ show: false, type: '', text: '' });
 
+  // Sync profile form data when user context changes (after refresh)
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name || '',
+        phone: user.phone || '',
+        street: user.address?.street || '',
+        city: user.address?.city || '',
+        state: user.address?.state || '',
+        zipCode: user.address?.zipCode || '',
+      });
+    }
+  }, [user]);
+
   const showToast = (type, text) => {
     setToast({ show: true, type, text });
     setTimeout(() => setToast({ show: false, type: '', text: '' }), 4000);
@@ -66,7 +81,27 @@ const Profile = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      const updateData = {
+      // Validate form data
+      if (!profileData.name.trim() || !profileData.phone.trim()) {
+        showToast('error', 'Name and phone are required');
+        setSaving(false);
+        return;
+      }
+
+      if (profileData.name.trim().length < 2) {
+        showToast('error', 'Name must be at least 2 characters');
+        setSaving(false);
+        return;
+      }
+
+      if (profileData.phone.trim().length < 10 || profileData.phone.trim().length > 20) {
+        showToast('error', 'Phone must be between 10 and 20 characters');
+        setSaving(false);
+        return;
+      }
+
+      // Use profile service for update with verification
+      const result = await profileService.updateUserProfile({
         name: profileData.name,
         phone: profileData.phone,
         address: {
@@ -76,13 +111,31 @@ const Profile = () => {
           zipCode: profileData.zipCode,
           country: 'India',
         },
-      };
-      await API.put('/users/profile', updateData);
-      showToast('success', 'Profile updated successfully!');
-      setEditing(false);
-      localStorage.setItem('user', JSON.stringify({ ...user, ...updateData }));
+      });
+
+      if (result.success) {
+        // Show verification status if available
+        if (result.verified !== undefined) {
+          console.log(`Database verification: ${result.verified ? '✅ Verified' : '⚠️ Unverified'}`);
+        }
+        
+        // Refresh user context with fresh data
+        const refreshResult = await refreshUser();
+        
+        if (refreshResult?.success || refreshResult !== false) {
+          showToast('success', 'Profile updated successfully!');
+          setEditing(false);
+        } else {
+          showToast('warning', 'Profile saved but failed to refresh context. Reloading...');
+          // Try one more time
+          setTimeout(() => window.location.reload(), 1500);
+        }
+      } else {
+        showToast('error', result.message || 'Failed to update profile');
+      }
     } catch (error) {
-      showToast('error', error.response?.data?.message || 'Failed to update profile');
+      console.error('Profile update error:', error);
+      showToast('error', error.message || 'Failed to update profile');
     } finally {
       setSaving(false);
     }

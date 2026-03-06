@@ -6,7 +6,7 @@ const {
   updateService,
   deleteService,
 } = require("../controllers/serviceController");
-const { protect } = require("../middleware/auth");
+const { adminProtect } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -15,8 +15,8 @@ router.get("/", getAllServices);
 router.get("/:id", getServiceById);
 
 // Admin routes
-router.post("/", protect, createService);
-router.put("/:id", protect, updateService);
-router.delete("/:id", protect, deleteService);
+router.post("/", adminProtect, createService);
+router.put("/:id", adminProtect, updateService);
+router.delete("/:id", adminProtect, deleteService);
 
 module.exports = router;

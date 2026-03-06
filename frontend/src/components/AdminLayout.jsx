@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import API from '../services/api';
 import LightbulbIcon from './LightbulbIcon';
+import NotificationBell from './admin/NotificationBell';
+import { useNotificationSocket } from '../hooks/useNotificationSocket';
 import './AdminLayout.css';
 
 /**
@@ -20,6 +22,9 @@ const AdminLayout = ({ children }) => {
 
   // Debug: Log admin data
   console.log('AdminLayout - Admin Data:', admin);
+
+  // Initialize notification socket connection
+  useNotificationSocket();
 
   // Fetch unread messages count
   useEffect(() => {
@@ -171,6 +176,8 @@ const AdminLayout = ({ children }) => {
           </h1>
           
           <div className="header-actions">
+            <NotificationBell />
+            
             <a href="/" target="_blank" rel="noopener noreferrer" className="view-site-link">
               🌐 View Site
             </a>

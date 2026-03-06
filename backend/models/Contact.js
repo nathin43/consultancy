@@ -86,4 +86,9 @@ const contactSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes
+contactSchema.index({ status: 1, createdAt: -1 });
+contactSchema.index({ userId: 1 }, { sparse: true });
+contactSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model("Contact", contactSchema);

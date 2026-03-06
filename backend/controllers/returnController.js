@@ -1,6 +1,9 @@
 const Return = require("../models/Return");
 const Contact = require("../models/Contact");
 const User = require("../models/User");
+const Admin = require('../models/Admin');
+const Order = require('../models/Order');
+const NotificationService = require('../services/notificationService');
 
 /**
  * Submit a new return request
@@ -33,6 +36,35 @@ exports.submitReturn = async (req, res) => {
     });
 
     await newReturn.save();
+
+    // Notify admin of new return/refund request
+    try {
+      const mainAdmin = await Admin.findOne({ role: 'MAIN_ADMIN' }).select('_id').lean();
+      if (mainAdmin) {
+        // Try to look up the order amount using the customer-typed orderId string
+        let orderAmount = null;
+        if (orderId) {
+          const relatedOrder = await Order.findOne({ orderNumber: orderId })
+            .select('totalAmount')
+            .lean();
+          if (relatedOrder) orderAmount = relatedOrder.totalAmount;
+        }
+
+        await NotificationService.notifyRefundRequest(mainAdmin._id, {
+          refundId: newReturn._id,
+          // orderId is a customer-typed string like "ORD1234" — pass as orderNumber (String)
+          // Never put it in data.orderId (ObjectId field) — causes Mongoose CastError
+          orderNumber: orderId || null,
+          customerId: null,
+          customerName: name,
+          amount: orderAmount,
+          category: category,
+          reason: reason,
+        });
+      }
+    } catch (notifError) {
+      console.error('Return notification error (non-fatal):', notifError.message);
+    }
 
     // Emit real-time notification to all connected admins
     const io = req.app.get('io');

@@ -1,13 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const { getPaymentsByUserId } = require('../controllers/reportControllerNew');
-const { adminProtect } = require('../middleware/auth');
+const {
+  getAllPayments,
+  getPaymentById,
+  getPaymentsByUserId,
+  getMyPayments,
+  getPaymentStats,
+} = require('../controllers/paymentController');
+const { protect, adminProtect } = require('../middleware/auth');
 
 /**
- * Payment Routes (For Admin Reports)
+ * Payment Routes
  */
 
-// Admin route to get payments by user ID
+// Admin routes
+router.get('/stats', adminProtect, getPaymentStats);
+router.get('/', adminProtect, getAllPayments);
 router.get('/user/:userId', adminProtect, getPaymentsByUserId);
+router.get('/:id', adminProtect, getPaymentById);
+
+// Customer routes
+router.get('/my/list', protect, getMyPayments);
 
 module.exports = router;

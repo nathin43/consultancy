@@ -95,26 +95,37 @@ API.interceptors.response.use(
 
     // Handle 401/403 authentication errors
     if (status === 401 || status === 403) {
-      // For admin routes, clear admin token and redirect
-      if (url.includes('/admin') || url.includes('/orders') || url.includes('/admin-management')) {
+
+      // Logout routes — clear everything
+      if (url.includes('logout')) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('admin');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+      // Admin login failures — don't clear tokens, just log
+      else if (url.includes('/auth/admin/login')) {
+        console.log('Admin login failed - invalid credentials');
+      }
+      // Admin panel routes — clear admin token on auth failure
+      else if (url.includes('/admin') || url.includes('/admin-management')) {
         const adminToken = localStorage.getItem('adminToken');
-        if (adminToken && (status === 401 || message.includes('expired') || message.includes('invalid'))) {
+        if (adminToken) {
           console.warn('Admin authentication failed, clearing token');
           localStorage.removeItem('adminToken');
           localStorage.removeItem('admin');
           // Don't redirect here - let components handle it to avoid loops
         }
       }
-      // For admin login failures, don't clear tokens
-      else if (url.includes('/auth/admin/login')) {
-        console.log('Admin login failed - invalid credentials');
-      }
-      // For logout, clear tokens
-      else if (url.includes('logout')) {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('admin');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+      // Customer routes — 401 means token missing/expired; clear it so the
+      // login guard redirects the user to sign in again
+      else if (status === 401) {
+        const userToken = localStorage.getItem('token');
+        if (userToken) {
+          console.warn('Customer session expired or invalid, clearing token');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
       }
     }
 

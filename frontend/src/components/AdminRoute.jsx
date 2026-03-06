@@ -1,11 +1,13 @@
 import { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { NotificationProvider } from '../context/NotificationContext';
 
 /**
  * Admin Route Component
  * Protects routes that require admin authentication
  * Redirects customers to home page
+ * Wraps with NotificationProvider for real-time notification support
  */
 const AdminRoute = ({ children }) => {
   const { isAdmin, isAuthenticated, loading } = useContext(AuthContext);
@@ -19,7 +21,13 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/" />;
   }
 
-  return isAdmin ? children : <Navigate to="/admin/login" />;
+  return isAdmin ? (
+    <NotificationProvider>
+      {children}
+    </NotificationProvider>
+  ) : (
+    <Navigate to="/admin/login" />
+  );
 };
 
 export default AdminRoute;

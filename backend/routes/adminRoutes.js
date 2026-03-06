@@ -4,7 +4,10 @@ const {
   getDashboard,
   getCustomers,
   getCustomer,
-  deleteCustomer
+  deleteCustomer,
+  checkDataConsistency,
+  verifyUserProfile,
+  getUserAuditLog
 } = require('../controllers/adminController');
 const { adminProtect } = require('../middleware/auth');
 
@@ -19,5 +22,10 @@ router.get('/dashboard', getDashboard);
 router.get('/customers', getCustomers);
 router.get('/customers/:id', getCustomer);
 router.delete('/customers/:id', deleteCustomer);
+
+// Verification and consistency check routes
+router.get('/verify/data-consistency', checkDataConsistency);
+router.get('/verify/profile/:userId', verifyUserProfile);
+router.get('/verify/audit/:userId', getUserAuditLog);
 
 module.exports = router;

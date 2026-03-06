@@ -125,6 +125,66 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Refresh user profile from server
+  const refreshUser = async () => {
+    try {
+      // Fetch fresh user data from backend
+      const { data } = await API.get('/users/profile');
+      
+      if (!data.success) {
+        console.error('Refresh user: Backend returned failure');
+        return {
+          success: false,
+          message: data.message || 'Failed to refresh profile'
+        };
+      }
+
+      if (!data.user) {
+        console.error('Refresh user: No user data in response');
+        return {
+          success: false,
+          message: 'No user data received'
+        };
+      }
+
+      // Validate the user object has required fields
+      if (!data.user._id || !data.user.email) {
+        console.error('Refresh user: Invalid user object structure');
+        return {
+          success: false,
+          message: 'Invalid user data received'
+        };
+      }
+
+      // Update both state and localStorage with fresh data
+      setUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      console.log('✅ User profile refreshed successfully at', new Date().toISOString());
+      
+      return {
+        success: true,
+        user: data.user,
+        timestamp: data.timestamp
+      };
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to refresh profile';
+      console.error('❌ Error refreshing user profile:', errorMessage);
+      
+      // If unauthorized (401), user session is invalid
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+      }
+
+      return {
+        success: false,
+        message: errorMessage
+      };
+    }
+  };
+
   // Customer Logout
   const logout = async (callback) => {
     // Prevent multiple logout attempts
@@ -261,6 +321,7 @@ export const AuthProvider = ({ children }) => {
     registerWithOTP,
     verifyOTP,
     resendOTP,
+    refreshUser,
     logout,
     loginWithGoogle,
     adminLogin,

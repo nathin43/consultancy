@@ -1,5 +1,7 @@
 const Contact = require("../models/Contact");
 const sendEmail = require("../utils/sendEmail");
+const Admin = require('../models/Admin');
+const NotificationService = require('../services/notificationService');
 
 // Get all contacts (Admin only)
 exports.getAllContacts = async (req, res) => {
@@ -64,6 +66,20 @@ exports.submitContact = async (req, res) => {
     });
 
     console.log('✅ Contact message saved to MongoDB:', contact._id);
+
+    // Notify admin of new contact message
+    try {
+      const mainAdmin = await Admin.findOne({ role: 'MAIN_ADMIN' }).select('_id').lean();
+      if (mainAdmin) {
+        await NotificationService.notifyContactMessage(mainAdmin._id, {
+          contactId: contact._id,
+          from: name,
+          subject: inquiryType,
+        });
+      }
+    } catch (notifError) {
+      console.error('Contact notification error (non-fatal):', notifError.message);
+    }
 
     // Send confirmation email
     try {

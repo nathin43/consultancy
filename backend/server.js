@@ -153,6 +153,11 @@ io.on('connection', (socket) => {
   });
 });
 
+// Initialize notification handlers
+const notificationHandlers = require('./socket/notificationHandlers');
+const NotificationEmitter = notificationHandlers(io);
+app.set('notificationEmitter', NotificationEmitter);
+
 // ============================================
 // REST API Routes
 // ============================================
@@ -168,10 +173,14 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/services', require('./routes/serviceRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
 app.use('/api/returns', require('./routes/returnRoutes'));
+app.use('/api/admin/notifications', require('./routes/notificationRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes')); // Legacy reports (backward compatibility)
 app.use('/api/admin/reports', require('./routes/adminReportRoutes')); // Admin reports (new)
 app.use('/api/user/reports', require('./routes/userReportRoutes')); // User reports (new)
 app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/refunds', require('./routes/refundRoutes'));
+app.use('/api/sales-reports', require('./routes/salesReportRoutes'));
+app.use('/api/activity-logs', require('./routes/activityLogRoutes'));
 app.use('/api/invoices', require('./routes/invoiceRoutes'));
 
 // Root route

@@ -150,6 +150,23 @@ exports.verifyAndSaveOrder = async (req, res) => {
       console.error('Error removing ordered items from cart (non-fatal):', cartError.message);
     }
 
+    // Create Payment record
+    try {
+      const Payment = require('../models/Payment');
+      await Payment.create({
+        order: order._id,
+        user: req.user.id,
+        amount: totalAmount,
+        paymentMethod: 'RAZORPAY',
+        paymentStatus: 'paid',
+        transactionId: razorpayPaymentId,
+        gatewayResponse: { razorpayOrderId, razorpayPaymentId, razorpaySignature },
+        paidAt: new Date(),
+      });
+    } catch (payErr) {
+      console.error('Payment record creation error (non-fatal):', payErr.message);
+    }
+
     // Auto-generate report
     try {
       const User = require('../models/User');

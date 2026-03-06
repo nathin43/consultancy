@@ -313,6 +313,11 @@
   gap: 14px;
   flex-wrap: wrap;
   animation: ao-slide-down .45s var(--ao-ease) .1s both;
+  /* The animation creates a stacking context — give the bar a z-index
+     higher than any sibling (tabs, orders) so the dropdown paints above them. */
+  position: relative;
+  z-index: 100;
+  overflow: visible;
 }
 
 /* Search */
@@ -409,6 +414,197 @@
 }
 
 .ao-btn-clear:hover {
+  background: var(--ao-red-lt);
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+/* ================================================================
+   DATE RANGE DROPDOWN
+   ================================================================ */
+
+.ao-date-dropdown-wrap {
+  position: relative;
+  /* Ensure the floating menu escapes any ancestor stacking context */
+  z-index: 999;
+}
+
+.ao-date-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--ao-border);
+  border-radius: var(--ao-radius-sm);
+  background: var(--ao-bg);
+  color: var(--ao-text);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .2s, background .2s, box-shadow .2s, color .2s;
+  outline: none;
+}
+
+.ao-date-dropdown-btn:hover {
+  border-color: var(--ao-primary);
+  background: var(--ao-white);
+}
+
+.ao-date-dropdown-btn--active {
+  border-color: var(--ao-primary);
+  background: var(--ao-primary-lt);
+  color: var(--ao-primary);
+  font-weight: 600;
+}
+
+.ao-date-icon { font-size: 14px; line-height: 1; }
+.ao-date-btn-text { flex: 1; }
+.ao-date-caret { font-size: 9px; opacity: .6; }
+
+/* Dropdown panel */
+.ao-date-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: #ffffff;
+  border: 1.5px solid var(--ao-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  z-index: 999;
+  padding: 8px 0 10px;
+  animation: ao-dropdown-in .2s var(--ao-ease) both;
+  /* Must not be clipped by any overflow */
+  overflow: visible;
+}
+
+@keyframes ao-dropdown-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.ao-date-dropdown-header {
+  padding: 6px 16px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--ao-text-muted);
+}
+
+/* Preset option rows */
+.ao-date-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 16px;
+  background: none;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ao-text);
+  cursor: pointer;
+  text-align: left;
+  transition: background .15s, color .15s;
+}
+
+.ao-date-option:hover {
+  background: var(--ao-primary-lt);
+  color: var(--ao-primary);
+}
+
+.ao-date-option--active {
+  background: var(--ao-primary-lt);
+  color: var(--ao-primary);
+  font-weight: 600;
+}
+
+.ao-date-check {
+  font-size: 12px;
+  color: var(--ao-primary);
+  font-weight: 700;
+}
+
+/* Custom range section */
+.ao-date-custom-wrap {
+  padding: 0 12px 10px;
+}
+
+.ao-date-divider {
+  height: 1px;
+  background: var(--ao-border);
+  margin: 6px 0 12px;
+}
+
+.ao-date-custom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ao-date-custom-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ao-text-muted);
+  width: 30px;
+  flex-shrink: 0;
+}
+
+.ao-date-custom-input {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1.5px solid var(--ao-border);
+  border-radius: var(--ao-radius-sm);
+  font-size: 13px;
+  color: var(--ao-text);
+  background: var(--ao-bg);
+  outline: none;
+  transition: border-color .2s;
+}
+
+.ao-date-custom-input:focus {
+  border-color: var(--ao-primary);
+  background: var(--ao-white);
+}
+
+.ao-date-custom-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ao-date-apply-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--ao-radius-sm);
+  background: var(--ao-primary);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s, opacity .2s;
+}
+
+.ao-date-apply-btn:hover:not(:disabled) { background: #4338ca; }
+.ao-date-apply-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.ao-date-cancel-btn {
+  padding: 8px 12px;
+  border: 1.5px solid var(--ao-border);
+  border-radius: var(--ao-radius-sm);
+  background: var(--ao-white);
+  color: var(--ao-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+
+.ao-date-cancel-btn:hover {
   background: var(--ao-red-lt);
   color: #dc2626;
   border-color: #fca5a5;

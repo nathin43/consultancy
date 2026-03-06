@@ -291,3 +291,103 @@ exports.deleteCustomer = async (req, res) => {
     });
   }
 };
+
+/**
+ * Check user data consistency across all modules
+ * @route GET /api/admin/verify/data-consistency
+ * @access Private/Admin
+ */
+exports.checkDataConsistency = async (req, res) => {
+  try {
+    const consistencyService = require('../services/userDataConsistency');
+    
+    const report = await consistencyService.getFullConsistencyReport();
+
+    res.status(200).json({
+      success: true,
+      report,
+      message: 'Data consistency check completed'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Verify specific user profile update
+ * @route GET /api/admin/verify/profile/:userId
+ * @access Private/Admin
+ */
+exports.verifyUserProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).select('_id name email phone address status createdAt updatedAt').lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      verified: true,
+      user,
+      message: 'User profile verified in database',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get user update audit log
+ * @route GET /api/admin/verify/audit/:userId
+ * @access Private/Admin
+ */
+exports.getUserAuditLog = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId).select('name email phone address status updatedAt _id').lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Get related orders count
+    const ordersCount = await Order.countDocuments({ user: userId });
+
+    res.status(200).json({
+      success: true,
+      user: {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        status: user.status,
+        lastUpdated: user.updatedAt
+      },
+      relatedData: {
+        ordersCount
+      },
+      message: 'Audit log retrieved'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

@@ -4,6 +4,8 @@ import AdminLayout from "../../components/AdminLayout";
 import DashboardSkeleton from "../../components/DashboardSkeleton";
 import useAdminLoader from "../../hooks/useAdminLoader";
 import API from "../../services/api";
+import RevenueChart from "../../components/admin/RevenueChart";
+import "../../components/admin/RevenueChart.css";
 import "./AdminDashboard.css";
 
 // Animated counter hook - defined outside component
@@ -111,24 +113,6 @@ const AdminDashboard = () => {
     const v = parseFloat(stats?.salesGrowth) || 0;
     return { val: Math.abs(v).toFixed(1), up: v >= 0 };
   })();
-
-  const buildAreaPath = (data, W = 700, H = 260) => {
-    if (!data || data.length < 2) return null;
-    const max = Math.max(...data.map((d) => d.revenue || 0), 1);
-    const pts = data.map((d, i) => ({
-      x: (i / (data.length - 1)) * W,
-      y: (d.revenue || 0) === 0
-        ? H  // zero-revenue day: point sits exactly at baseline
-        : H - Math.max(((d.revenue || 0) / max) * (H * 0.85), 8),
-    }));
-    const linePath = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-    const areaPath = linePath + ` L${W},${H} L0,${H} Z`;
-    return { line: linePath, area: areaPath };
-  };
-
-  // Use the sales trend data directly (it's already daily data from backend)
-  const paths = buildAreaPath(salesTrend);
-  const hasRevenue = salesTrend.some(d => (d.revenue || 0) > 0);
 
   const formatDate = () => {
     const d = new Date();
@@ -422,7 +406,7 @@ const AdminDashboard = () => {
 
           {/* CHARTS */}
           <section className="dash-charts">
-            {/* Area Chart */}
+            {/* Interactive Revenue Chart */}
             <div className="dash-card">
               <div className="dash-card__header">
                 <div>
@@ -430,53 +414,7 @@ const AdminDashboard = () => {
                   <p className="dash-card__subtitle">Sales performance over last 7 days</p>
                 </div>
               </div>
-              {paths ? (
-                <>
-                  <div className="dash-chart-wrap">
-                    <svg className="dash-chart-svg" viewBox="0 0 700 260" preserveAspectRatio="none">
-                      <defs>
-                        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#2563eb" stopOpacity="0.3"/>
-                          <stop offset="100%" stopColor="#2563eb" stopOpacity="0.02"/>
-                        </linearGradient>
-                        <filter id="shadow">
-                          <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.3"/>
-                        </filter>
-                      </defs>
-                      <path d={paths.area} fill="url(#areaGrad)"/>
-                      <path d={paths.line} fill="none" stroke="#2563eb" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" filter="url(#shadow)"/>
-                    </svg>
-                  </div>
-                  <div className="dash-chart-labels">
-                    {salesTrend.map((d, i) => (
-                      <span key={i}>{d.day || d.date?.split('-')[2] || i}</span>
-                    ))}
-                  </div>
-                  {!hasRevenue && (
-                    <div style={{ 
-                      padding: '12px', 
-                      marginTop: '12px', 
-                      background: '#fef3c7', 
-                      borderRadius: '8px',
-                      textAlign: 'center',
-                      fontSize: '0.875rem',
-                      color: '#92400e'
-                    }}>
-                      ⚠️ No revenue data yet. Complete orders with "delivered" status to see the trend.
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="dash-empty">
-                  <svg fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" width="48" height="48">
-                    <line x1="18" y1="20" x2="18" y2="10"/>
-                    <line x1="12" y1="20" x2="12" y2="4"/>
-                    <line x1="6" y1="20" x2="6" y2="14"/>
-                  </svg>
-                  <p>No revenue data available</p>
-                  <small>Complete delivered orders to see the sales trend</small>
-                </div>
-              )}
+              <RevenueChart data={salesTrend} loading={loading} />
             </div>
 
             {/* Donut Chart */}

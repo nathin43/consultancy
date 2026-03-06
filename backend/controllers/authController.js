@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Admin = require('../models/Admin');
 const generateToken = require('../utils/generateToken');
+const NotificationService = require('../services/notificationService');
 
 /**
  * Customer Register
@@ -38,6 +39,20 @@ exports.register = async (req, res) => {
 
     // Save user (password will be hashed by pre-save middleware)
     await user.save();
+
+    // Notify admin of new customer registration
+    try {
+      const mainAdmin = await Admin.findOne({ role: 'MAIN_ADMIN' }).select('_id').lean();
+      if (mainAdmin) {
+        await NotificationService.notifyNewCustomer(mainAdmin._id, {
+          customerId: user._id,
+          customerName: user.name,
+          email: user.email,
+        });
+      }
+    } catch (notifError) {
+      console.error('New customer notification error (non-fatal):', notifError.message);
+    }
 
     // Generate token
     const token = generateToken(user._id);

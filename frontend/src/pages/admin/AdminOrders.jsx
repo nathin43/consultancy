@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import DashboardSkeleton from '../../components/DashboardSkeleton';
 import useAdminLoader from '../../hooks/useAdminLoader';
@@ -8,7 +8,13 @@ import './AdminOrders.css';
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
+  const [dateRangePreset, setDateRangePreset] = useState('all');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
+  const [pendingFrom, setPendingFrom] = useState('');
+  const [pendingTo, setPendingTo] = useState('');
+  const dateDropdownRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrders, setExpandedOrders] = useState({});
   const [cardFilter, setCardFilter] = useState('all'); // 'all' | 'active' | 'cancelled'
@@ -18,6 +24,31 @@ const AdminOrders = () => {
   useEffect(() => {
     run(fetchOrders);
   }, []);
+
+  // Close date dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (dateDropdownRef.current && !dateDropdownRef.current.contains(e.target)) {
+        setDateDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const getDateRangeLabel = () => {
+    if (dateRangePreset === 'today') return 'Today';
+    if (dateRangePreset === 'yesterday') return 'Yesterday';
+    if (dateRangePreset === 'last7') return 'Last 7 Days';
+    if (dateRangePreset === 'last30') return 'Last 30 Days';
+    if (dateRangePreset === 'thisMonth') return 'This Month';
+    if (dateRangePreset === 'custom' && customFrom && customTo) {
+      const fmt = (s) =>
+        new Date(s + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+      return `${fmt(customFrom)} \u2013 ${fmt(customTo)}`;
+    }
+    return 'Date Range';
+  };
 
   const fetchOrders = async () => {
     try {
@@ -69,7 +100,12 @@ const AdminOrders = () => {
   const clearFilters = () => {
     setSearchQuery('');
     setStatusFilter('all');
-    setDateFilter('all');
+    setDateRangePreset('all');
+    setCustomFrom('');
+    setCustomTo('');
+    setPendingFrom('');
+    setPendingTo('');
+    setDateDropdownOpen(false);
     setCardFilter('all');
     setActiveTab('all');
   };
@@ -78,7 +114,9 @@ const AdminOrders = () => {
     setCardFilter(prev => prev === filter ? 'all' : filter);
     setStatusFilter('all');
     setSearchQuery('');
-    setDateFilter('all');
+    setDateRangePreset('all');
+    setCustomFrom('');
+    setCustomTo('');
     // Sync tab with card click
     const tabMap = { all: 'all', active: 'active', cancelled: 'cancelled' };
     setActiveTab(tabMap[filter] || 'all');
@@ -89,7 +127,9 @@ const AdminOrders = () => {
     setCardFilter('all');
     setStatusFilter('all');
     setSearchQuery('');
-    setDateFilter('all');
+    setDateRangePreset('all');
+    setCustomFrom('');
+    setCustomTo('');
   };
 
   const filterOrders = () => {
@@ -114,17 +154,36 @@ const AdminOrders = () => {
       filtered = filtered.filter(o => o.orderStatus === statusFilter);
     }
 
-    if (dateFilter !== 'all') {
+    if (dateRangePreset !== 'all') {
       const now = new Date();
-      const cutoff = new Date();
-      if (dateFilter === 'today') {
-        filtered = filtered.filter(o => new Date(o.createdAt).toDateString() === now.toDateString());
-      } else if (dateFilter === 'week') {
-        cutoff.setDate(cutoff.getDate() - 7);
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (dateRangePreset === 'today') {
+        filtered = filtered.filter(o => new Date(o.createdAt) >= todayStart);
+      } else if (dateRangePreset === 'yesterday') {
+        const yStart = new Date(todayStart);
+        yStart.setDate(yStart.getDate() - 1);
+        filtered = filtered.filter(o => {
+          const d = new Date(o.createdAt);
+          return d >= yStart && d < todayStart;
+        });
+      } else if (dateRangePreset === 'last7') {
+        const cutoff = new Date(todayStart);
+        cutoff.setDate(cutoff.getDate() - 6);
         filtered = filtered.filter(o => new Date(o.createdAt) >= cutoff);
-      } else if (dateFilter === 'month') {
-        cutoff.setMonth(cutoff.getMonth() - 1);
+      } else if (dateRangePreset === 'last30') {
+        const cutoff = new Date(todayStart);
+        cutoff.setDate(cutoff.getDate() - 29);
         filtered = filtered.filter(o => new Date(o.createdAt) >= cutoff);
+      } else if (dateRangePreset === 'thisMonth') {
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        filtered = filtered.filter(o => new Date(o.createdAt) >= monthStart);
+      } else if (dateRangePreset === 'custom' && customFrom && customTo) {
+        const from = new Date(customFrom + 'T00:00:00');
+        const to = new Date(customTo + 'T23:59:59');
+        filtered = filtered.filter(o => {
+          const d = new Date(o.createdAt);
+          return d >= from && d <= to;
+        });
       }
     }
 
@@ -262,18 +321,107 @@ const AdminOrders = () => {
               </select>
             </div>
 
-            <div className="ao-select-wrap">
-              <span className="ao-select-icon">📅</span>
-              <select
-                className="ao-filter-select"
-                value={dateFilter}
-                onChange={e => setDateFilter(e.target.value)}
+            <div className="ao-date-dropdown-wrap" ref={dateDropdownRef}>
+              <button
+                type="button"
+                className={`ao-date-dropdown-btn${dateRangePreset !== 'all' ? ' ao-date-dropdown-btn--active' : ''}`}
+                onClick={() => setDateDropdownOpen(prev => !prev)}
               >
-                <option value="all">All Time</option>
-                <option value="today">Today</option>
-                <option value="week">Last 7 Days</option>
-                <option value="month">Last 30 Days</option>
-              </select>
+                <span className="ao-date-icon">📅</span>
+                <span className="ao-date-btn-text">{getDateRangeLabel()}</span>
+                <span className="ao-date-caret">{dateDropdownOpen ? '▲' : '▼'}</span>
+              </button>
+
+              {dateDropdownOpen && (
+                <div className="ao-date-dropdown-menu">
+                  <div className="ao-date-dropdown-header">Date Range</div>
+
+                  {[
+                    { key: 'all',       label: 'All Time' },
+                    { key: 'today',     label: 'Today' },
+                    { key: 'yesterday', label: 'Yesterday' },
+                    { key: 'last7',     label: 'Last 7 Days' },
+                    { key: 'last30',    label: 'Last 30 Days' },
+                    { key: 'thisMonth', label: 'This Month' },
+                    { key: 'custom',    label: 'Custom Range' },
+                  ].map(opt => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      className={`ao-date-option${dateRangePreset === opt.key ? ' ao-date-option--active' : ''}`}
+                      onClick={() => {
+                        if (opt.key !== 'custom') {
+                          setDateRangePreset(opt.key);
+                          setCustomFrom('');
+                          setCustomTo('');
+                          setDateDropdownOpen(false);
+                        } else {
+                          setDateRangePreset('custom');
+                          setPendingFrom(customFrom);
+                          setPendingTo(customTo);
+                        }
+                      }}
+                    >
+                      {opt.label}
+                      {dateRangePreset === opt.key && <span className="ao-date-check">✓</span>}
+                    </button>
+                  ))}
+
+                  {dateRangePreset === 'custom' && (
+                    <div className="ao-date-custom-wrap">
+                      <div className="ao-date-divider" />
+                      <div className="ao-date-custom-row">
+                        <label className="ao-date-custom-label">From</label>
+                        <input
+                          type="date"
+                          className="ao-date-custom-input"
+                          value={pendingFrom}
+                          max={pendingTo || undefined}
+                          onChange={e => setPendingFrom(e.target.value)}
+                        />
+                      </div>
+                      <div className="ao-date-custom-row">
+                        <label className="ao-date-custom-label">To</label>
+                        <input
+                          type="date"
+                          className="ao-date-custom-input"
+                          value={pendingTo}
+                          min={pendingFrom || undefined}
+                          onChange={e => setPendingTo(e.target.value)}
+                        />
+                      </div>
+                      <div className="ao-date-custom-actions">
+                        <button
+                          type="button"
+                          className="ao-date-apply-btn"
+                          disabled={!pendingFrom || !pendingTo}
+                          onClick={() => {
+                            setCustomFrom(pendingFrom);
+                            setCustomTo(pendingTo);
+                            setDateDropdownOpen(false);
+                          }}
+                        >
+                          Apply Filter
+                        </button>
+                        <button
+                          type="button"
+                          className="ao-date-cancel-btn"
+                          onClick={() => {
+                            setDateRangePreset('all');
+                            setCustomFrom('');
+                            setCustomTo('');
+                            setPendingFrom('');
+                            setPendingTo('');
+                            setDateDropdownOpen(false);
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <button className="ao-btn-clear" onClick={clearFilters}>
