@@ -5,18 +5,22 @@ const {
   getReturnById,
   updateReturnStatus,
   deleteReturn,
+  getPendingCount,
+  replyToReturn,
 } = require("../controllers/returnController");
-const { protect } = require("../middleware/auth");
+const { adminProtect } = require("../middleware/auth");
 
 const router = express.Router();
 
-// Public routes
+// Public route — customers submit return requests (no auth required)
 router.post("/", submitReturn);
 
-// Admin routes
-router.get("/", protect, getAllReturns);
-router.get("/:id", protect, getReturnById);
-router.put("/:id", protect, updateReturnStatus);
-router.delete("/:id", protect, deleteReturn);
+// Admin-only routes — require admin JWT
+router.get("/pending-count", adminProtect, getPendingCount);
+router.get("/", adminProtect, getAllReturns);
+router.get("/:id", adminProtect, getReturnById);
+router.put("/:id", adminProtect, updateReturnStatus);
+router.post("/:id/reply", adminProtect, replyToReturn);
+router.delete("/:id", adminProtect, deleteReturn);
 
 module.exports = router;

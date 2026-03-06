@@ -168,6 +168,9 @@ const SupportMessages = () => {
                       </span>
                       <span className="message-time">{formatDate(msg.createdAt)}</span>
                     </div>
+                    {msg.orderId && (
+                      <p className="message-order-id">Order #{msg.orderId}</p>
+                    )}
                     <p className="message-preview">
                       {msg.message.substring(0, 60)}
                       {msg.message.length > 60 && '...'}
@@ -187,11 +190,25 @@ const SupportMessages = () => {
                       <h2 className="chat-title">
                         {selectedConversation.inquiryType?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </h2>
+                      {selectedConversation.orderId && (
+                        <p className="chat-order-id">Order #{selectedConversation.orderId}</p>
+                      )}
                       <p className="chat-subtitle">
                         Started on {formatFullDate(selectedConversation.createdAt)}
                       </p>
                     </div>
-                    {getStatusBadge(selectedConversation.status)}
+                    <div className="chat-header-badges">
+                      {getStatusBadge(selectedConversation.status)}
+                      {selectedConversation.refundDecision && (
+                        <span className={`refund-decision-badge refund-decision-${selectedConversation.refundDecision.toLowerCase().replace(/\s+/g, '-')}`}>
+                          {selectedConversation.refundDecision === 'Approved'    && '✔ '}
+                          {selectedConversation.refundDecision === 'Rejected'    && '✕ '}
+                          {selectedConversation.refundDecision === 'In Progress' && '🔄 '}
+                          {selectedConversation.refundDecision === 'Completed'   && '✅ '}
+                          {selectedConversation.refundDecision}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="chat-messages">

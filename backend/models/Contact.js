@@ -61,6 +61,19 @@ const contactSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    // Refund/Return reply linkage
+    orderId: {
+      type: String,
+      default: null,
+    },
+    refundDecision: {
+      type: String,
+      default: null,
+    },
+    returnId: {
+      type: String,
+      default: null,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

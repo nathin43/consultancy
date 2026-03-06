@@ -34,7 +34,7 @@ API.interceptors.request.use((config) => {
   const userToken  = localStorage.getItem('token');
 
   // Admin-only routes — always use admin token
-  if (config.url.includes('/admin') || config.url.includes('/admin-management')) {
+  if (config.url.includes('/admin') || config.url.includes('/admin-management') || config.url.startsWith('/returns')) {
     token = adminToken;
   }
   // Customer-only routes — ONLY use user token, never fall back to adminToken

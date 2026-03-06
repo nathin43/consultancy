@@ -16,6 +16,7 @@ const AdminLayout = ({ children }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [pendingReturns, setPendingReturns] = useState(0);
 
   // Debug: Log admin data
   console.log('AdminLayout - Admin Data:', admin);
@@ -23,8 +24,12 @@ const AdminLayout = ({ children }) => {
   // Fetch unread messages count
   useEffect(() => {
     fetchUnreadCount();
+    fetchPendingReturns();
     // Refresh every 2 minutes
-    const interval = setInterval(fetchUnreadCount, 120000);
+    const interval = setInterval(() => {
+      fetchUnreadCount();
+      fetchPendingReturns();
+    }, 120000);
     return () => clearInterval(interval);
   }, []);
 
@@ -36,6 +41,17 @@ const AdminLayout = ({ children }) => {
       }
     } catch (error) {
       console.error('Failed to fetch unread messages count:', error);
+    }
+  };
+
+  const fetchPendingReturns = async () => {
+    try {
+      const { data } = await API.get('/returns/pending-count');
+      if (data.success) {
+        setPendingReturns(data.count);
+      }
+    } catch (error) {
+      // Non-critical: silently ignore
     }
   };
 
@@ -52,7 +68,8 @@ const AdminLayout = ({ children }) => {
     { path: '/admin/orders', icon: '🛒', label: 'Orders', tooltip: 'Orders' },
     { path: '/admin/customers', icon: '👥', label: 'Customers', tooltip: 'Customers' },
     { path: '/admin/reports', icon: '📄', label: 'Reports', tooltip: 'Reports' },
-    { path: '/admin/contact-messages', icon: '✉️', label: 'Contact Messages', tooltip: 'Contact Messages' }
+    { path: '/admin/contact-messages', icon: '✉️', label: 'Contact Messages', tooltip: 'Contact Messages' },
+    { path: '/admin/refund-requests', icon: '↩️', label: 'Refund Requests', tooltip: 'Refund Requests' }
   ];
 
   // Only add Admin Management menu for MAIN_ADMIN (role-based check)
@@ -93,6 +110,9 @@ const AdminLayout = ({ children }) => {
                   {!sidebarCollapsed && <span className="menu-label">{item.label}</span>}
                   {item.path === '/admin/contact-messages' && unreadMessages > 0 && (
                     <span className="menu-badge">{unreadMessages}</span>
+                  )}
+                  {item.path === '/admin/refund-requests' && pendingReturns > 0 && (
+                    <span className="menu-badge menu-badge-warning">{pendingReturns}</span>
                   )}
                   {location.pathname === item.path && <span className="active-indicator"></span>}
                 </Link>

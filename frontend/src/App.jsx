@@ -31,6 +31,7 @@ import AdminCustomers from './pages/admin/AdminCustomers';
 import AdminManagement from './pages/admin/AdminManagement';
 import AdminReports from './pages/admin/AdminReports';
 import AdminContactMessages from './pages/admin/AdminContactMessages';
+import AdminRefundRequests from './pages/admin/AdminRefundRequests';
 import UserReportDetail from './pages/admin/UserReportDetailNew';
 
 // Admin Report Pages
@@ -96,6 +97,7 @@ function App() {
         <Route path="/admin/reports/orders" element={<AdminRoute><OrderReport /></AdminRoute>} />
         <Route path="/admin/reports/user/:userId" element={<AdminRoute><UserReportDetail /></AdminRoute>} />
         <Route path="/admin/contact-messages" element={<AdminRoute><AdminContactMessages /></AdminRoute>} />
+        <Route path="/admin/refund-requests" element={<AdminRoute><AdminRefundRequests /></AdminRoute>} />
         <Route path="/admin/admin-management" element={<MainAdminRoute><AdminManagement /></MainAdminRoute>} />
       </Routes>
     </>

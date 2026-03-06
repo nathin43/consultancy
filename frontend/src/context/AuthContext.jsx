@@ -188,6 +188,9 @@ export const AuthProvider = ({ children }) => {
     // Prevent multiple logout attempts
     if (isLoggingOut) return;
 
+    // Save token BEFORE clearing so we can still call the logout endpoint
+    const tokenToInvalidate = localStorage.getItem('adminToken');
+
     // Clear admin state and storage IMMEDIATELY so UI updates right away
     localStorage.removeItem('adminToken');
     localStorage.removeItem('admin');
@@ -197,18 +200,27 @@ export const AuthProvider = ({ children }) => {
     setLogoutType('admin');
     setIsLoggingOut(true);
     
-    // Store callback to execute after animation
+    // Store both the callback and token for use after animation
     if (callback) {
       setLogoutCallback(() => callback);
     }
+    // Stash token on window temporarily so handleAdminLogoutComplete can use it
+    window.__adminLogoutToken = tokenToInvalidate;
   };
 
   // Handle admin logout completion after animation
   const handleAdminLogoutComplete = async () => {
     try {
-      // Call admin logout endpoint to clear server session
-      await API.post('/auth/admin/logout');
+      // Use the saved token (cleared from localStorage before animation started)
+      const token = window.__adminLogoutToken;
+      delete window.__adminLogoutToken;
+      if (token) {
+        await API.post('/auth/admin/logout', {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
     } catch (error) {
+      // Non-critical – local state is already cleared
       console.error('Error during admin logout:', error);
     } finally {
       // State and storage already cleared in adminLogout(), just finish up

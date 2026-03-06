@@ -1,4 +1,6 @@
 const Return = require("../models/Return");
+const Contact = require("../models/Contact");
+const User = require("../models/User");
 
 /**
  * Submit a new return request
@@ -32,9 +34,22 @@ exports.submitReturn = async (req, res) => {
 
     await newReturn.save();
 
+    // Emit real-time notification to all connected admins
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('newReturnRequest', {
+        returnId: newReturn.returnId,
+        name: newReturn.name,
+        orderId: newReturn.orderId,
+        category: newReturn.category,
+        reason: newReturn.reason,
+        createdAt: newReturn.createdAt
+      });
+    }
+
     res.status(201).json({
       success: true,
-      message: "Return request submitted successfully",
+      message: 'Return request submitted successfully',
       returnId: newReturn.returnId,
     });
   } catch (error) {
@@ -167,14 +182,113 @@ exports.deleteReturn = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Return request deleted successfully",
+      message: 'Return request deleted successfully',
     });
   } catch (error) {
-    console.error("Error deleting return:", error);
+    console.error('Error deleting return:', error);
     res.status(500).json({
       success: false,
-      message: "Error deleting return request",
+      message: 'Error deleting return request',
       error: error.message,
     });
+  }
+};
+
+/**
+ * Get count of pending/new return requests (Admin only)
+ * GET /api/returns/pending-count
+ */
+exports.getPendingCount = async (req, res) => {
+  try {
+    const count = await Return.countDocuments({ status: { $in: ['new', 'in-progress'] } });
+    res.status(200).json({ success: true, count });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching pending count', error: error.message });
+  }
+};
+
+/**
+ * Admin replies to a return request → saves a Contact/Support message for the customer
+ * POST /api/returns/:id/reply
+ */
+exports.replyToReturn = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { replyMessage, newStatus } = req.body;
+
+    if (!replyMessage || !replyMessage.trim()) {
+      return res.status(400).json({ success: false, message: 'Reply message is required.' });
+    }
+
+    // Fetch the return request
+    const returnRequest = await Return.findOne({ returnId: id });
+    if (!returnRequest) {
+      return res.status(404).json({ success: false, message: 'Return request not found.' });
+    }
+
+    // Update status if a new one was supplied
+    const statusToSet = newStatus || returnRequest.status;
+    returnRequest.status = statusToSet;
+    returnRequest.adminNotes = replyMessage;
+    returnRequest.updatedAt = Date.now();
+    await returnRequest.save();
+
+    // Resolve decision label
+    const statusLabel =
+      statusToSet === 'approved'    ? 'Approved'    :
+      statusToSet === 'rejected'    ? 'Rejected'    :
+      statusToSet === 'in-progress' ? 'In Progress' :
+      statusToSet === 'completed'   ? 'Completed'   : 'Under Review';
+
+    // Look up the registered user by email to get userId and verified phone
+    const registeredUser = await User.findOne({
+      email: returnRequest.email.toLowerCase(),
+    }).select('_id phone name');
+
+    const userId       = registeredUser?._id   || null;
+    const verifiedPhone = registeredUser?.phone || returnRequest.phone;
+
+    // Build the full message stored in the Support Messages thread
+    const subject = `Return Request ${statusLabel} — ${
+      returnRequest.orderId ? 'Order #' + returnRequest.orderId : returnRequest.category
+    }`;
+
+    const fullMessage =
+      `Hello ${returnRequest.name},\n\n` +
+      `Your refund request${returnRequest.orderId ? ' for Order #' + returnRequest.orderId : ''} has been reviewed.\n\n` +
+      `Status: ${statusLabel}\n\n` +
+      `Message from Support:\n${replyMessage}\n\n` +
+      `Thank you,\nMani Electricals Support Team`;
+
+    // --- Create a Contact/Support-Messages record ---
+    const contactRecord = await Contact.create({
+      name:           returnRequest.name,
+      email:          returnRequest.email,
+      phone:          verifiedPhone,
+      subject,
+      message:        fullMessage,
+      inquiryType:    'Return / Refund',
+      status:         'replied',
+      replyMessage,
+      repliedAt:      new Date(),
+      repliedBy:      req.admin?.name || 'Admin',
+      // Linkage fields (requirement §2)
+      userId,
+      orderId:        returnRequest.orderId || null,
+      refundDecision: statusLabel,
+      returnId:       returnRequest.returnId,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Reply sent and support message created.',
+      return: returnRequest,
+      contactId: contactRecord._id,
+      // Return the verified phone so the frontend can open the correct WhatsApp link
+      userPhone: verifiedPhone,
+    });
+  } catch (error) {
+    console.error('Error replying to return:', error);
+    res.status(500).json({ success: false, message: 'Error sending reply.', error: error.message });
   }
 };

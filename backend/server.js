@@ -39,6 +39,9 @@ const io = new Server(httpServer, {
   }
 });
 
+// Make io accessible to route controllers via req.app.get('io')
+app.set('io', io);
+
 // CORS Middleware
 app.use(
   cors({
