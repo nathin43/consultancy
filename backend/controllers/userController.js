@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const UserNotificationService = require('../services/userNotificationService');
 
 /**
  * Get user profile
@@ -108,6 +109,11 @@ exports.updateProfile = async (req, res) => {
     // Re-fetch from database to ensure data consistency
     const verifiedUser = await User.findById(userId);
 
+    // Notify user: profile updated (fire-and-forget)
+    UserNotificationService.notifyProfileUpdated(userId).catch((err) =>
+      console.error('Profile-updated notification error (non-fatal):', err.message)
+    );
+
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
@@ -161,6 +167,11 @@ exports.updatePassword = async (req, res) => {
 
     user.password = newPassword;
     await user.save();
+
+    // Notify user: password changed (fire-and-forget)
+    UserNotificationService.notifyPasswordChanged(req.user.id).catch((err) =>
+      console.error('Password-changed notification error (non-fatal):', err.message)
+    );
 
     res.status(200).json({
       success: true,

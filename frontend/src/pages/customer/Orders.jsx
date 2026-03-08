@@ -261,28 +261,47 @@ const Orders = () => {
       {cancelModal.open && (
         <div className="modal-overlay" onClick={closeCancelModal}>
           <div className="cancel-modal" onClick={(e) => e.stopPropagation()}>
+
+            {/* Header — amber warning theme */}
             <div className="modal-header">
-              <h3>Cancel Order</h3>
-              <button className="modal-close" onClick={closeCancelModal}>×</button>
+              <div className="modal-warning-icon-circle">
+                <span className="modal-warning-icon-symbol">⚠</span>
+              </div>
+              <div className="modal-header-text">
+                <h3 className="modal-header-title">Cancel Order</h3>
+                <p className="modal-header-subtitle">Order ID: #{cancelModal.orderNumber}</p>
+              </div>
+              <button className="modal-close" onClick={closeCancelModal} aria-label="Close">×</button>
             </div>
 
+            {/* Body */}
             <div className="modal-body">
-              <div className="warning-icon">⚠️</div>
-              <p className="modal-message">
-                Are you sure you want to cancel <strong>Order #{cancelModal.orderNumber}</strong>?
-              </p>
+              <p className="modal-message">Are you sure you want to cancel this order?</p>
+              <p className="modal-order-id">Order #{cancelModal.orderNumber}</p>
 
               <div className="cancellation-terms">
-                <h4>Cancellation Terms:</h4>
-                <ul>
-                  <li>Once cancelled, this action cannot be undone.</li>
-                  <li>Refunds will be processed within 5-7 business days.</li>
-                  <li>Refund will be credited to the original payment method.</li>
-                  <li>You will receive a confirmation email once the cancellation is processed.</li>
+                <ul className="cancellation-terms-list">
+                  <li>
+                    <span className="terms-check-icon">✔</span>
+                    Once cancelled, this action cannot be undone
+                  </li>
+                  <li>
+                    <span className="terms-check-icon">✔</span>
+                    Refund will be processed within 5–7 business days
+                  </li>
+                  <li>
+                    <span className="terms-check-icon">✔</span>
+                    Refund will go to the original payment method
+                  </li>
+                  <li>
+                    <span className="terms-check-icon">✔</span>
+                    Confirmation email will be sent
+                  </li>
                 </ul>
               </div>
             </div>
 
+            {/* Footer */}
             <div className="modal-footer">
               <button
                 className="btn-modal-secondary"
@@ -296,9 +315,17 @@ const Orders = () => {
                 onClick={handleCancelOrder}
                 disabled={cancelling}
               >
-                {cancelling ? 'Cancelling...' : 'Yes, Cancel Order'}
+                {cancelling ? (
+                  <>
+                    <span className="btn-spinner"></span>
+                    Cancelling...
+                  </>
+                ) : (
+                  'Cancel Order'
+                )}
               </button>
             </div>
+
           </div>
         </div>
       )}

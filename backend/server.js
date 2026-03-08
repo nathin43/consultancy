@@ -177,6 +177,7 @@ app.use('/api/admin/notifications', require('./routes/notificationRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes')); // Legacy reports (backward compatibility)
 app.use('/api/admin/reports', require('./routes/adminReportRoutes')); // Admin reports (new)
 app.use('/api/user/reports', require('./routes/userReportRoutes')); // User reports (new)
+app.use('/api/user/notifications', require('./routes/userNotificationRoutes')); // User notifications
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/refunds', require('./routes/refundRoutes'));
 app.use('/api/sales-reports', require('./routes/salesReportRoutes'));

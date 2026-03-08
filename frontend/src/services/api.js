@@ -125,6 +125,9 @@ API.interceptors.response.use(
           console.warn('Customer session expired or invalid, clearing token');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          // Notify AuthContext (React state) that the session is gone so
+          // isAuthenticated flips to false and polling stops immediately.
+          window.dispatchEvent(new CustomEvent('auth:user-session-expired'));
         }
       }
     }

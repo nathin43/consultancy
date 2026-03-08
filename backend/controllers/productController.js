@@ -1,5 +1,6 @@
 const Product = require('../models/Product');
 const path = require('path');
+const UserNotificationService = require('../services/userNotificationService');
 const {
   specificationSchemas,
   getSpecificationSchema,
@@ -407,6 +408,11 @@ exports.createProduct = async (req, res) => {
 
     // Process product to add full image URL
     const processedProduct = processProductImages(product);
+
+    // Broadcast new-product notification to all users (fire-and-forget)
+    UserNotificationService.broadcastNewProduct(product._id, product.name).catch((err) =>
+      console.error('broadcastNewProduct error (non-fatal):', err.message)
+    );
 
     res.status(201).json({
       success: true,

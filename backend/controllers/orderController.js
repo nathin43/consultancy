@@ -6,6 +6,7 @@ const Payment = require('../models/Payment');
 const User = require('../models/User');
 const Admin = require('../models/Admin');
 const NotificationService = require('../services/notificationService');
+const UserNotificationService = require('../services/userNotificationService');
 const { upsertUserReportSummary } = require('../services/userReportSummaryService');
 
 /**
@@ -182,6 +183,17 @@ exports.createOrder = async (req, res) => {
       }
     } catch (notifError) {
       console.error('New order notification error (non-fatal):', notifError.message);
+    }
+
+    // Notify user: order placed
+    try {
+      await UserNotificationService.notifyOrderPlaced(req.user.id, {
+        orderId: order._id,
+        orderNumber: order.orderNumber,
+        amount: totalPrice,
+      });
+    } catch (err) {
+      console.error('User order-placed notification error (non-fatal):', err.message);
     }
 
     res.status(201).json({
@@ -402,6 +414,20 @@ exports.updateOrderStatus = async (req, res) => {
       console.error('Error syncing user report summary after status update:', summaryError.message);
     }
 
+    // Notify user of order status change
+    try {
+      const orderData = { orderId: order._id, orderNumber: order.orderNumber };
+      if (orderStatus === 'confirmed' || orderStatus === 'processing') {
+        await UserNotificationService.notifyOrderConfirmed(order.user.toString(), orderData);
+      } else if (orderStatus === 'shipped') {
+        await UserNotificationService.notifyOrderShipped(order.user.toString(), orderData);
+      } else if (orderStatus === 'delivered') {
+        await UserNotificationService.notifyOrderDelivered(order.user.toString(), orderData);
+      }
+    } catch (err) {
+      console.error('User order-status notification error (non-fatal):', err.message);
+    }
+
     // Log the result
     console.log(`Order ${orderId} updated successfully. New status: ${order.orderStatus}, Amount: ₹${order.totalAmount}`);
 
@@ -475,6 +501,16 @@ exports.cancelOrder = async (req, res) => {
       }
     } catch (notifError) {
       console.error('Cancel order notification error (non-fatal):', notifError.message);
+    }
+
+    // Notify user: order cancelled
+    try {
+      await UserNotificationService.notifyOrderCancelled(order.user.toString(), {
+        orderId: order._id,
+        orderNumber: order.orderNumber,
+      });
+    } catch (err) {
+      console.error('User cancel notification error (non-fatal):', err.message);
     }
 
     res.status(200).json({

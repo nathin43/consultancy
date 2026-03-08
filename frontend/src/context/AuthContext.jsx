@@ -28,6 +28,17 @@ export const AuthProvider = ({ children }) => {
   const [logoutCallback, setLogoutCallback] = useState(null);
   const [logoutType, setLogoutType] = useState(null); // 'user' | 'admin'
 
+  // React to token-cleared events dispatched by the API response interceptor.
+  // When a 401 clears localStorage.token outside of React, this keeps
+  // isAuthenticated in sync so polling (bell, etc.) stops immediately.
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setUser(null);
+    };
+    window.addEventListener('auth:user-session-expired', handleSessionExpired);
+    return () => window.removeEventListener('auth:user-session-expired', handleSessionExpired);
+  }, []);
+
   // Restore session from localStorage on component mount
   useEffect(() => {
     const restoreSession = async () => {

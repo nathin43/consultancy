@@ -204,6 +204,63 @@ exports.getDashboard = async (req, res) => {
 };
 
 /**
+ * Get top customers by total products purchased
+ * @route GET /api/admin/customers/top-buyers
+ * @access Private/Admin
+ */
+exports.getTopBuyers = async (req, res) => {
+  try {
+    const topBuyers = await Order.aggregate([
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$user',
+          totalProducts: { $sum: '$items.quantity' },
+          productNames: { $addToSet: '$items.name' },
+        },
+      },
+      { $sort: { totalProducts: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'userInfo',
+        },
+      },
+      { $unwind: '$userInfo' },
+      {
+        $project: {
+          _id: 1,
+          name: '$userInfo.name',
+          email: '$userInfo.email',
+          totalProducts: 1,
+          productNames: 1,
+        },
+      },
+    ]);
+
+    const globalStats = await Order.aggregate([
+      { $unwind: '$items' },
+      { $group: { _id: '$user', total: { $sum: '$items.quantity' } } },
+      { $group: { _id: null, customersWithOrders: { $sum: 1 }, totalProducts: { $sum: '$total' } } },
+    ]);
+    const gs = globalStats[0] || { customersWithOrders: 0, totalProducts: 0 };
+    const insights = {
+      customersWithOrders: gs.customersWithOrders,
+      avgProducts: gs.customersWithOrders > 0
+        ? parseFloat((gs.totalProducts / gs.customersWithOrders).toFixed(1))
+        : 0,
+    };
+
+    res.status(200).json({ success: true, topBuyers, insights });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
  * Get all customers
  * @route GET /api/admin/customers
  * @access Private/Admin

@@ -30,8 +30,8 @@ exports.googleAuth = async (req, res) => {
     const payload = ticket.getPayload();
     const { email, name, picture, sub: googleId } = payload;
 
-    // Check if user exists
-    let user = await User.findOne({ email });
+    // Check if user exists (Google emails come normalized but ensure lowercase match)
+    let user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
       // Create new user if doesn't exist

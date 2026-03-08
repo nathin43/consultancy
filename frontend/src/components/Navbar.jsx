@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import { useToast } from '../hooks/useToast';
 import LightbulbIcon from './LightbulbIcon';
+import UserNotificationBell from './UserNotificationBell';
 import './Navbar.css';
 
 /**
@@ -196,6 +197,9 @@ const Navbar = () => {
                 </div>
               )}
             </div>
+
+            {/* Notifications Bell (logged-in users only) */}
+            <UserNotificationBell />
 
             {/* Cart */}
             <Link to="/cart" className="cart-button">

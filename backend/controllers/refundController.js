@@ -2,6 +2,7 @@ const Refund = require('../models/Refund');
 const Order = require('../models/Order');
 const Payment = require('../models/Payment');
 const NotificationService = require('../services/notificationService');
+const UserNotificationService = require('../services/userNotificationService');
 const Admin = require('../models/Admin');
 
 /**
@@ -54,6 +55,17 @@ exports.createRefund = async (req, res) => {
       }
     } catch (e) {
       console.error('Refund notification error (non-fatal):', e.message);
+    }
+
+    // Notify user: refund request received
+    try {
+      await UserNotificationService.notifyRefundRequested(req.user.id, {
+        orderId: order._id,
+        orderNumber: order.orderNumber,
+        amount: order.totalAmount,
+      });
+    } catch (err) {
+      console.error('User refund-requested notification error (non-fatal):', err.message);
     }
 
     res.status(201).json({ success: true, message: 'Refund request submitted', refund });
@@ -131,6 +143,23 @@ exports.updateRefundStatus = async (req, res) => {
         { order: refund.order },
         { paymentStatus: 'refunded' }
       );
+    }
+
+    // Notify user of refund status change
+    try {
+      const order = await Order.findById(refund.order).select('orderNumber totalAmount').lean();
+      const orderData = {
+        orderId: refund.order,
+        orderNumber: order?.orderNumber || '',
+        amount: order?.totalAmount || refund.amount,
+      };
+      if (refundStatus === 'approved') {
+        await UserNotificationService.notifyRefundApproved(refund.user.toString(), orderData);
+      } else if (refundStatus === 'completed') {
+        await UserNotificationService.notifyRefundCompleted(refund.user.toString(), orderData);
+      }
+    } catch (err) {
+      console.error('User refund-status notification error (non-fatal):', err.message);
     }
 
     res.status(200).json({ success: true, message: 'Refund status updated', refund });

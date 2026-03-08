@@ -5,6 +5,7 @@ const {
   getCustomers,
   getCustomer,
   deleteCustomer,
+  getTopBuyers,
   checkDataConsistency,
   verifyUserProfile,
   getUserAuditLog
@@ -20,6 +21,7 @@ router.use(adminProtect); // Apply admin authentication to all routes
 
 router.get('/dashboard', getDashboard);
 router.get('/customers', getCustomers);
+router.get('/customers/top-buyers', getTopBuyers);
 router.get('/customers/:id', getCustomer);
 router.delete('/customers/:id', deleteCustomer);
 
