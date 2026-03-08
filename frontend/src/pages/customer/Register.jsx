@@ -7,6 +7,7 @@ import Footer from '../../components/Footer';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import './Login.css';
+import './Register.css';
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -288,12 +289,35 @@ const Register = () => {
 
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
+      {/* Full-Screen Background Animation Layer */}
+      <div className="auth-fullscreen-bg">
+        {/* Animated Background Elements */}
+        <div className="auth-bg-effects">
+          {/* Floating Blobs */}
+          <div className="auth-blob auth-blob-1"></div>
+          <div className="auth-blob auth-blob-2"></div>
+          <div className="auth-blob auth-blob-3"></div>
+          
+          {/* Floating Bubbles */}
+          <div className="auth-bubbles">
+            {[...Array(35)].map((_, i) => (
+              <div key={i} className={`auth-bubble auth-bubble-${i + 1}`}></div>
+            ))}
+          </div>
+          
+          {/* Animated Wave Effect */}
+          <div className="auth-wave auth-wave-1"></div>
+          <div className="auth-wave auth-wave-2"></div>
+          <div className="auth-wave auth-wave-3"></div>
+          
+          {/* Mesh Grid */}
+          <div className="auth-mesh-grid"></div>
+        </div>
+      </div>
+
       <Navbar />
 
       <div className="auth-page">
-        <div className="auth-blob auth-blob-1"></div>
-        <div className="auth-blob auth-blob-2"></div>
-        <div className="auth-blob auth-blob-3"></div>
 
         <motion.div
           className="auth-card auth-card--register"
@@ -418,7 +442,7 @@ const Register = () => {
             </div>
 
             {/* Row 3: Confirm Password — full width */}
-            <div className="auth-field">
+            <div className="auth-field auth-field--full">
               <label>Confirm Password</label>
               <div className="input-icon-wrapper has-eye">
                 <span className="input-icon">

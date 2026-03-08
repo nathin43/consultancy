@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useContext, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import { useToast } from '../hooks/useToast';
@@ -144,58 +145,97 @@ const Navbar = () => {
                 </svg>
               </button>
 
-              {dropdownOpen && (
-                <div className="user-dropdown active">
+              <AnimatePresence>
+                {dropdownOpen && (
+                  <motion.div
+                    className="user-dropdown"
+                    initial={{ opacity: 0, y: -10, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.97 }}
+                    transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                  >
+                  {/* Non-Authenticated User Welcome Card */}
                   {!isAuthenticated && (
-                    <>
-                      <div className="dropdown-header">
-                        <Link to="/login" className="dropdown-signin-btn" onClick={() => setDropdownOpen(false)}>
-                          Sign in to your account
-                        </Link>
-                        <div className="dropdown-signup-text">
-                          New customer? <Link to="/register" onClick={() => setDropdownOpen(false)}>Start here.</Link>
-                        </div>
+                    <div className="dropdown-welcome-card">
+                      <div className="modal-header-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
                       </div>
-                      <div className="dropdown-divider"></div>
-                    </>
-                  )}
-                  
-                  {isAuthenticated && (
-                    <>
-                      <div className="dropdown-section">
-                        <h3 className="dropdown-title">Your Account</h3>
-                        <Link to="/profile" className="dropdown-link" onClick={() => setDropdownOpen(false)}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <h3 className="welcome-title">Welcome to Mani Electrical</h3>
+                      <p className="welcome-subtitle">Sign in to manage your account and orders</p>
+                      <div className="welcome-buttons">
+                        <Link to="/login" className="welcome-btn primary" onClick={() => setDropdownOpen(false)}>
+                          <svg className="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
                           </svg>
-                          Profile Settings
+                          Sign In
                         </Link>
-                        <Link to="/orders" className="dropdown-link" onClick={() => setDropdownOpen(false)}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M9 11l3 3L22 4"></path>
-                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                        <Link to="/register" className="welcome-btn secondary" onClick={() => setDropdownOpen(false)}>
+                          <svg className="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="8.5" cy="7" r="4"></circle>
+                            <line x1="20" y1="8" x2="20" y2="14"></line>
+                            <line x1="23" y1="11" x2="17" y2="11"></line>
                           </svg>
-                          Your Orders
-                        </Link>
-                        <Link to="/support-messages" className="dropdown-link" onClick={() => setDropdownOpen(false)}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path>
-                          </svg>
-                          Support Messages
+                          Create Account
                         </Link>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Authenticated User Info */}
+                  {isAuthenticated && (
+                    <div className="dropdown-user-info">
+                      <div className="user-avatar-large">
+                        {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                      <div className="user-details">
+                        <h4 className="user-name-display">{user?.name || 'User'}</h4>
+                        <p className="user-email-display">{user?.email || ''}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="dropdown-divider"></div>
+
+                  {/* Menu Options */}
+                  {isAuthenticated && (
+                    <div className="dropdown-menu-section">
+                      <motion.div whileHover={{ x: 4, scale: 1.03 }} transition={{ duration: 0.15 }}>
+                        <Link to="/profile" className="dropdown-menu-item" onClick={() => setDropdownOpen(false)}>
+                          <span className="menu-icon">👤</span>
+                          <span className="menu-text">My Profile</span>
+                        </Link>
+                      </motion.div>
+                      <motion.div whileHover={{ x: 4, scale: 1.03 }} transition={{ duration: 0.15 }}>
+                        <Link to="/orders" className="dropdown-menu-item" onClick={() => setDropdownOpen(false)}>
+                          <span className="menu-icon">📦</span>
+                          <span className="menu-text">My Orders</span>
+                        </Link>
+                      </motion.div>
+                    </div>
+                  )}
+
+                  {/* Sign Out */}
+                  {isAuthenticated && (
+                    <>
                       <div className="dropdown-divider"></div>
-                      <button onClick={handleLogout} className="dropdown-link logout-link">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M10 3H6a2 2 0 00-2 2v14a2 2 0 002 2h4m7-4l4-4m0 0l-4-4m4 4H9"></path>
-                        </svg>
-                        Sign Out
-                      </button>
+                      <div className="dropdown-menu-section dropdown-signout-section">
+                        <motion.div whileHover={{ x: 4, scale: 1.03 }} transition={{ duration: 0.15 }}>
+                          <button onClick={handleLogout} className="dropdown-menu-item logout-item">
+                            <span className="menu-icon">🚪</span>
+                            <span className="menu-text">Sign Out</span>
+                          </button>
+                        </motion.div>
+                      </div>
                     </>
                   )}
-                </div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Notifications Bell (logged-in users only) */}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useContext } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import userNotificationApi from '../services/userNotificationApi';
@@ -98,6 +99,20 @@ const TYPE_CONFIG = {
       </svg>
     ),
   },
+  shipping: {
+    label: 'Shipping',
+    color: '#0891b2',
+    bg: '#cffafe',
+    emoji: '🚚',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="1" y="3" width="15" height="13" />
+        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+        <circle cx="5.5" cy="18.5" r="2.5" />
+        <circle cx="18.5" cy="18.5" r="2.5" />
+      </svg>
+    ),
+  },
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -132,6 +147,10 @@ export default function UserNotificationBell() {
 
   const dropdownRef = useRef(null);
   const pollRef = useRef(null);
+  const modalRef = useRef(null);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalFilter, setModalFilter] = useState('all');
 
   // ── Fetch full list (used when dropdown opens) ────────────────────────────
   const fetchNotifications = useCallback(async (pageNum = 1, append = false) => {
@@ -175,6 +194,20 @@ export default function UserNotificationBell() {
     pollRef.current = setInterval(pollUnreadCount, POLL_INTERVAL);
     return () => clearInterval(pollRef.current);
   }, [isAuthenticated, pollUnreadCount]);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (modalOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, [modalOpen]);
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') setModalOpen(false); };
+    if (modalOpen) document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [modalOpen]);
 
   // Load full list when dropdown opens
   useEffect(() => {
@@ -259,6 +292,18 @@ export default function UserNotificationBell() {
   if (!isAuthenticated) return null;
 
   const cfg = (type) => TYPE_CONFIG[type] || TYPE_CONFIG.account;
+
+  const MODAL_CATEGORIES = [
+    { key: 'all',      label: 'All' },
+    { key: 'order',    label: 'Orders' },
+    { key: 'shipping', label: 'Shipping' },
+    { key: 'offer',    label: 'Offers' },
+    { key: 'product',  label: 'Product Updates' },
+  ];
+
+  const filteredNotifs = modalFilter === 'all'
+    ? notifications
+    : notifications.filter((n) => n.type === modalFilter);
 
   return (
     <div className="notif-bell-wrapper" ref={dropdownRef}>
@@ -427,7 +472,7 @@ export default function UserNotificationBell() {
           <div className="notif-footer">
             <button
               className="notif-footer-btn"
-              onClick={() => { setOpen(false); navigate('/orders'); }}
+              onClick={() => { setOpen(false); setModalFilter('all'); setModalOpen(true); }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -438,6 +483,206 @@ export default function UserNotificationBell() {
           </div>
 
         </div>
+      )}
+
+      {/* ── Full Notifications Modal ──────────────────────────────────────── */}
+      {modalOpen && createPortal(
+        <div
+          className="notif-modal-overlay"
+          onClick={(e) => { if (!modalRef.current?.contains(e.target)) setModalOpen(false); }}
+          aria-modal="true"
+          role="presentation"
+        >
+          <div className="notif-modal" ref={modalRef} role="dialog" aria-label="All Notifications">
+
+            {/* Modal Header */}
+            <div className="notif-modal-header">
+              <div className="notif-modal-header-left">
+                <div className="notif-modal-header-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="notif-modal-title">All Notifications</h2>
+                  <p className="notif-modal-subtitle">
+                    {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
+                  </p>
+                </div>
+              </div>
+              <div className="notif-modal-header-btns">
+                {unreadCount > 0 && (
+                  <button
+                    className="notif-modal-btn notif-modal-btn--mark"
+                    onClick={handleMarkAllAsRead}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    Mark all read
+                  </button>
+                )}
+                <button
+                  className="notif-modal-btn notif-modal-btn--clear"
+                  onClick={handleClearAll}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                  </svg>
+                  Clear all
+                </button>
+                <button
+                  className="notif-modal-close"
+                  onClick={() => setModalOpen(false)}
+                  aria-label="Close notifications"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Category Filter Tabs */}
+            <div className="notif-modal-tabs" role="tablist">
+              {MODAL_CATEGORIES.map(({ key, label }) => {
+                const count = key === 'all'
+                  ? notifications.length
+                  : notifications.filter((n) => n.type === key).length;
+                return (
+                  <button
+                    key={key}
+                    role="tab"
+                    aria-selected={modalFilter === key}
+                    className={`notif-modal-tab ${modalFilter === key ? 'notif-modal-tab--active' : ''}`}
+                    onClick={() => setModalFilter(key)}
+                  >
+                    {label}
+                    {count > 0 && (
+                      <span className="notif-modal-tab-badge">{count}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Modal Body */}
+            <div className="notif-modal-body">
+              {loading ? (
+                <div className="notif-state-box">
+                  <div className="notif-spinner" />
+                  <p className="notif-state-primary">Loading notifications…</p>
+                </div>
+              ) : filteredNotifs.length === 0 ? (
+                <div className="notif-state-box">
+                  <div className="notif-empty-illo">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#c7d2fe" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                  </div>
+                  <p className="notif-state-primary">No notifications</p>
+                  <p className="notif-state-secondary">
+                    {modalFilter === 'all' ? "We'll notify you when something arrives" : `No ${MODAL_CATEGORIES.find(c => c.key === modalFilter)?.label ?? ''} notifications`}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {filteredNotifs.map((notif) => {
+                    const { icon, color, bg, label, emoji } = cfg(notif.type);
+                    return (
+                      <div
+                        key={notif._id}
+                        className={`notif-modal-item ${!notif.isRead ? 'notif-modal-item--unread' : ''}`}
+                        onClick={() => { handleNotificationClick(notif); setModalOpen(false); }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') { handleNotificationClick(notif); setModalOpen(false); }
+                        }}
+                      >
+                        {/* Unread left accent bar */}
+                        {!notif.isRead && <span className="notif-item-bar" />}
+
+                        {/* Icon bubble */}
+                        <div className="notif-item-bubble" style={{ background: bg, color }}>
+                          {icon}
+                        </div>
+
+                        {/* Content */}
+                        <div className="notif-item-body">
+                          <div className="notif-item-top">
+                            <span className="notif-item-type-chip" style={{ color, background: bg }}>
+                              {emoji} {label}
+                            </span>
+                            {!notif.isRead && (
+                              <span className="notif-modal-unread-dot" title="Unread" />
+                            )}
+                            <span className="notif-item-time">{timeAgo(notif.createdAt)}</span>
+                          </div>
+                          <p className="notif-item-title">{notif.title}</p>
+                          <p className="notif-modal-item-msg">{notif.message}</p>
+                        </div>
+
+                        {/* Controls */}
+                        <div className="notif-item-controls">
+                          {!notif.isRead && (
+                            <button
+                              className="notif-unread-dot"
+                              onClick={(e) => handleMarkAsRead(e, notif._id)}
+                              title="Mark as read"
+                              aria-label="Mark as read"
+                            />
+                          )}
+                          <button
+                            className="notif-dismiss-btn"
+                            onClick={(e) => handleDeleteOne(e, notif._id)}
+                            title="Dismiss"
+                            aria-label="Dismiss notification"
+                          >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                              <line x1="18" y1="6" x2="6" y2="18" />
+                              <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {hasMore && (
+                    <button
+                      className="notif-load-more"
+                      onClick={handleLoadMore}
+                      disabled={loadingMore}
+                    >
+                      {loadingMore ? 'Loading…' : 'Show older notifications'}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="notif-modal-footer">
+              <button
+                className="notif-modal-footer-btn"
+                onClick={() => setModalOpen(false)}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                View All Notifications
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
