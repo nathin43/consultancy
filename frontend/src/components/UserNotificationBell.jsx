@@ -195,6 +195,16 @@ export default function UserNotificationBell() {
     return () => clearInterval(pollRef.current);
   }, [isAuthenticated, pollUnreadCount]);
 
+  // Refresh immediately when an order is placed anywhere in the app
+  useEffect(() => {
+    const handler = () => {
+      pollUnreadCount();
+      if (open) fetchNotifications(1, false);
+    };
+    window.addEventListener('order-placed', handler);
+    return () => window.removeEventListener('order-placed', handler);
+  }, [pollUnreadCount, fetchNotifications, open]);
+
   // Lock body scroll when modal is open
   useEffect(() => {
     if (modalOpen) document.body.style.overflow = 'hidden';

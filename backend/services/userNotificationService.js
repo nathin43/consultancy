@@ -69,6 +69,16 @@ class UserNotificationService {
     });
   }
 
+  static async notifyOrderRejected(userId, { orderId, orderNumber }) {
+    return this.create(userId, {
+      type: 'order',
+      title: 'Order Rejected',
+      message: `Your order #${orderNumber} has been rejected by our team. Please contact support for details.`,
+      relatedOrderId: orderId,
+      actionUrl: `/orders`,
+    });
+  }
+
   // ─── Refund Notifications ──────────────────────────────────────────────────
 
   static async notifyRefundRequested(userId, { orderId, orderNumber, amount }) {

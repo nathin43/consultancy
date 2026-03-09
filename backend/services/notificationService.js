@@ -86,10 +86,11 @@ class NotificationService {
    * Create new order notification
    */
   static async notifyNewOrder(adminId, orderData) {
+    const itemLabel = orderData.itemCount ? ` | Items: ${orderData.itemCount}` : '';
     return this.createNotification(adminId, {
       type: 'NEW_ORDER',
       title: 'New Order Received',
-      description: `Order #${orderData.orderNumber} for ₹${orderData.amount} from ${orderData.customerName}`,
+      description: `Order #${orderData.orderNumber} for ₹${orderData.amount} from ${orderData.customerName}${itemLabel}`,
       icon: 'shopping-cart',
       color: 'blue',
       actionUrl: `/admin/orders/${orderData.orderId}`,
@@ -99,6 +100,7 @@ class NotificationService {
         customerId: orderData.customerId,
         customerName: orderData.customerName,
         amount: orderData.amount,
+        itemCount: orderData.itemCount,
       },
     });
   }

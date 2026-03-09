@@ -22,6 +22,7 @@ const orderSchema = new mongoose.Schema({
     },
     name: String,
     image: String,
+    category: String,
     quantity: {
       type: Number,
       required: true,
@@ -105,6 +106,18 @@ const orderSchema = new mongoose.Schema({
     enum: ['pending', 'paid', 'failed'],
     default: 'pending'
   },
+  subtotal: {
+    type: Number,
+    default: 0
+  },
+  gst: {
+    type: Number,
+    default: 0
+  },
+  shipping: {
+    type: Number,
+    default: 0
+  },
   totalAmount: {
     type: Number,
     required: true,
@@ -112,7 +125,7 @@ const orderSchema = new mongoose.Schema({
   },
   orderStatus: {
     type: String,
-    enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'],
+    enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'],
     default: 'pending'
   },
   deliveredAt: Date,

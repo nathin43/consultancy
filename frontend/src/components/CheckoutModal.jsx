@@ -20,7 +20,7 @@ const loadRazorpayScript = () =>
     document.body.appendChild(script);
   });
 
-const CheckoutModal = ({ isOpen, onClose, selectedItems }) => {
+const CheckoutModal = ({ isOpen, onClose, selectedItems, subtotal = 0, gst = 0, shipping = 0, total = 0 }) => {
   const navigate = useNavigate();
   const { fetchCart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
@@ -57,10 +57,7 @@ const CheckoutModal = ({ isOpen, onClose, selectedItems }) => {
 
   if (!isOpen) return null;
 
-  const subtotal = selectedItems.reduce((total, item) => {
-    const itemPrice = item.price || item.product.price || 0;
-    return total + (itemPrice * item.quantity);
-  }, 0);
+  const fmt = (n) => Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -154,11 +151,15 @@ const CheckoutModal = ({ isOpen, onClose, selectedItems }) => {
               razorpaySignature: response.razorpay_signature,
               items: data.validatedItems,
               shippingAddress: data.shippingAddress,
+              subtotal: data.subtotal,
+              gst: data.gst,
+              shipping: data.shipping,
               totalAmount: data.totalAmount
             });
 
             if (verifyRes.data.success) {
               success('Payment successful! Order placed. 🎉');
+              window.dispatchEvent(new CustomEvent('order-placed'));
               await fetchCart();
               onClose();
               setTimeout(() => navigate('/orders'), 1500);
@@ -286,6 +287,7 @@ const CheckoutModal = ({ isOpen, onClose, selectedItems }) => {
 
         if (data.success) {
           success('Order placed successfully! 🎉');
+          window.dispatchEvent(new CustomEvent('order-placed'));
           await fetchCart();
           onClose();
           setTimeout(() => navigate('/orders'), 1500);
@@ -489,17 +491,21 @@ const CheckoutModal = ({ isOpen, onClose, selectedItems }) => {
 
                 <div className="checkout-totals">
                   <div className="checkout-total-row">
-                    <span>Subtotal ({selectedItems.length} items)</span>
-                    <span>₹{subtotal.toLocaleString()}</span>
+                    <span>Subtotal ({selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''})</span>
+                    <span>₹{fmt(subtotal)}</span>
+                  </div>
+                  <div className="checkout-total-row">
+                    <span>GST</span>
+                    <span>₹{fmt(gst)}</span>
                   </div>
                   <div className="checkout-total-row">
                     <span>Shipping</span>
-                    <span className="free-text">FREE</span>
+                    <span>₹{fmt(shipping)}</span>
                   </div>
                   <div className="checkout-divider"></div>
                   <div className="checkout-total-row total">
                     <span>Total</span>
-                    <span>₹{subtotal.toLocaleString()}</span>
+                    <span>₹{fmt(total)}</span>
                   </div>
                 </div>
               </div>

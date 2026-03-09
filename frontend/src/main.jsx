@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom/client'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import './index.css'
-import { AuthProvider } from './context/AuthContext.jsx'
-import { CartProvider } from './context/CartContext.jsx'
+import { AuthProvider } from './context/AuthProvider.jsx'
+import { CartProvider } from './context/CartProvider.jsx'
 import { ToastProvider } from './context/ToastContext.jsx'
 
 /**

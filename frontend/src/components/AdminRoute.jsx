@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { NotificationProvider } from '../context/NotificationContext';
+import { NotificationProvider } from '../context/NotificationProvider';
 
 /**
  * Admin Route Component

@@ -295,7 +295,7 @@ const Orders = () => {
                   </li>
                   <li>
                     <span className="terms-check-icon">✔</span>
-                    Confirmation email will be sent
+                    WhatsApp confirmation message will be sent to your registered phone number
                   </li>
                 </ul>
               </div>

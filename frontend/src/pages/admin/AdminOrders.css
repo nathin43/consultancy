@@ -836,6 +836,7 @@
 .ao-badge-shipped   { background: #a5f3fc;              color: #0c4a6e; }
 .ao-badge-delivered { background: var(--ao-green-bg);  color: #166534; }
 .ao-badge-cancelled { background: var(--ao-red-bg);    color: #991b1b; }
+.ao-badge-refunded  { background: #f3e8ff;              color: #6b21a8; }
 
 .ao-pay-paid    { background: var(--ao-green-bg); color: #166534; }
 .ao-pay-pending { background: var(--ao-yellow-bg); color: #92400e; }
@@ -1001,16 +1002,35 @@
 
 .ao-items-total {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 4px;
   padding: 12px 14px;
   border-radius: 8px;
   background: var(--ao-primary-lt);
   border: 1.5px solid var(--ao-primary-md);
   margin-top: 4px;
   font-size: 14px;
-  font-weight: 600;
   color: var(--ao-text-muted);
+}
+
+.ao-items-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ao-text-muted);
+  padding: 2px 0;
+}
+
+.ao-items-total > span {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  padding-top: 6px;
+  border-top: 1px solid var(--ao-primary-md);
+  margin-top: 4px;
 }
 
 .ao-items-total-price {

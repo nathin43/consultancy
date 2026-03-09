@@ -6,7 +6,7 @@
 import React from 'react';
 import { Menu, LogOut, Settings } from 'lucide-react';
 import NotificationBell from './NotificationBell';
-import { NotificationProvider } from '../../context/NotificationContext';
+import { NotificationProvider } from '../../context/NotificationProvider';
 import useNotificationSocket from '../../hooks/useNotificationSocket';
 import './AdminHeader.css';
 

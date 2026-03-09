@@ -41,11 +41,14 @@ API.interceptors.request.use((config) => {
   // This prevents an admin's token being sent to customer APIs,
   // which causes "User not found" because the admin ID doesn't exist in Users collection.
   else if (
-    config.url.includes('/razorpay')          ||
-    config.url.includes('/cart')              ||
-    config.url.includes('/orders/myorders')   ||  // customer: view own orders
+    config.url.includes('/razorpay')             ||
+    config.url.includes('/cart')                 ||
+    config.url.includes('/orders/myorders')      ||  // customer: view own orders
     config.url.includes('/orders/') && config.url.includes('/cancel') || // customer: cancel own order
-    config.url.includes('/contact/my-messages')
+    config.url.includes('/contact/my-messages')  ||
+    config.url.includes('/user/notifications')   ||  // customer: notification bell
+    config.url.includes('/users/profile')        ||  // customer: profile page
+    config.url.includes('/auth/logout')              // customer logout (token cleared before call)
   ) {
     token = userToken; // intentionally no adminToken fallback
   }
@@ -65,10 +68,13 @@ API.interceptors.request.use((config) => {
   // Generic fallback ONLY for non-customer-critical routes
   // (customer-only routes already returned above without this fallback)
   const isCustomerOnlyRoute =
-    config.url.includes('/razorpay') ||
-    config.url.includes('/cart')     ||
-    config.url.includes('/orders/myorders') ||
-    (config.url.includes('/orders/') && config.url.includes('/cancel'));
+    config.url.includes('/razorpay')           ||
+    config.url.includes('/cart')               ||
+    config.url.includes('/orders/myorders')    ||
+    (config.url.includes('/orders/') && config.url.includes('/cancel')) ||
+    config.url.includes('/user/notifications') ||
+    config.url.includes('/users/profile')      ||
+    config.url.includes('/auth/logout');
   if (!token && !isCustomerOnlyRoute) {
     token = adminToken || userToken;
   }
@@ -117,16 +123,18 @@ API.interceptors.response.use(
           // Don't redirect here - let components handle it to avoid loops
         }
       }
-      // Customer routes — 401 means token missing/expired; clear it so the
-      // login guard redirects the user to sign in again
+      // Customer routes — 401 means token is expired/invalid; clear it so the
+      // login guard redirects the user to sign in again.
+      // Guard: only clear the user token if the request actually used the user token
+      // (prevents clearing a valid user token when an admin token was mistakenly sent).
       else if (status === 401) {
+        const sentToken = error.config?.headers?.Authorization?.replace('Bearer ', '');
         const userToken = localStorage.getItem('token');
-        if (userToken) {
+        // Only clear if the token that was sent matches the stored user token
+        if (userToken && sentToken === userToken) {
           console.warn('Customer session expired or invalid, clearing token');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          // Notify AuthContext (React state) that the session is gone so
-          // isAuthenticated flips to false and polling stops immediately.
           window.dispatchEvent(new CustomEvent('auth:user-session-expired'));
         }
       }

@@ -81,9 +81,11 @@ const AdminOrders = () => {
     const map = {
       pending: 'pending',
       confirmed: 'confirmed',
+      processing: 'processing',
       shipped: 'shipped',
       delivered: 'delivered',
       cancelled: 'cancelled',
+      refunded: 'refunded',
     };
     return map[status] || 'pending';
   };
@@ -315,9 +317,11 @@ const AdminOrders = () => {
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
                 <option value="confirmed">Confirmed</option>
+                <option value="processing">Processing</option>
                 <option value="shipped">Shipped</option>
                 <option value="delivered">Delivered</option>
                 <option value="cancelled">Cancelled</option>
+                <option value="refunded">Refunded</option>
               </select>
             </div>
 
@@ -513,7 +517,7 @@ const AdminOrders = () => {
                     {expandedOrders[order._id] ? 'Hide Details' : 'View Order'}
                   </button>
 
-                  {order.orderStatus !== 'cancelled' && order.orderStatus !== 'delivered' && (
+                  {order.orderStatus !== 'cancelled' && order.orderStatus !== 'delivered' && order.orderStatus !== 'refunded' && (
                     <div className="ao-status-select-wrap">
                       <span className="ao-action-label">✏ Status:</span>
                       <select
@@ -524,6 +528,7 @@ const AdminOrders = () => {
                       >
                         <option value="pending">Pending</option>
                         <option value="confirmed">Confirmed</option>
+                        <option value="processing">Processing</option>
                         <option value="shipped">Shipped</option>
                         <option value="delivered">Delivered</option>
                         <option value="cancelled">Cancelled</option>
@@ -631,6 +636,22 @@ const AdminOrders = () => {
                         ))}
                       </div>
                       <div className="ao-items-total">
+                        {order.subtotal > 0 && (
+                          <>
+                            <div className="ao-items-total-row">
+                              <span>Subtotal</span>
+                              <span>₹{(order.subtotal || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="ao-items-total-row">
+                              <span>GST</span>
+                              <span>₹{(order.gst || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="ao-items-total-row">
+                              <span>Shipping</span>
+                              <span>₹{(order.shipping || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                            </div>
+                          </>
+                        )}
                         <span>Total Amount</span>
                         <span className="ao-items-total-price">
                           ₹{(order.totalAmount || order.totalPrice || 0).toLocaleString()}

@@ -3,7 +3,12 @@ const getRazorpay = require('../config/razorpay');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Report = require('../models/Report');
+const Admin = require('../models/Admin');
+const User = require('../models/User');
+const NotificationService = require('../services/notificationService');
+const UserNotificationService = require('../services/userNotificationService');
 const { upsertUserReportSummary } = require('../services/userReportSummaryService');
+const { calculateOrderTotals } = require('../utils/pricingUtils');
 
 /**
  * Create a Razorpay order (does NOT save order to DB yet)
@@ -42,15 +47,20 @@ exports.createRazorpayOrder = async (req, res) => {
         product: product._id,
         name: product.name,
         image: product.image,
+        category: product.category || 'Other',
         quantity: item.quantity,
         price: product.price
       });
     }
 
-    // Razorpay amount is in paise (INR × 100)
+    // Compute GST + shipping using category-based pricing rules
+    const pricing = calculateOrderTotals(validatedItems);
+    const { subtotal, gst, shipping, total } = pricing;
+
+    // Razorpay amount is in paise (INR × 100) — charge the full total including GST + shipping
     const razorpay = getRazorpay(); // validates keys; throws if missing
     const razorpayOrder = await razorpay.orders.create({
-      amount: Math.round(totalAmount * 100),
+      amount: Math.round(total * 100),
       currency: 'INR',
       receipt: `receipt_${Date.now()}`,
       notes: {
@@ -64,9 +74,12 @@ exports.createRazorpayOrder = async (req, res) => {
       amount: razorpayOrder.amount,       // paise
       currency: razorpayOrder.currency,
       keyId: process.env.RAZORPAY_KEY_ID,
-      // Pass validated items & amount back so frontend doesn't need to re-send
+      // Pass validated items & pricing back so frontend doesn't need to re-send
       validatedItems,
-      totalAmount,
+      subtotal,
+      gst,
+      shipping,
+      totalAmount: total,
       shippingAddress
     });
   } catch (error) {
@@ -93,7 +106,10 @@ exports.verifyAndSaveOrder = async (req, res) => {
       razorpaySignature,
       items,            // validated items from previous step
       shippingAddress,
-      totalAmount
+      totalAmount,
+      subtotal,
+      gst,
+      shipping
     } = req.body;
 
     // ── Signature verification ──────────────────────────────────────────────
@@ -117,14 +133,18 @@ exports.verifyAndSaveOrder = async (req, res) => {
       });
     }
 
-    // Save order as Paid
+    // Save order as Paid + Confirmed
     const order = new Order({
       user: req.user.id,
       items,
       shippingAddress,
       paymentMethod: 'RAZORPAY',
+      subtotal:     subtotal  || 0,
+      gst:          gst       || 0,
+      shipping:     shipping  || 0,
       totalAmount,
       paymentStatus: 'paid',
+      orderStatus: 'confirmed',
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature
@@ -206,6 +226,35 @@ exports.verifyAndSaveOrder = async (req, res) => {
       await upsertUserReportSummary(req.user.id);
     } catch (summaryErr) {
       console.error('Summary sync error (non-fatal):', summaryErr.message);
+    }
+
+    // Notify admin of new Razorpay order
+    try {
+      const customer = await User.findById(req.user.id).select('name').lean();
+      const mainAdmin = await Admin.findOne({ role: 'MAIN_ADMIN' }).select('_id').lean();
+      if (mainAdmin) {
+        await NotificationService.notifyNewOrder(mainAdmin._id, {
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          customerId: req.user.id,
+          customerName: customer?.name || 'Customer',
+          amount: totalAmount,
+          itemCount: items.length,
+        });
+      }
+    } catch (notifError) {
+      console.error('New Razorpay order admin notification error (non-fatal):', notifError.message);
+    }
+
+    // Notify user: order placed
+    try {
+      await UserNotificationService.notifyOrderPlaced(req.user.id, {
+        orderId: order._id,
+        orderNumber: order.orderNumber,
+        amount: totalAmount,
+      });
+    } catch (err) {
+      console.error('User order-placed notification error (non-fatal):', err.message);
     }
 
     res.status(201).json({

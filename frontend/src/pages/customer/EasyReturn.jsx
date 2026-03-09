@@ -29,17 +29,14 @@ const EasyReturn = () => {
 
   const fetchCategories = async () => {
     try {
-      const { data } = await API.get('/products');
-      
-      if (data.products && Array.isArray(data.products)) {
-        // Extract unique categories from products
-        const uniqueCategories = [...new Set(data.products.map(p => p.category))].filter(Boolean);
-        setCategories(uniqueCategories);
+      const { data } = await API.get('/products/categories');
+      if (data.categories && Array.isArray(data.categories)) {
+        setCategories(data.categories.filter(Boolean).sort());
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
-      // Fallback categories
-      setCategories(["Fan", "Switch", "Lights", "Heater", "Wire & Cables", "Motors", "Pipes", "Other Electrical Items"]);
+      // Fallback categories — mirrors the full category list used across the site
+      setCategories(["Fan", "Lights", "Motors", "Pipes", "Switches", "Tank", "Water Heater", "Wire & Cables"]);
     }
   };
 

@@ -15,11 +15,11 @@ router.post('/login', login);
 router.post('/google', googleAuth);
 router.post('/forgot-password', forgotPassword);
 router.get('/me', protect, getMe);
-router.post('/logout', protect, logout);
-
+router.post('/logout', logout);
 // Admin routes
 router.post('/admin/login', adminLogin);
 router.get('/admin/me', adminProtect, adminGetMe);
-router.post('/admin/logout', adminProtect, adminLogout);
+// Admin logout — no auth needed (JWT is stateless; controller just returns success)
+router.post('/admin/logout', adminLogout);
 
 module.exports = router;

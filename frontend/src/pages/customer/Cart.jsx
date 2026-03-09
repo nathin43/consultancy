@@ -12,6 +12,7 @@ import { CartContext } from '../../context/CartContext';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import './Cart.css';
+import { calculateOrderTotals } from '../../utils/pricingUtils';
 
 /* ─── SVG Icons ──────────────────────────────────────────────── */
 const CheckIcon = () => (
@@ -62,12 +63,14 @@ const Cart = () => {
   const selectedCount = selectedItems.size;
   const isAllSelected = items.length > 0 && selectedCount === items.length;
 
-  const selectedSubtotal = items.reduce((acc, item) => {
-    if (!selectedItems.has(item.product._id)) return acc;
-    return acc + ((item.price || item.product.price || 0) * item.quantity);
-  }, 0);
+  const selectedItemsList = items.filter(item => selectedItems.has(item.product._id));
 
-  const finalTotal = selectedSubtotal;
+  const {
+    subtotal: selectedSubtotal,
+    gst:      selectedGST,
+    shipping: selectedShipping,
+    total:    finalTotal,
+  } = calculateOrderTotals(selectedItemsList);
 
 
   // Show animated login required screen if user is not authenticated
@@ -330,7 +333,14 @@ const Cart = () => {
                     <span className="summary-label">Subtotal</span>
                     <span className="summary-value">₹{fmt(selectedSubtotal)}</span>
                   </div>
-
+                  <div className="summary-row">
+                    <span className="summary-label">GST</span>
+                    <span className="summary-value">₹{fmt(selectedGST)}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span className="summary-label">Shipping</span>
+                    <span className="summary-value">₹{fmt(selectedShipping)}</span>
+                  </div>
                 </div>
 
                 <div className="summary-divider" />
@@ -402,6 +412,10 @@ const Cart = () => {
         isOpen={isCheckoutModalOpen}
         onClose={handleCloseCheckoutModal}
         selectedItems={getSelectedItemsData()}
+        subtotal={selectedSubtotal}
+        gst={selectedGST}
+        shipping={selectedShipping}
+        total={finalTotal}
       />
     </>
   );

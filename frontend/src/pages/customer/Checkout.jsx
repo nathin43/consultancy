@@ -6,6 +6,7 @@ import { CartContext } from '../../context/CartContext';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import API from '../../services/api';
+import { calculateOrderTotals } from '../../utils/pricingUtils';
 import './Checkout.css';
 
 /**
@@ -86,13 +87,8 @@ const Checkout = () => {
     );
   }
 
-  // Calculate subtotal of selected items only
-  const subtotal = selectedItems.reduce((total, item) => {
-    const itemPrice = item.price || item.product.price || 0;
-    return total + (itemPrice * item.quantity);
-  }, 0);
-
-  const total = subtotal;
+  // Calculate subtotal, GST, shipping and total for selected items
+  const { subtotal, gst, shipping, total } = calculateOrderTotals(selectedItems);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -141,11 +137,15 @@ const Checkout = () => {
               razorpaySignature: response.razorpay_signature,
               items: data.validatedItems,
               shippingAddress: data.shippingAddress,
+              subtotal: data.subtotal,
+              gst: data.gst,
+              shipping: data.shipping,
               totalAmount: data.totalAmount
             });
 
             if (verifyRes.data.success) {
               success('Payment successful! Order placed. 🎉');
+              window.dispatchEvent(new CustomEvent('order-placed'));
               await fetchCart();
               navigate('/order-confirmation', {
                 state: {
@@ -263,6 +263,7 @@ const Checkout = () => {
 
       if (data.success) {
         success('Order placed successfully! 🎉');
+        window.dispatchEvent(new CustomEvent('order-placed'));
         await fetchCart();
         setTimeout(() => navigate('/orders'), 1500);
       }
@@ -453,13 +454,21 @@ const Checkout = () => {
 
               <div className="summary-totals">
                 <div className="summary-row">
-                  <span>Subtotal ({selectedItems.length} items)</span>
-                  <span>₹{subtotal.toLocaleString()}</span>
+                  <span>Subtotal ({selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''})</span>
+                  <span>₹{subtotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="summary-row">
+                  <span>GST</span>
+                  <span>₹{gst.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="summary-row">
+                  <span>Shipping</span>
+                  <span>₹{shipping.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                 </div>
 
                 <div className="summary-total">
                   <span>Total</span>
-                  <span>₹{total.toLocaleString()}</span>
+                  <span>₹{total.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                 </div>
               </div>
 

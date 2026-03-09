@@ -1,6 +1,7 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { User, UserPlus, Shield } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import { useToast } from '../hooks/useToast';
@@ -13,7 +14,7 @@ import './Navbar.css';
  * Amazon/Flipkart inspired design with search bar and category menu
  */
 const Navbar = () => {
-  const { isAuthenticated, user, logout } = useContext(AuthContext);
+  const { isAuthenticated, user, logout, isAdmin } = useContext(AuthContext);
   const { cartCount } = useContext(CartContext);
   const { info } = useToast();
   const navigate = useNavigate();
@@ -158,31 +159,29 @@ const Navbar = () => {
                   {!isAuthenticated && (
                     <div className="dropdown-welcome-card">
                       <div className="modal-header-icon">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                          <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
+                        <User size={26} color="#ffffff" strokeWidth={2} />
                       </div>
                       <h3 className="welcome-title">Welcome to Mani Electrical</h3>
                       <p className="welcome-subtitle">Sign in to manage your account and orders</p>
                       <div className="welcome-buttons">
                         <Link to="/login" className="welcome-btn primary" onClick={() => setDropdownOpen(false)}>
-                          <svg className="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                          </svg>
+                          <User size={18} strokeWidth={2} />
                           Sign In
                         </Link>
                         <Link to="/register" className="welcome-btn secondary" onClick={() => setDropdownOpen(false)}>
-                          <svg className="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="8.5" cy="7" r="4"></circle>
-                            <line x1="20" y1="8" x2="20" y2="14"></line>
-                            <line x1="23" y1="11" x2="17" y2="11"></line>
-                          </svg>
+                          <UserPlus size={18} strokeWidth={2} />
                           Create Account
                         </Link>
                       </div>
+                      <div className="dropdown-divider"></div>
+                      <Link
+                        to="/admin/login"
+                        className="welcome-btn admin"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <Shield size={18} strokeWidth={2} />
+                        Admin Dashboard
+                      </Link>
                     </div>
                   )}
 
@@ -231,6 +230,21 @@ const Navbar = () => {
                           </button>
                         </motion.div>
                       </div>
+                    </>
+                  )}
+
+                  {/* Admin Dashboard - shown for admin users */}
+                  {isAuthenticated && isAdmin && (
+                    <>
+                      <div className="dropdown-divider"></div>
+                      <Link
+                        to="/admin"
+                        className="welcome-btn admin"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <Shield size={18} strokeWidth={2} />
+                        Admin Dashboard
+                      </Link>
                     </>
                   )}
                   </motion.div>

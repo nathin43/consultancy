@@ -7,7 +7,9 @@ const User = require('../models/User');
 const Admin = require('../models/Admin');
 const NotificationService = require('../services/notificationService');
 const UserNotificationService = require('../services/userNotificationService');
+const WhatsAppService = require('../services/whatsappService');
 const { upsertUserReportSummary } = require('../services/userReportSummaryService');
+const { calculateOrderTotals } = require('../utils/pricingUtils');
 
 /**
  * Create new order
@@ -52,6 +54,7 @@ exports.createOrder = async (req, res) => {
         product: product._id,
         name: product.name,
         image: product.image,
+        category: product.category || 'Other',
         quantity: item.quantity,
         price: product.price
       });
@@ -82,6 +85,9 @@ exports.createOrder = async (req, res) => {
       }
     }
 
+    // Compute GST + shipping using category-based pricing rules
+    const { subtotal, gst, shipping, total } = calculateOrderTotals(orderItems);
+
     // Create order (use new + save to trigger pre-save hook for orderNumber)
     const order = new Order({
       user: req.user.id,
@@ -89,7 +95,10 @@ exports.createOrder = async (req, res) => {
       shippingAddress,
       paymentMethod,
       paymentDetails: paymentDetails || {}, // Store payment details if provided
-      totalAmount: totalPrice,
+      subtotal,
+      gst,
+      shipping,
+      totalAmount: total,
       paymentStatus: paymentMethod === 'Cash on Delivery' ? 'pending' : 'pending'
     });
 
@@ -100,7 +109,7 @@ exports.createOrder = async (req, res) => {
       await Payment.create({
         order: order._id,
         user: req.user.id,
-        amount: totalPrice,
+        amount: total,
         paymentMethod: paymentMethod,
         paymentStatus: paymentMethod === 'Cash on Delivery' ? 'pending' : 'pending',
       });
@@ -129,7 +138,7 @@ exports.createOrder = async (req, res) => {
         orderStatus: order.orderStatus,
         orderDate: order.createdAt,
         items: reportItems,
-        totalAmount: totalPrice,
+        totalAmount: total,
         paymentMethod: paymentMethod,
         transactionId: null,
         paymentStatus: 'pending',
@@ -178,7 +187,8 @@ exports.createOrder = async (req, res) => {
           orderNumber: order.orderNumber,
           customerId: req.user.id,
           customerName: customer?.name || 'Customer',
-          amount: totalPrice,
+          amount: total,
+          itemCount: orderItems.length,
         });
       }
     } catch (notifError) {
@@ -190,7 +200,7 @@ exports.createOrder = async (req, res) => {
       await UserNotificationService.notifyOrderPlaced(req.user.id, {
         orderId: order._id,
         orderNumber: order.orderNumber,
-        amount: totalPrice,
+        amount: total,
       });
     } catch (err) {
       console.error('User order-placed notification error (non-fatal):', err.message);
@@ -423,6 +433,8 @@ exports.updateOrderStatus = async (req, res) => {
         await UserNotificationService.notifyOrderShipped(order.user.toString(), orderData);
       } else if (orderStatus === 'delivered') {
         await UserNotificationService.notifyOrderDelivered(order.user.toString(), orderData);
+      } else if (orderStatus === 'cancelled' || orderStatus === 'rejected') {
+        await UserNotificationService.notifyOrderRejected(order.user.toString(), orderData);
       }
     } catch (err) {
       console.error('User order-status notification error (non-fatal):', err.message);
@@ -503,7 +515,7 @@ exports.cancelOrder = async (req, res) => {
       console.error('Cancel order notification error (non-fatal):', notifError.message);
     }
 
-    // Notify user: order cancelled
+    // Notify user: order cancelled (in-app)
     try {
       await UserNotificationService.notifyOrderCancelled(order.user.toString(), {
         orderId: order._id,
@@ -511,6 +523,19 @@ exports.cancelOrder = async (req, res) => {
       });
     } catch (err) {
       console.error('User cancel notification error (non-fatal):', err.message);
+    }
+
+    // Notify user: WhatsApp message
+    try {
+      const userForWhatsApp = await User.findById(order.user).select('name phone').lean();
+      if (userForWhatsApp?.phone) {
+        await WhatsAppService.notifyOrderCancelled(userForWhatsApp.phone, {
+          userName: userForWhatsApp.name || 'Customer',
+          orderNumber: order.orderNumber,
+        });
+      }
+    } catch (waErr) {
+      console.error('WhatsApp cancel notification error (non-fatal):', waErr.message);
     }
 
     res.status(200).json({
