@@ -7,6 +7,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import API from '../../services/api';
 import { calculateOrderTotals } from '../../utils/pricingUtils';
+import useCategories from '../../hooks/useCategories';
 import './Checkout.css';
 
 /**
@@ -55,6 +56,9 @@ const Checkout = () => {
   const [error, setError] = useState('');
   const [paymentProcessing, setPaymentProcessing] = useState(false);
 
+  // Live category GST/shipping data from DB
+  const { categoriesMap } = useCategories();
+
   // Validate selected items exist
   useEffect(() => {
     if (!cart || cart.items.length === 0 || selectedItemIds.length === 0) {
@@ -87,8 +91,8 @@ const Checkout = () => {
     );
   }
 
-  // Calculate subtotal, GST, shipping and total for selected items
-  const { subtotal, gst, shipping, total } = calculateOrderTotals(selectedItems);
+  // Calculate subtotal, GST, shipping and total for selected items using live DB category rates
+  const { subtotal, gst, shipping, total } = calculateOrderTotals(selectedItems, categoriesMap);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

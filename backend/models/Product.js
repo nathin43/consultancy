@@ -60,7 +60,7 @@ const productSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'inactive', 'out-of-stock'],
+    enum: ['active', 'inactive', 'out-of-stock', 'low-stock'],
     default: 'active'
   },
   featured: {
@@ -75,12 +75,17 @@ const productSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Update status based on stock
+// Auto-update status based on stock level
+// 'inactive' is admin-managed and never overridden automatically
 productSchema.pre('save', function(next) {
-  if (this.stock === 0) {
-    this.status = 'out-of-stock';
-  } else if (this.status === 'out-of-stock' && this.stock > 0) {
-    this.status = 'active';
+  if (this.status !== 'inactive') {
+    if (this.stock === 0) {
+      this.status = 'out-of-stock';
+    } else if (this.stock <= 10) {
+      this.status = 'low-stock';
+    } else {
+      this.status = 'active';
+    }
   }
   next();
 });

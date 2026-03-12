@@ -164,6 +164,7 @@ app.set('notificationEmitter', NotificationEmitter);
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/admin-management', require('./routes/adminManagementRoutes'));
+app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/reviews', require('./routes/reviewRoutes'));
 app.use('/api/cart', require('./routes/cartRoutes'));
@@ -238,7 +239,32 @@ if (mongoURI.includes('YOUR_NEW_PASSWORD') ||
 
 const connectWithRetry = (retries = 5, delay = 5000) => {
   mongoose.connect(mongoURI)
-    .then(() => console.log('✅ MongoDB Connected'))
+    .then(async () => {
+      console.log('✅ MongoDB Connected');
+      // Auto-seed categories if the collection is empty
+      try {
+        const Category = require('./models/Category');
+        const count = await Category.countDocuments();
+        if (count === 0) {
+          const DEFAULTS = [
+            { name: 'Fan',           gst: 18, shipping: 80  },
+            { name: 'Lights',        gst: 12, shipping: 50  },
+            { name: 'Motors',        gst: 18, shipping: 100 },
+            { name: 'Pipes',         gst: 18, shipping: 50  },
+            { name: 'Switches',      gst: 18, shipping: 40  },
+            { name: 'Tank',          gst: 18, shipping: 150 },
+            { name: 'Water Heater',  gst: 18, shipping: 100 },
+            { name: 'Wire & Cables', gst: 18, shipping: 60  },
+            { name: 'Heater',        gst: 18, shipping: 100 },
+            { name: 'Other',         gst: 18, shipping: 60  },
+          ];
+          await Category.insertMany(DEFAULTS);
+          console.log('✅ Categories auto-seeded (10 categories)');
+        }
+      } catch (seedErr) {
+        console.error('⚠️  Category auto-seed failed (non-fatal):', seedErr.message);
+      }
+    })
     .catch(err => {
       console.error('\n❌ MongoDB Connection Error:', err.message);
 

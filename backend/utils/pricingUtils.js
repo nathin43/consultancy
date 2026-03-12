@@ -27,15 +27,24 @@ const getCategoryPricing = (category) =>
 /**
  * calculateOrderTotals
  *
- * @param {Array} items  Each item must have: { price, quantity, category }
+ * @param {Array}  items         Each item must have: { price, quantity, category }
+ * @param {Object} [categoriesMap]  Optional live map from DB:
+ *                               { "Fan": { gstPercent: 18, shipping: 80 }, ... }
+ *                               Falls back to hardcoded CATEGORY_PRICING when omitted.
  * @returns {{ subtotal, gst, shipping, total }}
  *
  * Shipping is charged once per distinct category.
  */
-const calculateOrderTotals = (items) => {
+const calculateOrderTotals = (items, categoriesMap = null) => {
   if (!items || items.length === 0) {
     return { subtotal: 0, gst: 0, shipping: 0, total: 0 };
   }
+
+  // Use live DB map when provided, otherwise fall back to hardcoded values
+  const getRule = (category) => {
+    if (categoriesMap && categoriesMap[category]) return categoriesMap[category];
+    return getCategoryPricing(category);
+  };
 
   let subtotal = 0;
   let gst = 0;
@@ -45,7 +54,7 @@ const calculateOrderTotals = (items) => {
     const price    = item.price    || 0;
     const qty      = item.quantity || 1;
     const category = item.category || 'Other';
-    const { gstPercent } = getCategoryPricing(category);
+    const { gstPercent } = getRule(category);
 
     const lineSubtotal = price * qty;
     subtotal += lineSubtotal;
@@ -55,7 +64,7 @@ const calculateOrderTotals = (items) => {
 
   let shipping = 0;
   seenCategories.forEach((cat) => {
-    shipping += getCategoryPricing(cat).shipping;
+    shipping += getRule(cat).shipping;
   });
 
   const total = subtotal + gst + shipping;

@@ -13,6 +13,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import './Cart.css';
 import { calculateOrderTotals } from '../../utils/pricingUtils';
+import useCategories from '../../hooks/useCategories';
 
 /* ─── SVG Icons ──────────────────────────────────────────────── */
 const CheckIcon = () => (
@@ -52,6 +53,7 @@ const Cart = () => {
   const { cart, updateCartItem, removeFromCart, loading } = useContext(CartContext);
   const { isAuthenticated } = useContext(AuthContext);
   const { info, error } = useToast();
+  const { categoriesMap } = useCategories();
 
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [updatingItems, setUpdatingItems] = useState(new Set());
@@ -70,7 +72,7 @@ const Cart = () => {
     gst:      selectedGST,
     shipping: selectedShipping,
     total:    finalTotal,
-  } = calculateOrderTotals(selectedItemsList);
+  } = calculateOrderTotals(selectedItemsList, categoriesMap);
 
 
   // Show animated login required screen if user is not authenticated

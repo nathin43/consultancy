@@ -411,10 +411,10 @@ const AdminDashboard = () => {
               <div className="dash-card__header">
                 <div>
                   <h2 className="dash-card__title">Revenue Trend</h2>
-                  <p className="dash-card__subtitle">Sales performance over last 7 days</p>
+                  <p className="dash-card__subtitle">Weekly sales performance (Mon – Sun)</p>
                 </div>
               </div>
-              <RevenueChart data={salesTrend} loading={loading} />
+              <RevenueChart loading={loading} />
             </div>
 
             {/* Donut Chart */}

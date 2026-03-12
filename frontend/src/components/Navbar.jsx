@@ -1,7 +1,7 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, UserPlus, Shield } from 'lucide-react';
+import { User, UserPlus, Shield, Package, LogOut, ChevronRight } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
 import { useToast } from '../hooks/useToast';
@@ -150,11 +150,12 @@ const Navbar = () => {
                 {dropdownOpen && (
                   <motion.div
                     className="user-dropdown"
-                    initial={{ opacity: 0, y: -10, scale: 0.97 }}
+                    initial={{ opacity: 0, y: 10, scale: 0.97 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.97 }}
-                    transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                    exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
                   >
+                  <div className="dropdown-caret" />
                   {/* Non-Authenticated User Welcome Card */}
                   {!isAuthenticated && (
                     <div className="dropdown-welcome-card">
@@ -203,18 +204,16 @@ const Navbar = () => {
                   {/* Menu Options */}
                   {isAuthenticated && (
                     <div className="dropdown-menu-section">
-                      <motion.div whileHover={{ x: 4, scale: 1.03 }} transition={{ duration: 0.15 }}>
-                        <Link to="/profile" className="dropdown-menu-item" onClick={() => setDropdownOpen(false)}>
-                          <span className="menu-icon">👤</span>
-                          <span className="menu-text">My Profile</span>
-                        </Link>
-                      </motion.div>
-                      <motion.div whileHover={{ x: 4, scale: 1.03 }} transition={{ duration: 0.15 }}>
-                        <Link to="/orders" className="dropdown-menu-item" onClick={() => setDropdownOpen(false)}>
-                          <span className="menu-icon">📦</span>
-                          <span className="menu-text">My Orders</span>
-                        </Link>
-                      </motion.div>
+                      <Link to="/profile" className="dropdown-menu-item" onClick={() => setDropdownOpen(false)}>
+                        <span className="menu-icon-wrap"><User size={16} strokeWidth={2} /></span>
+                        <span className="menu-text">My Profile</span>
+                        <ChevronRight size={14} className="menu-chevron" />
+                      </Link>
+                      <Link to="/orders" className="dropdown-menu-item" onClick={() => setDropdownOpen(false)}>
+                        <span className="menu-icon-wrap"><Package size={16} strokeWidth={2} /></span>
+                        <span className="menu-text">My Orders</span>
+                        <ChevronRight size={14} className="menu-chevron" />
+                      </Link>
                     </div>
                   )}
 
@@ -223,12 +222,11 @@ const Navbar = () => {
                     <>
                       <div className="dropdown-divider"></div>
                       <div className="dropdown-menu-section dropdown-signout-section">
-                        <motion.div whileHover={{ x: 4, scale: 1.03 }} transition={{ duration: 0.15 }}>
-                          <button onClick={handleLogout} className="dropdown-menu-item logout-item">
-                            <span className="menu-icon">🚪</span>
-                            <span className="menu-text">Sign Out</span>
-                          </button>
-                        </motion.div>
+                        <button onClick={handleLogout} className="dropdown-menu-item logout-item">
+                          <span className="menu-icon-wrap"><LogOut size={16} strokeWidth={2} /></span>
+                          <span className="menu-text">Sign Out</span>
+                          <ChevronRight size={14} className="menu-chevron" />
+                        </button>
                       </div>
                     </>
                   )}

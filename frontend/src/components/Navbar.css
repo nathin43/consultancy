@@ -427,60 +427,124 @@
 }
 
 /* User Dropdown - Framer Motion animated */
+/* === Welcome Card Animations === */
+@keyframes iconGlowPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.5), 0 8px 22px rgba(99, 102, 241, 0.38);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(124, 58, 237, 0), 0 8px 22px rgba(99, 102, 241, 0.15);
+    }
+}
+
+@keyframes gradientShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Shine sweep — white highlight slides across button face */
+@keyframes shineSweep {
+    0%   { left: -120%; }
+    100% { left: 170%; }
+}
+
+/* Per-button glow pulses on hover */
+@keyframes primaryGlowPulse {
+    0%, 100% { box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45), 0 0 0 0   rgba(99, 102, 241, 0.18); }
+    50%       { box-shadow: 0 12px 34px rgba(99, 102, 241, 0.65), 0 0 0 6px rgba(99, 102, 241, 0.09); }
+}
+
+@keyframes secondaryGlowPulse {
+    0%, 100% { box-shadow: 0 6px 18px rgba(99, 102, 241, 0.32), 0 0 0 0   rgba(99, 102, 241, 0.14); }
+    50%       { box-shadow: 0 10px 26px rgba(99, 102, 241, 0.50), 0 0 0 5px rgba(99, 102, 241, 0.07); }
+}
+
+@keyframes adminGlowPulse {
+    0%, 100% { box-shadow: 0 6px 20px rgba(249, 115, 22, 0.42), 0 0 0 0   rgba(249, 115, 22, 0.18); }
+    50%       { box-shadow: 0 12px 34px rgba(249, 115, 22, 0.65), 0 0 0 6px rgba(249, 115, 22, 0.09); }
+}
+
+/* === Dropdown Arrow Caret === */
+.dropdown-caret {
+    position: absolute;
+    top: -6px;
+    right: 24px;
+    width: 12px;
+    height: 12px;
+    background: #ffffff;
+    border-top: 1px solid rgba(226, 232, 240, 0.7);
+    border-left: 1px solid rgba(226, 232, 240, 0.7);
+    transform: rotate(45deg);
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 1;
+}
+
 .user-dropdown {
     position: absolute;
-    top: calc(100% + 10px);
+    top: calc(100% + 14px);
     right: 0;
     background: #ffffff;
-    border-radius: 18px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-    width: 280px;
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.14), 0 6px 20px rgba(0, 0, 0, 0.06);
+    width: 304px;
     z-index: 1000;
-    overflow: hidden;
-    padding: 22px;
+    overflow: visible;
+    padding: 20px 18px 18px;
     box-sizing: border-box;
+    border: 1px solid rgba(226, 232, 240, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 /* Welcome Card for Non-Authenticated Users */
 .dropdown-welcome-card {
-    background: #ffffff;
+    background: transparent;
     text-align: center;
+    font-family: 'Poppins', 'Inter', -apple-system, sans-serif;
 }
 
 .modal-header-icon {
-    width: 56px;
-    height: 56px;
-    margin: 0 auto 16px;
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #3b82f6 100%);
     border-radius: 50%;
     color: #ffffff;
+    box-shadow: 0 8px 22px rgba(99, 102, 241, 0.42);
+    animation: iconGlowPulse 2.8s ease-in-out infinite;
 }
 
 .modal-header-icon svg {
     stroke-width: 2;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
 }
 
 .welcome-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #111827;
-    margin: 0 0 8px 0;
-    letter-spacing: -0.3px;
+    font-size: 19px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 7px 0;
+    letter-spacing: -0.4px;
+    font-family: 'Poppins', 'Inter', -apple-system, sans-serif;
 }
 
 .welcome-subtitle {
-    font-size: 13px;
-    color: #6b7280;
-    margin: 0 0 20px 0;
-    line-height: 1.6;
+    font-size: 12.5px;
+    color: #94a3b8;
+    margin: 0 0 22px 0;
+    line-height: 1.65;
+    font-family: 'Poppins', 'Inter', -apple-system, sans-serif;
+    font-weight: 400;
 }
 
 .welcome-buttons {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     flex-direction: column;
     align-items: stretch;
     margin-bottom: 0;
@@ -493,17 +557,52 @@
     gap: 8px;
     padding: 0 18px;
     width: 100%;
-    height: 42px;
-    border-radius: 12px;
+    height: 46px;
+    border-radius: 14px;
     font-size: 14px;
     font-weight: 600;
     text-decoration: none;
-    transition: all 0.2s ease;
+    /* Spring easing on transform gives micro-bounce overshoot; smooth ease for shadow */
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     position: relative;
     overflow: hidden;
     box-sizing: border-box;
     border: none;
+    font-family: 'Poppins', 'Inter', -apple-system, sans-serif;
+    letter-spacing: 0.15px;
+}
+
+/* Shine sweep highlight — slides left→right on hover */
+.welcome-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 55%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.22) 50%,
+        transparent 100%
+    );
+    transform: skewX(-18deg);
+    pointer-events: none;
+}
+
+.welcome-btn:hover::after {
+    animation: shineSweep 0.6s ease forwards;
+}
+
+.welcome-btn svg {
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+.welcome-btn:hover svg {
+    transform: translateX(5px);
 }
 
 .btn-icon {
@@ -512,80 +611,125 @@
     flex-shrink: 0;
 }
 
+/* Sign In — purple → blue gradient, glow pulse on hover */
 .welcome-btn.primary {
-    background: #4f46e5;
+    background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 40%, #3b82f6 80%, #7c3aed 100%);
+    background-size: 250% 250%;
+    background-position: 0% 50%;
     color: #ffffff;
     border: none;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.38);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .welcome-btn.primary:hover {
-    background: #4338ca;
-    transform: scale(1.02);
-    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+    transform: translateY(-4px);
+    /* glow pulse — only animates box-shadow, transform uses transition above */
+    animation: primaryGlowPulse 1.8s ease-in-out infinite;
+}
+
+.welcome-btn.primary:hover svg {
+    transform: translateX(5px);
 }
 
 .welcome-btn.primary:active {
-    transform: scale(0.98);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    transform: translateY(0) scale(0.96) !important;
+    animation: none;
+    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.25);
 }
 
+/* Create Account — colors unchanged, lift + glow pulse on hover */
 .welcome-btn.secondary {
-    background: #ffffff;
-    color: #374151;
-    border: 1px solid #e5e7eb;
+    background: #f5f3ff;
+    color: #5b21b6;
+    border: 1.5px solid #a78bfa;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .welcome-btn.secondary:hover {
-    background: #f9fafb;
-    border-color: #d1d5db;
-    transform: scale(1.02);
+    transform: translateY(-4px);
+    animation: secondaryGlowPulse 1.8s ease-in-out infinite;
+}
+
+.welcome-btn.secondary:hover svg {
+    transform: translateX(5px);
 }
 
 .welcome-btn.secondary:active {
-    transform: scale(0.98);
+    transform: translateY(0) scale(0.96) !important;
+    animation: none;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1);
 }
 
-/* Admin Dashboard Button */
+/* Admin Dashboard — colors unchanged, lift + orange glow pulse on hover */
 .welcome-btn.admin {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+    background: linear-gradient(135deg, #f59e0b 0%, #f97316 60%, #ea580c 100%);
+    background-size: 200% 200%;
+    background-position: 0% 50%;
     color: #ffffff;
     border: none;
     width: 100%;
     margin-top: 0;
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.38);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .welcome-btn.admin:hover {
-    background: linear-gradient(135deg, #d97706, #b45309);
-    transform: scale(1.02);
-    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+    transform: translateY(-4px);
+    animation: adminGlowPulse 1.8s ease-in-out infinite;
+}
+
+.welcome-btn.admin:hover svg {
+    transform: translateX(5px);
 }
 
 .welcome-btn.admin:active {
-    transform: scale(0.98);
+    transform: translateY(0) scale(0.96) !important;
+    animation: none;
+    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.28);
 }
 
 /* Authenticated User Info */
 .dropdown-user-info {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 2px;
+    gap: 13px;
+    padding: 2px 2px 14px;
+    margin-bottom: 0;
 }
 
 .user-avatar-large {
-    width: 44px;
-    height: 44px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6, #06b6d4);
+    background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #3b82f6 100%);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.38);
+    border: 2.5px solid rgba(255, 255, 255, 0.9);
+    position: relative;
+}
+
+/* Online presence dot */
+.user-avatar-large::after {
+    content: '';
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #22c55e;
+    border: 2px solid #ffffff;
 }
 
 .user-details {
@@ -594,27 +738,30 @@
 }
 
 .user-name-display {
-    font-size: 16px;
-    font-weight: 600;
-    color: #111827;
-    margin: 0 0 2px 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 3px 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-family: 'Poppins', 'Inter', -apple-system, sans-serif;
+    letter-spacing: -0.2px;
 }
 
 .user-email-display {
-    font-size: 13px;
-    color: #6b7280;
+    font-size: 12px;
+    color: #94a3b8;
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-family: 'Poppins', 'Inter', -apple-system, sans-serif;
 }
 
 /* Menu Section */
 .dropdown-menu-section {
-    padding: 0;
+    padding: 2px 0;
 }
 
 .dropdown-signout-section {
@@ -625,29 +772,72 @@
 .dropdown-menu-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    border-radius: 10px;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.2s ease;
     text-decoration: none;
-    color: #111827;
-    font-size: 14px;
+    color: #1e293b;
+    font-size: 13.5px;
     font-weight: 500;
+    font-family: 'Poppins', 'Inter', -apple-system, sans-serif;
     background: transparent;
     border: none;
     width: 100%;
     text-align: left;
     margin-bottom: 2px;
+    position: relative;
 }
 
 .dropdown-menu-item:hover {
-    background: #f8fafc;
-    color: #111827;
+    transform: translateX(6px);
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.07) 0%, rgba(99, 102, 241, 0.02) 100%);
+    box-shadow: inset 3px 0 0 #6366f1;
+    color: #4338ca;
+}
+
+/* Icon wrapper — soft rounded bg, scales on item hover */
+.menu-icon-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #64748b;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                background 0.25s ease,
+                color 0.2s ease;
+}
+
+.dropdown-menu-item:hover .menu-icon-wrap {
+    transform: scale(1.14);
+    background: #e0e7ff;
+    color: #4f46e5;
+}
+
+/* Chevron — fades + slides in on hover */
+.menu-chevron {
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #6366f1;
+    flex-shrink: 0;
+}
+
+.dropdown-menu-item:hover .menu-chevron {
+    opacity: 1;
+    transform: translateX(0);
 }
 
 .menu-icon {
-    font-size: 20px;
+    font-size: 18px;
     width: 24px;
     height: 24px;
     display: flex;
@@ -734,24 +924,31 @@
     justify-content: center;
 }
 
-/* Logout Item Styling */
+/* Logout Item — red accent treatment */
 .logout-item {
-    color: #ef4444 !important;
+    color: #1e293b !important;
 }
 
 .logout-item:hover {
-    background: rgba(239, 68, 68, 0.08) !important;
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.07) 0%, rgba(239, 68, 68, 0.02) 100%) !important;
+    box-shadow: inset 3px 0 0 #ef4444 !important;
+    color: #dc2626 !important;
+    transform: translateX(6px) !important;
+}
+
+.logout-item:hover .menu-icon-wrap {
+    background: #fee2e2 !important;
     color: #dc2626 !important;
 }
 
-.logout-item .menu-icon {
-    color: #ef4444;
+.logout-item:hover .menu-chevron {
+    color: #dc2626;
 }
 
 .dropdown-divider {
     height: 1px;
-    background: #f1f5f9;
-    margin: 12px 0;
+    background: linear-gradient(90deg, transparent, #e2e8f0 20%, #e2e8f0 80%, transparent);
+    margin: 10px 0;
 }
 
 /* Mobile Responsive */

@@ -7,6 +7,7 @@ const {
   removeFromCart,
   clearCart
 } = require('../controllers/cartController');
+const { calculateCart } = require('../controllers/categoryController');
 const { protect } = require('../middleware/auth');
 const { checkUserStatus } = require('../middleware/checkUserStatus');
 
@@ -26,6 +27,7 @@ const { checkUserStatus } = require('../middleware/checkUserStatus');
 // Protected routes - all require authentication
 router.get('/', protect, getCart);
 router.post('/add', protect, checkUserStatus, addToCart);
+router.post('/calculate', protect, calculateCart);
 router.put('/update', protect, checkUserStatus, updateCartItem);
 router.delete('/remove/:productId', protect, removeFromCart);
 router.delete('/clear', protect, clearCart);

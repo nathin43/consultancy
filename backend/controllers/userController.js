@@ -106,9 +106,6 @@ exports.updateProfile = async (req, res) => {
       });
     }
 
-    // Re-fetch from database to ensure data consistency
-    const verifiedUser = await User.findById(userId);
-
     // Notify user: profile updated (fire-and-forget)
     UserNotificationService.notifyProfileUpdated(userId).catch((err) =>
       console.error('Profile-updated notification error (non-fatal):', err.message)
@@ -117,7 +114,7 @@ exports.updateProfile = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      user: verifiedUser,
+      user: updatedUser,
       timestamp: new Date().toISOString()
     });
   } catch (error) {

@@ -7,6 +7,8 @@ import { CartContext } from '../../context/CartContext';
 import { AuthContext } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
 import API from '../../services/api';
+import useCategories from '../../hooks/useCategories';
+import { getCategoryPricing } from '../../utils/pricingUtils';
 import './ProductDetails.css';
 
 /**
@@ -22,6 +24,7 @@ const ProductDetails = () => {
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const { categoriesMap } = useCategories();
 
   useEffect(() => {
     fetchProduct();
@@ -128,12 +131,29 @@ const ProductDetails = () => {
                   )}
                 </div>
                 <div className="stock-status">
-                  {product.stock > 0 ? (
-                    <span className="in-stock">In Stock: {product.stock}</span>
-                  ) : (
+                  {product.stock === 0 ? (
                     <span className="out-of-stock-text">Out of Stock</span>
+                  ) : product.stock <= 10 ? (
+                    <span className="low-stock-text">Low Stock — only {product.stock} left!</span>
+                  ) : (
+                    <span className="in-stock">In Stock: {product.stock}</span>
                   )}
                 </div>
+                {/* GST & Shipping info based on product category */}
+                {(() => {
+                  const catKey = product.category || 'Other';
+                  const rule = (categoriesMap && categoriesMap[catKey])
+                    ? categoriesMap[catKey]
+                    : getCategoryPricing(catKey);
+                  const gstAmt = product.price ? Math.round(product.price * rule.gstPercent) / 100 : 0;
+                  return (
+                    <div className="product-tax-info">
+                      <span className="tax-info-item">GST {rule.gstPercent}% (+₹{gstAmt.toLocaleString('en-IN', { maximumFractionDigits: 2 })})</span>
+                      <span className="tax-info-sep">·</span>
+                      <span className="tax-info-item">Shipping ₹{rule.shipping}</span>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="product-description">

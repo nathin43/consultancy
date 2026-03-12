@@ -87,8 +87,8 @@ exports.adminProtect = async (req, res, next) => {
       });
     }
 
-    // Set role from JWT token (for role-based access control)
-    req.admin.role = decoded.role || 'SUB_ADMIN';
+    // Use role from database; fall back to JWT claim only if DB field is somehow missing
+    req.admin.role = req.admin.role || decoded.role || 'SUB_ADMIN';
 
     next();
   } catch (error) {

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import DashboardSkeleton from '../../components/DashboardSkeleton';
 import useAdminLoader from '../../hooks/useAdminLoader';
+import { useToast } from '../../hooks/useToast';
 import API from '../../services/api';
 import './AdminProducts.css';
 
@@ -13,6 +14,7 @@ import './AdminProducts.css';
 const AdminProducts = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { success: toastSuccess, error: toastError } = useToast();
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -21,6 +23,14 @@ const AdminProducts = () => {
   const [selectedProducts, setSelectedProducts] = useState(new Set());
   const [categories, setCategories] = useState([]);
   const { loading, run } = useAdminLoader();
+
+  // Category Charges state
+  const [catGstList, setCatGstList] = useState([]);
+  const [catGstLoading, setCatGstLoading] = useState(true);
+  const [editingCatId, setEditingCatId] = useState(null);
+  const [editCatValues, setEditCatValues] = useState({ gst: '', shipping: '' });
+  const [savingCat, setSavingCat] = useState(false);
+  const [catModalOpen, setCatModalOpen] = useState(false);
 
   // Apply URL filter on component mount and URL change
   useEffect(() => {
@@ -35,6 +45,7 @@ const AdminProducts = () => {
   useEffect(() => {
     run(fetchProducts);
     fetchCategories();
+    fetchCategoryCharges();
   }, []);
 
   const fetchProducts = async () => {
@@ -56,6 +67,58 @@ const AdminProducts = () => {
     }
   };
 
+  const fetchCategoryCharges = async () => {
+    try {
+      setCatGstLoading(true);
+      const { data } = await API.get('/categories');
+      if (data.success) {
+        setCatGstList(data.categories);
+      }
+    } catch (err) {
+      console.error('Error fetching category charges:', err);
+    } finally {
+      setCatGstLoading(false);
+    }
+  };
+
+  const startCatEdit = (cat) => {
+    setEditingCatId(cat._id);
+    setEditCatValues({ gst: cat.gst, shipping: cat.shipping });
+  };
+
+  const cancelCatEdit = () => {
+    setEditingCatId(null);
+    setEditCatValues({ gst: '', shipping: '' });
+  };
+
+  const saveCatEdit = async (catId) => {
+    const gst = parseFloat(editCatValues.gst);
+    const shipping = parseFloat(editCatValues.shipping);
+
+    if (isNaN(gst) || gst < 0 || gst > 100) {
+      toastError('GST must be a number between 0 and 100');
+      return;
+    }
+    if (isNaN(shipping) || shipping < 0) {
+      toastError('Shipping must be a non-negative number');
+      return;
+    }
+
+    try {
+      setSavingCat(true);
+      const { data } = await API.put(`/admin/categories/update/${catId}`, { gst, shipping });
+      if (data.success) {
+        setCatGstList(prev => prev.map(c => c._id === catId ? data.category : c));
+        toastSuccess(`Updated "${data.category.name}" successfully`);
+        cancelCatEdit();
+      }
+    } catch (err) {
+      toastError(err.response?.data?.message || 'Failed to update category');
+    } finally {
+      setSavingCat(false);
+    }
+  };
+
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Are you sure you want to delete "${name}"?`)) {
       return;
@@ -73,7 +136,9 @@ const AdminProducts = () => {
 
   const handleToggleStatus = async (id, currentStatus) => {
     try {
-      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      // Toggle between inactive and active; pre-save hook auto-corrects
+      // 'active' to 'low-stock' or 'out-of-stock' based on stock amount
+      const newStatus = currentStatus === 'inactive' ? 'active' : 'inactive';
       await API.patch(`/products/${id}/status`, { status: newStatus });
       fetchProducts();
     } catch (error) {
@@ -146,7 +211,7 @@ const AdminProducts = () => {
       } else if (statusFilter === 'out-of-stock') {
         matchesStatus = product.stock === 0;
       } else if (statusFilter === 'low-stock') {
-        matchesStatus = product.stock > 0 && product.stock < 10;
+        matchesStatus = product.stock > 0 && product.stock <= 10;
       } else if (statusFilter === 'all') {
         matchesStatus = true;
       }
@@ -174,7 +239,7 @@ const AdminProducts = () => {
   const activeProducts = products.filter(p => p.status === 'active').length;
   const inactiveProducts = products.filter(p => p.status === 'inactive').length;
   const outOfStock = products.filter(p => p.stock === 0).length;
-  const lowStock = products.filter(p => p.stock > 0 && p.stock < 10).length;
+  const lowStock = products.filter(p => p.stock > 0 && p.stock <= 10).length;
 
   // Get page heading based on filter
   const getPageHeading = () => {
@@ -357,6 +422,13 @@ const AdminProducts = () => {
             <span className="product-count">
               {filteredProducts.length} / {products.length} products
             </span>
+            <button className="cat-trigger-card" onClick={() => setCatModalOpen(true)} title="Manage GST & Shipping per category">
+              <span className="cat-trigger-icon">⚙️</span>
+              <span className="cat-trigger-text">
+                <span className="cat-trigger-title">Category Charges</span>
+                <span className="cat-trigger-sub">GST &amp; Shipping</span>
+              </span>
+            </button>
           </div>
         </div>
 
@@ -399,6 +471,94 @@ const AdminProducts = () => {
           </div>
         )}
 
+        {/* ── Category Charges Modal ── */}
+        {catModalOpen && (
+          <div className="cat-modal-overlay" onClick={() => { setCatModalOpen(false); cancelCatEdit(); }}>
+            <div className="cat-modal" onClick={e => e.stopPropagation()}>
+
+              {/* Modal header */}
+              <div className="cat-modal-header">
+                <div className="cat-modal-header-left">
+                  <span className="cat-modal-header-icon">⚙️</span>
+                  <div>
+                    <h3 className="cat-modal-title">Category Charges</h3>
+                    <p className="cat-modal-subtitle">Set GST % and flat shipping charge per category</p>
+                  </div>
+                </div>
+                <button className="cat-modal-close" onClick={() => { setCatModalOpen(false); cancelCatEdit(); }}>✕</button>
+              </div>
+
+              {/* Table */}
+              {catGstLoading ? (
+                <p className="cat-charges-loading">Loading categories…</p>
+              ) : (
+                <div className="cat-charges-table-wrapper">
+                  <table className="cat-charges-table">
+                    <thead>
+                      <tr>
+                        <th>Category</th>
+                        <th>GST (%)</th>
+                        <th>Shipping (₹)</th>
+                        <th style={{ textAlign: 'center' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {catGstList.map((cat, index) => (
+                        <tr key={cat._id} className={index % 2 === 0 ? 'row-even' : 'row-odd'}>
+                          <td className="cat-name-cell">{cat.name}</td>
+
+                          {editingCatId === cat._id ? (
+                            <>
+                              <td>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.01"
+                                  value={editCatValues.gst}
+                                  onChange={e => setEditCatValues(v => ({ ...v, gst: e.target.value }))}
+                                  className="cat-charges-input"
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  value={editCatValues.shipping}
+                                  onChange={e => setEditCatValues(v => ({ ...v, shipping: e.target.value }))}
+                                  className="cat-charges-input"
+                                />
+                              </td>
+                              <td className="cat-actions-cell">
+                                <button onClick={() => saveCatEdit(cat._id)} disabled={savingCat} className="cat-btn cat-btn-save">
+                                  {savingCat ? 'Saving…' : 'Save'}
+                                </button>
+                                <button onClick={cancelCatEdit} disabled={savingCat} className="cat-btn cat-btn-cancel">
+                                  Cancel
+                                </button>
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td><span className="cat-tag">{cat.gst}%</span></td>
+                              <td><span className="cat-tag">₹{cat.shipping}</span></td>
+                              <td className="cat-actions-cell">
+                                <button onClick={() => startCatEdit(cat)} className="cat-btn cat-btn-edit">Edit</button>
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+            </div>
+          </div>
+        )}
+
         {/* Products Grid */}
         {filteredProducts.length === 0 ? (
           <div className="no-products">
@@ -424,19 +584,29 @@ const AdminProducts = () => {
                   />
                   <div className="card-status-overlay">
                     <button 
-                      className={`status-pill ${product.status === 'active' ? 'status-active' : 'status-inactive'}`}
+                      className={`status-pill ${
+                        product.status === 'active' ? 'status-active' :
+                        product.status === 'low-stock' ? 'status-low-stock' :
+                        product.status === 'out-of-stock' ? 'status-out-of-stock' :
+                        'status-inactive'
+                      }`}
                       onClick={(e) => {
                         e.preventDefault();
                         handleToggleStatus(product._id, product.status);
                       }}
-                      title="Click to toggle status"
+                      title={product.status === 'inactive' ? 'Click to activate' : 'Click to deactivate'}
                     >
                       <span className="status-indicator"></span>
-                      <span className="status-text">{product.status === 'active' ? 'Active' : 'Inactive'}</span>
+                      <span className="status-text">{
+                        product.status === 'active' ? 'Active' :
+                        product.status === 'low-stock' ? 'Low Stock' :
+                        product.status === 'out-of-stock' ? 'Out of Stock' :
+                        'Inactive'
+                      }</span>
                     </button>
                   </div>
                   {product.stock === 0 && <div className="out-of-stock-banner">Out of Stock</div>}
-                  {product.stock > 0 && product.stock < 10 && <div className="low-stock-banner">Low Stock</div>}
+                  {product.stock > 0 && product.stock <= 10 && <div className="low-stock-banner">Low Stock ({product.stock} left)</div>}
                 </div>
 
                 {/* Product Details */}

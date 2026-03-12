@@ -43,16 +43,25 @@ export const getCategoryPricing = (category) =>
  * Computes subtotal, GST, shipping and final total for an array of cart items.
  * Shipping is charged once per unique product category present in the items.
  *
- * @param {Array} items  — cart items, each with shape:
+ * @param {Array}  items          — cart items, each with shape:
  *   { product: { category, price, ... }, price?, quantity }
+ * @param {Object} [categoriesMap] — optional live map fetched from DB:
+ *   { "Fan": { gstPercent: 18, shipping: 80 }, ... }
+ *   When provided, DB values take priority over hardcoded CATEGORY_PRICING.
  *
  * @returns {{ subtotal, gst, shipping, total }}
  *   All values are numbers rounded to 2 decimal places.
  */
-export const calculateOrderTotals = (items) => {
+export const calculateOrderTotals = (items, categoriesMap = null) => {
   if (!items || items.length === 0) {
     return { subtotal: 0, gst: 0, shipping: 0, total: 0 };
   }
+
+  // Resolve pricing rule: live DB map → hardcoded fallback
+  const getRule = (category) => {
+    if (categoriesMap && categoriesMap[category]) return categoriesMap[category];
+    return getCategoryPricing(category);
+  };
 
   let subtotal = 0;
   let gst = 0;
@@ -61,8 +70,8 @@ export const calculateOrderTotals = (items) => {
   items.forEach((item) => {
     const price    = item.price || item.product?.price || 0;
     const qty      = item.quantity || 1;
-    const category = item.product?.category || 'Other';
-    const { gstPercent } = getCategoryPricing(category);
+    const category = item.product?.category || item.category || 'Other';
+    const { gstPercent } = getRule(category);
 
     const lineSubtotal = price * qty;
     subtotal += lineSubtotal;
@@ -74,7 +83,7 @@ export const calculateOrderTotals = (items) => {
   // One shipping charge per distinct category, not per item
   let shipping = 0;
   seenCategories.forEach((cat) => {
-    shipping += getCategoryPricing(cat).shipping;
+    shipping += getRule(cat).shipping;
   });
 
   const total = subtotal + gst + shipping;

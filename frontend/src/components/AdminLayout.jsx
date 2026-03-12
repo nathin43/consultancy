@@ -79,7 +79,9 @@ const AdminLayout = ({ children }) => {
 
   // Only add Admin Management menu for MAIN_ADMIN (role-based check)
   const adminMenuItems = admin?.role === 'MAIN_ADMIN'
-    ? [{ path: '/admin/admin-management', icon: '🔐', label: 'Admin Management', tooltip: 'Admin Management' }]
+    ? [
+        { path: '/admin/admin-management', icon: '🔐', label: 'Admin Management', tooltip: 'Admin Management' }
+      ]
     : [];
 
   return (

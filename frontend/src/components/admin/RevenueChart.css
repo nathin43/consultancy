@@ -9,6 +9,93 @@
   animation: slideInUp 0.6s ease-out;
 }
 
+/* ── Filter bar (Daily / Weekly / Monthly) ─────────── */
+.revenue-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 4px 12px;
+}
+
+.revenue-filter-group {
+  display: flex;
+  gap: 4px;
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.revenue-filter-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.revenue-filter-btn:hover {
+  color: #374151;
+  background: #e5e7eb;
+}
+
+.revenue-filter-btn.active {
+  background: #fff;
+  color: #2563eb;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Week navigation bar */
+.revenue-week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px 12px;
+  gap: 8px;
+}
+
+.revenue-nav-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.revenue-nav-btn:hover:not(:disabled) {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.revenue-nav-btn:disabled {
+  color: #9ca3af;
+  background: #f9fafb;
+  border-color: #e5e7eb;
+  cursor: default;
+}
+
+.revenue-week-range {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+  flex: 1;
+}
+
 @keyframes slideInUp {
   from {
     opacity: 0;

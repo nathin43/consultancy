@@ -223,6 +223,43 @@
   border-radius: 20px;
 }
 
+.low-stock-text {
+  color: #b45309;
+  font-weight: 600;
+  font-size: 13px;
+  background: #fef3c7;
+  padding: 6px 16px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.3px;
+  border: 1px solid #fde68a;
+}
+
+/* GST & Shipping info row below stock status */
+.product-tax-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tax-info-item {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.tax-info-sep {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
 .product-description h3,
 .product-specifications h3 {
   font-size: 16px;

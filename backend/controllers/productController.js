@@ -76,9 +76,15 @@ exports.getProducts = async (req, res) => {
       // Build query
       let query = {};
 
-      // Status filter (pass status=active to restrict to active products only)
+      // Status filter
+      // For public/customer view (status=active), also include low-stock products
+      // so customers can still see and buy products with limited inventory
       if (status && status !== 'all') {
-        query.status = status;
+        if (status === 'active') {
+          query.status = { $in: ['active', 'low-stock'] };
+        } else {
+          query.status = status;
+        }
       }
 
       // Category filter
@@ -274,7 +280,7 @@ exports.getFeaturedProducts = async (req, res) => {
   try {
     // Try database first
     try {
-      const products = await Product.find({ featured: true, status: 'active' })
+      const products = await Product.find({ featured: true, status: { $in: ['active', 'low-stock'] } })
         .limit(8)
         .sort('-createdAt');
       
@@ -489,6 +495,24 @@ exports.updateProduct = async (req, res) => {
       specsKeys: req.body.specifications ? Object.keys(req.body.specifications) : []
     });
 
+    // Auto-calculate stock-based status (mirrors pre-save hook,
+    // needed here because findByIdAndUpdate bypasses Mongoose middleware)
+    if (req.body.stock !== undefined && req.body.status !== 'inactive') {
+      const stockNum = Number(req.body.stock);
+      if (stockNum === 0) {
+        req.body.status = 'out-of-stock';
+      } else if (stockNum <= 10) {
+        req.body.status = 'low-stock';
+      } else if (req.body.status === 'out-of-stock' || req.body.status === 'low-stock') {
+        req.body.status = 'active';
+      } else if (!req.body.status) {
+        // Restore from auto-statuses when stock is refilled
+        if (product.status === 'out-of-stock' || product.status === 'low-stock') {
+          req.body.status = 'active';
+        }
+      }
+    }
+
     product = await Product.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
@@ -555,11 +579,12 @@ exports.toggleProductStatus = async (req, res) => {
   try {
     const { status } = req.body;
 
-    // Validate status value
-    if (!status || !['active', 'inactive', 'out-of-stock'].includes(status)) {
+    // Validate status value — only allow admin toggle between active and inactive;
+    // 'low-stock' and 'out-of-stock' are auto-managed by the pre-save hook
+    if (!status || !['active', 'inactive'].includes(status)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid status. Must be: active, inactive, or out-of-stock'
+        message: 'Invalid status. Toggle accepts: active or inactive'
       });
     }
 

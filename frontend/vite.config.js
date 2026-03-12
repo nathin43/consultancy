@@ -1,8 +1,19 @@
-import { defineConfig } from 'vite'
+import { defineConfig, createLogger } from 'vite'
 import react from '@vitejs/plugin-react'
+
+// Custom logger that suppresses ECONNREFUSED proxy noise when the backend is down.
+// Vite logs "http proxy error" before the per-proxy error handler runs, so we
+// have to filter it here instead.
+const logger = createLogger();
+const _warn = logger.warn.bind(logger);
+logger.warn = (msg, opts) => {
+  if (msg.includes('ECONNREFUSED') || msg.includes('ECONNRESET')) return;
+  _warn(msg, opts);
+};
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  customLogger: logger,
   plugins: [react()],
   server: {
     port: 3003,

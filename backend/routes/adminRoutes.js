@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   getDashboard,
+  getRevenueTrend,
   getCustomers,
   getCustomer,
   deleteCustomer,
@@ -10,6 +11,7 @@ const {
   verifyUserProfile,
   getUserAuditLog
 } = require('../controllers/adminController');
+const { updateCategory } = require('../controllers/categoryController');
 const { adminProtect } = require('../middleware/auth');
 
 /**
@@ -20,6 +22,7 @@ const { adminProtect } = require('../middleware/auth');
 router.use(adminProtect); // Apply admin authentication to all routes
 
 router.get('/dashboard', getDashboard);
+router.get('/revenue-trend', getRevenueTrend);
 router.get('/customers', getCustomers);
 router.get('/customers/top-buyers', getTopBuyers);
 router.get('/customers/:id', getCustomer);
@@ -29,5 +32,8 @@ router.delete('/customers/:id', deleteCustomer);
 router.get('/verify/data-consistency', checkDataConsistency);
 router.get('/verify/profile/:userId', verifyUserProfile);
 router.get('/verify/audit/:userId', getUserAuditLog);
+
+// Category GST & shipping management — admin-authenticated via router.use(adminProtect) above
+router.put('/categories/update/:id', updateCategory);
 
 module.exports = router;

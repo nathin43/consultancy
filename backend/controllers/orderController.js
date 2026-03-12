@@ -58,31 +58,6 @@ exports.createOrder = async (req, res) => {
         quantity: item.quantity,
         price: product.price
       });
-
-      // Update product stock
-      product.stock -= item.quantity;
-      await product.save();
-
-      // Notify admin if stock is critical after this order
-      try {
-        const mainAdmin = await Admin.findOne({ role: 'MAIN_ADMIN' }).select('_id').lean();
-        if (mainAdmin) {
-          if (product.stock === 0) {
-            await NotificationService.notifyOutOfStock(mainAdmin._id, {
-              productId: product._id,
-              productName: product.name,
-            });
-          } else if (product.stock <= 5) {
-            await NotificationService.notifyLowStock(mainAdmin._id, {
-              productId: product._id,
-              productName: product.name,
-              stock: product.stock,
-            });
-          }
-        }
-      } catch (notifError) {
-        console.error('Stock notification error (non-fatal):', notifError.message);
-      }
     }
 
     // Compute GST + shipping using category-based pricing rules
@@ -103,6 +78,39 @@ exports.createOrder = async (req, res) => {
     });
 
     await order.save();
+
+    // Deduct stock after order is safely committed to DB.
+    // Doing this after save ensures no ghost stock loss if order.save() throws.
+    const stockMainAdmin = await Admin.findOne({ role: 'MAIN_ADMIN' }).select('_id').lean();
+    for (const stockItem of orderItems) {
+      try {
+        const product = await Product.findById(stockItem.product);
+        if (product) {
+          product.stock -= stockItem.quantity;
+          await product.save(); // triggers pre-save hook to auto-update status field
+          try {
+            if (stockMainAdmin) {
+              if (product.stock === 0) {
+                await NotificationService.notifyOutOfStock(stockMainAdmin._id, {
+                  productId: product._id,
+                  productName: product.name,
+                });
+              } else if (product.stock <= 5) {
+                await NotificationService.notifyLowStock(stockMainAdmin._id, {
+                  productId: product._id,
+                  productName: product.name,
+                  stock: product.stock,
+                });
+              }
+            }
+          } catch (notifError) {
+            console.error('Stock notification error (non-fatal):', notifError.message);
+          }
+        }
+      } catch (stockErr) {
+        console.error(`Stock deduction error for ${stockItem.name} (non-fatal):`, stockErr.message);
+      }
+    }
 
     // Create Payment record
     try {

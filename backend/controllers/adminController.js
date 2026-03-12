@@ -13,21 +13,21 @@ exports.getDashboard = async (req, res) => {
     
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    // Build week/month bounds WITHOUT mutating `now`
+    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const prevWeekStart = new Date(startOfWeek);
-    prevWeekStart.setDate(prevWeekStart.getDate() - 7);
+    const prevWeekStart = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() - 7);
 
     // ========== SALES METRICS ==========
-    // Total sales from delivered orders only
-    const deliveredOrders = await Order.find({ orderStatus: { $in: ['delivered', 'paid'] } });
+    // Total sales: delivered (COD) + paid online (Razorpay) orders
+    const deliveredOrders = await Order.find({ $or: [{ orderStatus: 'delivered' }, { paymentStatus: 'paid' }] });
     const totalSales = deliveredOrders.reduce((sum, order) => sum + (order.totalAmount || order.totalPrice || 0), 0);
     
     // Current week sales
     const currentWeekSales = await Order.aggregate([
       {
         $match: {
-          orderStatus: { $in: ['delivered', 'paid'] },
+          $or: [{ orderStatus: 'delivered' }, { paymentStatus: 'paid' }],
           createdAt: { $gte: startOfWeek }
         }
       },
@@ -38,7 +38,7 @@ exports.getDashboard = async (req, res) => {
     const prevWeekSales = await Order.aggregate([
       {
         $match: {
-          orderStatus: { $in: ['delivered', 'paid'] },
+          $or: [{ orderStatus: 'delivered' }, { paymentStatus: 'paid' }],
           createdAt: { $gte: prevWeekStart, $lt: startOfWeek }
         }
       },
@@ -54,13 +54,14 @@ exports.getDashboard = async (req, res) => {
     const todayOrders = await Order.countDocuments({
       createdAt: { $gte: startOfToday }
     });
-    // Count all active orders (not delivered or cancelled) as pending/active orders
-    const pendingOrders = await Order.countDocuments({ 
-      orderStatus: { $nin: ['delivered', 'cancelled'] }
+    // Mutually exclusive status counts so the donut chart totals correctly
+    const pendingOrders = await Order.countDocuments({
+      orderStatus: { $in: ['pending', 'confirmed', 'processing'] }
     });
     const shippedOrders = await Order.countDocuments({ orderStatus: 'shipped' });
+    // deliveredOrdersCount: only orders with orderStatus 'delivered' (for distribution chart accuracy)
     const deliveredOrdersCount = await Order.countDocuments({ orderStatus: 'delivered' });
-    const cancelledOrders = await Order.countDocuments({ orderStatus: 'cancelled' });
+    const cancelledOrders = await Order.countDocuments({ orderStatus: { $in: ['cancelled', 'refunded'] } });
 
     // ========== PRODUCTS METRICS ==========
     const totalProducts = await Product.countDocuments();
@@ -86,20 +87,16 @@ exports.getDashboard = async (req, res) => {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const endOfDay = new Date(startOfDay.getTime() + 24*60*60*1000);
-      
-      // Try to use deliveredAt if available, otherwise use updatedAt for delivered orders
+      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+
+      // Use createdAt so every completed order is attributed to the day it was placed.
+      // This is consistent, reliable (all orders have createdAt) and avoids the
+      // updatedAt-on-status-change misattribution.
       const dailySales = await Order.aggregate([
         {
           $match: {
-            orderStatus: { $in: ['delivered', 'paid'] },
-            $or: [
-              { deliveredAt: { $gte: startOfDay, $lt: endOfDay } },
-              { 
-                deliveredAt: null,
-                updatedAt: { $gte: startOfDay, $lt: endOfDay }
-              }
-            ]
+            $or: [{ orderStatus: 'delivered' }, { paymentStatus: 'paid' }],
+            createdAt: { $gte: startOfDay, $lt: endOfDay }
           }
         },
         {
@@ -110,22 +107,14 @@ exports.getDashboard = async (req, res) => {
           }
         }
       ]);
-      
+
+      // Use en-CA locale for a reliable YYYY-MM-DD local-date string
       salesTrendData.push({
-        date: startOfDay.toISOString().split('T')[0],
+        date: startOfDay.toLocaleDateString('en-CA'),
         day: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()],
         revenue: dailySales[0]?.revenue || 0,
         orders: dailySales[0]?.orders || 0
       });
-    }
-
-    // Fallback: If we have delivered orders but no revenue in trend, add them to today
-    const totalTrendRevenue = salesTrendData.reduce((sum, d) => sum + d.revenue, 0);
-    if (totalTrendRevenue === 0 && totalSales > 0 && deliveredOrdersCount > 0) {
-      console.log('⚠️ No revenue in trend data but have delivered orders. Adding to today...');
-      // Add all revenue to today's date (last item in the array)
-      salesTrendData[salesTrendData.length - 1].revenue = totalSales;
-      salesTrendData[salesTrendData.length - 1].orders = deliveredOrdersCount;
     }
 
     // ========== RECENT ORDERS ==========
@@ -186,10 +175,10 @@ exports.getDashboard = async (req, res) => {
       },
       salesTrendData,
       orderDistribution: {
-        delivered: deliveredOrdersCount,
+        delivered: deliveredOrdersCount,   // delivered + paid
         shipped: shippedOrders,
-        pending: pendingOrders,
-        cancelled: cancelledOrders
+        pending: pendingOrders,             // pending + confirmed + processing only
+        cancelled: cancelledOrders          // cancelled + refunded
       },
       recentOrders,
       lastUpdated: new Date().toISOString()
@@ -200,6 +189,132 @@ exports.getDashboard = async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+};
+
+/**
+ * Get revenue trend data for a specific week (Mon–Sun)
+ * @route GET /api/admin/revenue-trend?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+ * @access Private/Admin
+ */
+exports.getRevenueTrend = async (req, res) => {
+  try {
+    const { mode = 'weekly', startDate, endDate, date: dateParam } = req.query;
+    const salesTrendData = [];
+
+    // ── DAILY: hourly breakdown for one calendar day ──────────────────────────
+    if (mode === 'daily') {
+      // Use supplied date or today
+      const ref = dateParam
+        ? new Date(dateParam + 'T00:00:00')
+        : new Date();
+      const startOfDay = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate());
+
+      for (let h = 0; h < 24; h++) {
+        const slotStart = new Date(startOfDay.getTime() + h * 60 * 60 * 1000);
+        const slotEnd   = new Date(slotStart.getTime() + 60 * 60 * 1000);
+
+        const hourSales = await Order.aggregate([
+          {
+            $match: {
+              orderStatus: { $in: ['delivered', 'paid', 'confirmed', 'processing'] },
+              createdAt: { $gte: slotStart, $lt: slotEnd }
+            }
+          },
+          { $group: { _id: null, revenue: { $sum: '$totalAmount' }, orders: { $sum: 1 } } }
+        ]);
+
+        const label = String(h).padStart(2, '0') + ':00';
+        salesTrendData.push({
+          date: startOfDay.toLocaleDateString('en-CA'),
+          day: label,
+          hour: h,
+          revenue: hourSales[0]?.revenue || 0,
+          orders:  hourSales[0]?.orders  || 0
+        });
+      }
+
+      return res.status(200).json({ success: true, salesTrendData });
+    }
+
+    // ── MONTHLY: one entry per calendar day in the given month ────────────────
+    if (mode === 'monthly') {
+      const ref = dateParam
+        ? new Date(dateParam + 'T00:00:00')
+        : new Date();
+      const year  = ref.getFullYear();
+      const month = ref.getMonth(); // 0-based
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const startOfDay = new Date(year, month, d);
+        const endOfDay   = new Date(year, month, d + 1);
+
+        const daySales = await Order.aggregate([
+          {
+            $match: {
+              orderStatus: { $in: ['delivered', 'paid', 'confirmed', 'processing'] },
+              createdAt: { $gte: startOfDay, $lt: endOfDay }
+            }
+          },
+          { $group: { _id: null, revenue: { $sum: '$totalAmount' }, orders: { $sum: 1 } } }
+        ]);
+
+        salesTrendData.push({
+          date: startOfDay.toLocaleDateString('en-CA'),
+          day:  String(d),          // X-axis label: "1", "2", … "31"
+          revenue: daySales[0]?.revenue || 0,
+          orders:  daySales[0]?.orders  || 0
+        });
+      }
+
+      return res.status(200).json({ success: true, salesTrendData });
+    }
+
+    // ── WEEKLY (default): one entry per day between startDate and endDate ─────
+    if (!startDate || !endDate) {
+      return res.status(400).json({ success: false, message: 'startDate and endDate are required for weekly mode' });
+    }
+
+    const current = new Date(startDate + 'T00:00:00');
+    const end     = new Date(endDate   + 'T00:00:00');
+
+    while (current <= end) {
+      const startOfDay = new Date(current.getFullYear(), current.getMonth(), current.getDate());
+      const endOfDay   = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+
+      // Use createdAt — consistent with dashboard trend and avoids updatedAt drift
+      const dailySales = await Order.aggregate([
+        {
+          $match: {
+            $or: [{ orderStatus: 'delivered' }, { paymentStatus: 'paid' }],
+            createdAt: { $gte: startOfDay, $lt: endOfDay }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            revenue: { $sum: '$totalAmount' },
+            orders: { $sum: 1 }
+          }
+        }
+      ]);
+
+      // en-CA gives reliable YYYY-MM-DD in local time (avoids UTC midnight drift)
+      salesTrendData.push({
+        date: startOfDay.toLocaleDateString('en-CA'),
+        day:  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][current.getDay()],
+        revenue: dailySales[0]?.revenue || 0,
+        orders:  dailySales[0]?.orders  || 0
+      });
+
+      current.setDate(current.getDate() + 1);
+    }
+
+    res.status(200).json({ success: true, salesTrendData });
+  } catch (error) {
+    console.error('Revenue Trend Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch revenue trend' });
   }
 };
 
@@ -302,7 +417,7 @@ exports.getCustomer = async (req, res) => {
       .populate('items.product')
       .sort('-createdAt');
 
-    const totalSpent = orders.reduce((sum, order) => sum + order.totalPrice, 0);
+    const totalSpent = orders.reduce((sum, order) => sum + (order.totalAmount || order.totalPrice || 0), 0);
 
     res.status(200).json({
       success: true,
