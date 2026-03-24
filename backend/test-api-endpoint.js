@@ -6,7 +6,7 @@ require('dotenv').config();
 
 const testAPIEndpoint = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect((process.env.MONGO_URI || process.env.MONGODB_URI));
     console.log('✅ Connected to MongoDB\n');
 
     // Find the user who has messages

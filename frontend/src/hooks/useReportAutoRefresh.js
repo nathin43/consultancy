@@ -1,7 +1,20 @@
 import { useEffect, useRef } from 'react';
 
+const DEFAULT_EVENT_NAMES = [
+  'report:data-changed',
+  'order-placed',
+  'order-cancelled',
+  'refund-approved',
+  'payment-completed',
+  'stock-updated',
+];
+
 const useReportAutoRefresh = (refreshFn, options = {}) => {
-  const { intervalMs = 10000, enabled = true } = options;
+  const {
+    intervalMs = 10000,
+    enabled = true,
+    eventNames = DEFAULT_EVENT_NAMES,
+  } = options;
   const refreshRef = useRef(refreshFn);
   const isRefreshingRef = useRef(false);
 
@@ -38,15 +51,19 @@ const useReportAutoRefresh = (refreshFn, options = {}) => {
 
     window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('report:data-changed', handleDataChanged);
+    eventNames.forEach((eventName) => {
+      window.addEventListener(eventName, handleDataChanged);
+    });
 
     return () => {
       window.clearInterval(intervalId);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('report:data-changed', handleDataChanged);
+      eventNames.forEach((eventName) => {
+        window.removeEventListener(eventName, handleDataChanged);
+      });
     };
-  }, [enabled, intervalMs]);
+  }, [enabled, intervalMs, eventNames]);
 };
 
 export default useReportAutoRefresh;

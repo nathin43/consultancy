@@ -29,11 +29,12 @@ const ReportChartTooltip = ({ active, payload, label, seriesLabel = 'Value', val
 
   const point = payload[0]?.value ?? 0;
   const valueText = formatValue(point);
+  const metricLabel = String(seriesLabel || 'Value').trim();
 
   return (
     <div className="report-chart-tooltip">
       <p className="report-chart-tooltip__value">
-        {label} {'->'} {valueText} {seriesLabel}
+        {label} {'->'} {valueText} {metricLabel.toLowerCase()}
       </p>
     </div>
   );

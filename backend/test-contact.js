@@ -10,7 +10,7 @@ const Contact = require('./models/Contact');
 async function testContactSystem() {
   try {
     console.log('🔄 Connecting to MongoDB...');
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect((process.env.MONGO_URI || process.env.MONGODB_URI));
     console.log('✅ MongoDB Connected!\n');
 
     // Test 1: Create a test contact message

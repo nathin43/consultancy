@@ -56,8 +56,19 @@
 /* Toast Message */
 .toast-message {
   flex: 1;
-  color: inherit;
+  color: #0f172a;
+  font-weight: 600;
   word-break: break-word;
+}
+
+.toast-success .toast-message {
+  color: #166534;
+}
+
+.toast-error .toast-message,
+.toast-info .toast-message,
+.toast-warning .toast-message {
+  color: #93c5fd;
 }
 
 /* Toast Close Button */

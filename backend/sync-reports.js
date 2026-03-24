@@ -13,7 +13,7 @@ const { upsertUserReportSummariesBulk } = require('./services/userReportSummaryS
 const syncReports = async () => {
   try {
     console.log('🔄 Connecting to MongoDB...');
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect((process.env.MONGO_URI || process.env.MONGODB_URI));
     console.log('✅ Connected to MongoDB');
 
     console.log('📊 Fetching all users...');

@@ -356,14 +356,18 @@ const products = [
 // Import data
 const importData = async () => {
   try {
-    // Clear existing data
-    await Admin.deleteMany();
-    await User.deleteMany();
-    await Product.deleteMany();
-    await Order.deleteMany();
-    await Cart.deleteMany();
-
-    console.log('🗑️  Data Destroyed...');
+    // For safety, avoid destructive resets on live databases unless explicitly allowed.
+    const shouldReset = process.env.SEED_RESET === 'true';
+    if (shouldReset) {
+      await Admin.deleteMany();
+      await User.deleteMany();
+      await Product.deleteMany();
+      await Order.deleteMany();
+      await Cart.deleteMany();
+      console.log('🗑️  Data Destroyed (SEED_RESET=true)...');
+    } else {
+      console.log('ℹ️  SEED_RESET is not true: keeping existing data and inserting demo records only.');
+    }
 
     // Insert sample data (using .create() to trigger password hashing middleware)
     await Admin.create(admins);

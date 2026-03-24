@@ -6,6 +6,23 @@ const toDate = (value) => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+const resolveItemDate = (item, dateField) => {
+  if (typeof dateField === 'function') {
+    return toDate(dateField(item));
+  }
+
+  if (Array.isArray(dateField)) {
+    for (let i = 0; i < dateField.length; i += 1) {
+      const field = dateField[i];
+      const date = toDate(item?.[field]);
+      if (date) return date;
+    }
+    return null;
+  }
+
+  return toDate(item?.[dateField]);
+};
+
 export const filterByDateRange = (
   allData = [],
   selectedRange = 'monthly',
@@ -18,7 +35,7 @@ export const filterByDateRange = (
   const toDateValue = toDate(dateTo) || fallbackRange.to;
 
   return allData.filter((item) => {
-    const itemDate = toDate(item?.[dateField]);
+    const itemDate = resolveItemDate(item, dateField);
     if (!itemDate) return false;
     return itemDate >= fromDate && itemDate <= toDateValue;
   });

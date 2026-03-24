@@ -13,14 +13,14 @@ const mongoose = require('mongoose');
 const testConnection = async () => {
   console.log('\n🔍 Testing MongoDB Atlas Connection...\n');
   console.log('📋 Connection Details:');
-  console.log(`- URI: ${process.env.MONGODB_URI.split('@')[0]}...@${process.env.MONGODB_URI.split('@')[1].split('/')[0]}`);
+  console.log(`- URI: ${(process.env.MONGO_URI || process.env.MONGODB_URI).split('@')[0]}...@${(process.env.MONGO_URI || process.env.MONGODB_URI).split('@')[1].split('/')[0]}`);
   console.log(`- Database: electric-shop`);
   console.log(`- Environment: ${process.env.NODE_ENV}\n`);
 
   try {
     console.log('⏳ Connecting to MongoDB Atlas...');
     
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+    const conn = await mongoose.connect((process.env.MONGO_URI || process.env.MONGODB_URI), {
       retryWrites: true,
       w: 'majority',
       serverSelectionTimeoutMS: 10000,

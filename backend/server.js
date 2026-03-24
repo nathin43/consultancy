@@ -13,48 +13,73 @@ dotenv.config();
 // ============================================
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-  console.error(`[${timestamp}] [CRITICAL] Uncaught Exception:`, error.message);
-  console.error(error.stack);
-  // Exit process after logging
-  process.exit(1);
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION:", err);
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-  console.error(`[${timestamp}] [CRITICAL] Unhandled Rejection at:`, promise);
-  console.error('[CRITICAL] Reason:', reason);
-  // Don't exit - continue running but log the issue
+process.on("unhandledRejection", (err) => {
+  console.error("UNHANDLED REJECTION:", err);
 });
 
-// Handle graceful shutdown
-process.on('SIGTERM', () => {
-  const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-  console.log(`[${timestamp}] [SERVER] SIGTERM signal received: closing HTTP server`);
-  if (global.httpServer) {
-    global.httpServer.close(() => {
-      console.log(`[${timestamp}] [SERVER] HTTP server closed`);
-      process.exit(0);
-    });
-  } else {
-    process.exit(0);
-  }
-});
+let isShuttingDown = false;
+const gracefulShutdown = (signal, onDone) => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
 
-// Handle interrupt signal
-process.on('SIGINT', () => {
   const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-  console.log(`[${timestamp}] [SERVER] SIGINT signal received: closing HTTP server`);
-  if (global.httpServer) {
-    global.httpServer.close(() => {
-      console.log(`[${timestamp}] [SERVER] HTTP server closed`);
+  console.log(`[${timestamp}] [SERVER] ${signal} signal received: shutting down`);
+
+  // Prevent hanging forever during nodemon restarts.
+  const forceExitTimer = setTimeout(() => {
+    const ts = new Date().toISOString().split('T')[1].split('.')[0];
+    console.warn(`[${ts}] [SERVER] Forced shutdown timeout reached`);
+    if (typeof onDone === 'function') {
+      onDone();
+    } else {
       process.exit(0);
+    }
+  }, 3000);
+
+  const done = () => {
+    clearTimeout(forceExitTimer);
+    if (typeof onDone === 'function') {
+      onDone();
+    } else {
+      process.exit(0);
+    }
+  };
+
+  const closeHttpServer = () => {
+    if (global.httpServer) {
+      global.httpServer.close(() => {
+        const ts = new Date().toISOString().split('T')[1].split('.')[0];
+        console.log(`[${ts}] [SERVER] HTTP server closed`);
+        done();
+      });
+    } else {
+      done();
+    }
+  };
+
+  if (global.io) {
+    global.io.close(() => {
+      const ts = new Date().toISOString().split('T')[1].split('.')[0];
+      console.log(`[${ts}] [SERVER] Socket.IO server closed`);
+      closeHttpServer();
     });
   } else {
-    process.exit(0);
+    closeHttpServer();
   }
+};
+
+// Handle process termination and Ctrl+C.
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Nodemon uses SIGUSR2 for restarts; acknowledge and re-emit when cleanly closed.
+process.once('SIGUSR2', () => {
+  gracefulShutdown('SIGUSR2', () => process.kill(process.pid, 'SIGUSR2'));
 });
 
 
@@ -63,6 +88,7 @@ const app = express();
 
 // Create HTTP server
 const httpServer = http.createServer(app);
+global.httpServer = httpServer;
 
 // CORS Configuration - Production Ready
 const allowedOrigins = [
@@ -91,6 +117,7 @@ const io = new Server(httpServer, {
 
 // Make io accessible to route controllers via req.app.get('io')
 app.set('io', io);
+global.io = io;
 
 // CORS Middleware
 app.use(
@@ -334,12 +361,24 @@ if (mongoURI.includes('YOUR_NEW_PASSWORD') ||
   process.exit(1);
 }
 
-const connectWithRetry = (retries = 5, delay = 5000) => {
-  mongoose.connect(mongoURI)
+const connectDB = () => {
+  mongoose.connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
     .then(async () => {
       console.log('✅ MongoDB Connected');
-      // Auto-seed categories if the collection is empty
+      
+      // Auto-seed data if the products or categories are empty
       try {
+        const Product = require('./models/Product');
+        const productsCount = await Product.countDocuments();
+        if (productsCount === 0) {
+          console.log('🌱 Data missing, seeding data...');
+          // Prevent hanging by running this asynchronously without blocking boot
+          require('./seeder'); 
+        }
+
         const Category = require('./models/Category');
         const count = await Category.countDocuments();
         if (count === 0) {
@@ -361,42 +400,22 @@ const connectWithRetry = (retries = 5, delay = 5000) => {
       } catch (seedErr) {
         console.error('⚠️  Category auto-seed failed (non-fatal):', seedErr.message);
       }
+
+      // Start listening only after DB is ready
+      httpServer.listen(PORT, '0.0.0.0', () => {
+        const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+        console.log(`[${timestamp}] [SERVER] Running on port ${PORT}`);
+        console.log(`[${timestamp}] [SERVER] Environment: ${process.env.NODE_ENV || 'development'}`);
+      });
     })
     .catch(err => {
-      console.error('\n❌ MongoDB Connection Error:', err.message);
-
-      if (err.message.includes('bad auth') || err.message.includes('authentication failed')) {
-        console.error('\n🔐 Authentication failed — check MONGO_URI password in .env\n');
-        process.exit(1);
-      } else if (err.message.includes('whitelist') || err.message.includes('IP') || err.message.includes('ENOTFOUND') || err.message.includes('ECONNREFUSED')) {
-        if (retries > 0) {
-          console.error(`🔄 Retrying in ${delay / 1000}s... (${retries} attempts left)`);
-          console.error('   Tip: Make sure your IP is whitelisted on MongoDB Atlas → Network Access\n');
-          setTimeout(() => connectWithRetry(retries - 1, delay), delay);
-        } else {
-          console.error('\n❌ Could not connect after multiple attempts. Please whitelist your IP on MongoDB Atlas:\n');
-          console.error('   https://www.mongodb.com/docs/atlas/security-whitelist/\n');
-          console.error(`   Your public IP: run  curl ifconfig.me  to find it\n`);
-          process.exit(1);
-        }
-      } else {
-        if (retries > 0) {
-          console.error(`🔄 Retrying in ${delay / 1000}s... (${retries} attempts left)\n`);
-          setTimeout(() => connectWithRetry(retries - 1, delay), delay);
-        } else {
-          process.exit(1);
-        }
-      }
+      console.error('\n❌ DB error, retrying...', err.message);
+      setTimeout(() => connectDB(), 5000);
     });
 };
 
-connectWithRetry();
-
 // Start Server
 const PORT = process.env.PORT || 5000;
-
-// Store server in global scope for graceful shutdown
-global.httpServer = httpServer;
 
 httpServer.on('error', (err) => {
   const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
@@ -411,15 +430,5 @@ httpServer.on('error', (err) => {
   }
 });
 
-try {
-  httpServer.listen(PORT, '0.0.0.0', () => {
-    const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-    console.log(`[${timestamp}] [SERVER] Running on port ${PORT}`);
-    console.log(`[${timestamp}] [SERVER] Environment: ${process.env.NODE_ENV || 'development'}`);
-  });
-} catch (error) {
-  const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-  console.error(`[${timestamp}] [CRITICAL] Failed to start server:`, error.message);
-  process.exit(1);
-}
+connectDB();
 

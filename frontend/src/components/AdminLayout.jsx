@@ -18,7 +18,7 @@ const AdminLayout = ({ children }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
-  const [pendingReturns, setPendingReturns] = useState(0);
+  const [pendingRefunds, setPendingRefunds] = useState(0);
 
   // Debug: Log admin data
   console.log('AdminLayout - Admin Data:', admin);
@@ -41,11 +41,13 @@ const AdminLayout = ({ children }) => {
       }
     };
 
-    const fetchPendingReturns = async () => {
+    const fetchPendingRefunds = async () => {
       try {
-        const { data } = await API.get('/returns/pending-count');
+        const { data } = await API.get('/refunds/stats');
         if (data.success) {
-          setPendingReturns(data.count);
+          const pending = Number(data.stats?.pending || 0);
+          const processing = Number(data.stats?.processing || 0);
+          setPendingRefunds(pending + processing);
         }
       } catch (error) {
         // Non-critical: silently ignore
@@ -53,12 +55,12 @@ const AdminLayout = ({ children }) => {
     };
     
     fetchUnreadCount();
-    fetchPendingReturns();
+    fetchPendingRefunds();
     
     // Refresh every 2 minutes
     const interval = setInterval(() => {
       fetchUnreadCount();
-      fetchPendingReturns();
+      fetchPendingRefunds();
     }, 120000);
     
     return () => clearInterval(interval);
@@ -122,8 +124,8 @@ const AdminLayout = ({ children }) => {
                   {item.path === '/admin/contact-messages' && unreadMessages > 0 && (
                     <span className="menu-badge">{unreadMessages}</span>
                   )}
-                  {item.path === '/admin/refund-requests' && pendingReturns > 0 && (
-                    <span className="menu-badge menu-badge-warning">{pendingReturns}</span>
+                  {item.path === '/admin/refund-requests' && pendingRefunds > 0 && (
+                    <span className="menu-badge menu-badge-warning">{pendingRefunds}</span>
                   )}
                   {location.pathname === item.path && <span className="active-indicator"></span>}
                 </Link>

@@ -6,7 +6,7 @@ require('dotenv').config();
 
 const testUserReportsAPI = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect((process.env.MONGO_URI || process.env.MONGODB_URI));
     console.log('✅ Connected to MongoDB\n');
 
     // Check if ReportMessage collection exists and has data

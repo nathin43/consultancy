@@ -20,7 +20,7 @@ import {
   getTimelinePoints,
   mapSeriesToTimeline,
   bucketKeyForDate,
-  hasAnyNonZero,
+  buildZeroSeriesForRange,
 } from '../../utils/reportChartTimeline';
 import ModernReportChart from '../../components/admin/ModernReportChart';
 import useReportAutoRefresh from '../../hooks/useReportAutoRefresh';
@@ -37,9 +37,7 @@ const PaymentReport = () => {
   const [selectedRange, setSelectedRange] = useState('monthly');
   const [periodAnchor, setPeriodAnchor] = useState(new Date());
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [comparison, setComparison] = useState(null);
-  const [backendChart, setBackendChart] = useState(null);
   const [paymentMethodBreakdown, setPaymentMethodBreakdown] = useState([]);
   const [dateRangeLabel, setDateRangeLabel] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -61,24 +59,14 @@ const PaymentReport = () => {
 
   // Refs to prevent duplicate calls and enable caching
   const isFetchingRef = useRef(false);
-  const cacheRef = useRef(null);
-  const cacheTimeRef = useRef(0);
   const chartRef = useRef(null);
-  const CACHE_DURATION = 30000; // 30 seconds
   const paymentTimelineData = useMemo(() => {
-    if (backendChart?.labels?.length && backendChart?.data?.length) {
-      return backendChart.labels.map((label, index) => ({
-        label,
-        value: Number(backendChart.data[index] || 0),
-      }));
-    }
-
     const timeline = getTimelinePoints(selectedRange, filters.dateFrom, filters.dateTo);
     return mapSeriesToTimeline(timeline, paymentData, {
       getBucketKey: (item) => bucketKeyForDate(item.createdAt, selectedRange),
       getValue: (item) => Number(item.totalAmount || 0),
     });
-  }, [backendChart, paymentData, selectedRange, filters.dateFrom, filters.dateTo]);
+  }, [paymentData, selectedRange, filters.dateFrom, filters.dateTo]);
   const paymentMethodPieData = useMemo(() => {
     if (!paymentMethodBreakdown || paymentMethodBreakdown.length === 0) {
       return [
@@ -88,7 +76,11 @@ const PaymentReport = () => {
     }
     return paymentMethodBreakdown;
   }, [paymentMethodBreakdown]);
-  const showNoDataHint = !hasAnyNonZero(paymentTimelineData);
+  const fallbackFlatTimelineData = useMemo(
+    () => buildZeroSeriesForRange(selectedRange, filters.dateFrom, filters.dateTo),
+    [selectedRange, filters.dateFrom, filters.dateTo]
+  );
+  const paymentTimelineRenderData = paymentTimelineData.length > 0 ? paymentTimelineData : fallbackFlatTimelineData;
 
   const fetchPaymentData = useCallback(async (forceRefresh = false, rangeOverride = selectedRange, filtersOverride = null) => {
     const activeFilters = filtersOverride || filters;
@@ -97,12 +89,6 @@ const PaymentReport = () => {
       return;
     }
 
-    if (!forceRefresh && cacheRef.current && (Date.now() - cacheTimeRef.current < CACHE_DURATION)) {
-      console.log('💳 Using cached payment data');
-      setAllPaymentData(cacheRef.current.data);
-      return;
-    }
-    
     isFetchingRef.current = true;
     setErrorMessage('');
 
@@ -130,10 +116,7 @@ const PaymentReport = () => {
       if (response.data?.success) {
         const reportData = response.data.data || [];
         const summary = response.data.summary || {};
-        const chart = response.data.chart || null;
-
         setAllPaymentData(reportData);
-        setBackendChart(chart);
         setComparison(summary.comparison || null);
         if (summary.dateRange?.from && summary.dateRange?.to) {
           setDateRangeLabel(`${formatDateLabel(summary.dateRange.from)} - ${formatDateLabel(summary.dateRange.to)}`);
@@ -141,9 +124,6 @@ const PaymentReport = () => {
           setDateRangeLabel('');
         }
 
-        cacheRef.current = { data: reportData };
-        cacheTimeRef.current = Date.now();
-        
         console.log(`✅ Payment report loaded: ${reportData.length} records`);
       } else {
         throw new Error('Invalid response format');
@@ -160,7 +140,6 @@ const PaymentReport = () => {
       
       const errorMsg = err.response?.data?.message || 'Failed to load payment report. Please try again.';
       setErrorMessage(errorMsg);
-      setBackendChart(null);
       setComparison(null);
       setPaymentMethodBreakdown([]);
       error(errorMsg);
@@ -250,13 +229,7 @@ const PaymentReport = () => {
     setPeriodAnchor(nextAnchor);
     setSelectedRange(range);
     setFilters(nextFilters);
-    cacheRef.current = null;
-    setIsUpdating(true);
-    try {
-      await fetchPaymentData(true, range, nextFilters);
-    } finally {
-      setIsUpdating(false);
-    }
+    await fetchPaymentData(true, range, nextFilters);
   };
 
   const handleShiftPeriod = async (direction) => {
@@ -270,16 +243,8 @@ const PaymentReport = () => {
 
     setPeriodAnchor(nextAnchor);
     setFilters(nextFilters);
-    cacheRef.current = null;
-    setIsUpdating(true);
-    try {
-      await fetchPaymentData(true, selectedRange, nextFilters);
-    } finally {
-      setIsUpdating(false);
-    }
+    await fetchPaymentData(true, selectedRange, nextFilters);
   };
-
-  // Removed old fetchPaymentData - now using optimized version above
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -287,13 +252,7 @@ const PaymentReport = () => {
   };
 
   const handleApplyFilters = async () => {
-    cacheRef.current = null;
-    setIsUpdating(true);
-    try {
-      await fetchPaymentData(true, selectedRange);
-    } finally {
-      setIsUpdating(false);
-    }
+    await fetchPaymentData(true, selectedRange);
   };
 
   const handleClearFilters = () => {
@@ -319,19 +278,22 @@ const PaymentReport = () => {
 
       // Load Unicode font for ₹ symbol
       const PDF_FONT = await loadUnicodeFonts(doc);
+      const exportTitle = `${getRangeTitle(selectedRange)} Payment Report`;
+      const exportRangeLabel =
+        dateRangeLabel || `${formatDateLabel(filters.dateFrom)} - ${formatDateLabel(filters.dateTo)}`;
 
       let yPos = addShopHeader(doc, 'PAYMENT REPORT', [245, 158, 11]);
 
       doc.setFont(PDF_FONT, 'bold');
       doc.setFontSize(9);
       doc.setTextColor(50, 50, 50);
-      doc.text(`${getRangeTitle(selectedRange)} Payment Report`, 14, yPos);
+      doc.text(exportTitle, 14, yPos);
       yPos += 5;
-      if (dateRangeLabel) {
+      if (exportRangeLabel) {
         doc.setFont(PDF_FONT, 'normal');
         doc.setFontSize(8);
         doc.setTextColor(120, 120, 120);
-        doc.text(`Range: ${dateRangeLabel}`, 14, yPos);
+        doc.text(`Range: ${exportRangeLabel}`, 14, yPos);
         yPos += 5;
       }
 
@@ -365,8 +327,8 @@ const PaymentReport = () => {
       const summaryData = [
         ['Total Transactions', analytics.totalTransactions.toString()],
         ['Total Amount', pdfRupee(analytics.totalAmount)],
-        ['COD Payments', pdfRupee(analytics.codPayments)],
-        ['Online Payments', pdfRupee(analytics.onlinePayments)]
+        ['COD Payments', analytics.codPayments.toString()],
+        ['Online Payments', analytics.onlinePayments.toString()]
       ];
       
       autoTable(doc, {
@@ -421,8 +383,12 @@ const PaymentReport = () => {
         formatDate(payment.createdAt),
         pdfRupee(payment.totalAmount),
         payment.paymentMethod || 'N/A',
-        payment.status || 'Pending'
+        payment.paymentStatus || payment.status || 'Pending'
       ]);
+
+      if (tableData.length === 0) {
+        tableData.push(['—', 'No records for selected filter', '—', pdfRupee(0), '—', '—']);
+      }
       
       autoTable(doc, {
         startY: yPos,
@@ -466,7 +432,7 @@ const PaymentReport = () => {
 
   return (
     <AdminLayout>
-      <div className={`admin-report-page ${isUpdating ? 'is-updating' : ''}`}>
+      <div className="admin-report-page">
         {/* Header */}
         <div className="report-page-header">
           <button className="btn-back" onClick={() => navigate('/admin/reports')}>
@@ -543,7 +509,7 @@ const PaymentReport = () => {
             <div className="report-chart-grid two-col">
               <ModernReportChart
                 type="line"
-                data={paymentTimelineData}
+                data={paymentTimelineRenderData}
                 xKey="label"
                 valueKey="value"
                 title="Payment Trend"
@@ -567,11 +533,6 @@ const PaymentReport = () => {
                 animationDuration={800}
               />
             </div>
-            {showNoDataHint && (
-              <div className="report-chart-overlay">
-                <span className="report-chart-overlay__text">No sales recorded</span>
-              </div>
-            )}
           </div>
         </div>
 

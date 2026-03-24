@@ -40,6 +40,8 @@ exports.createRefund = async (req, res) => {
       user: req.user.id,
       amount: order.totalAmount,
       reason,
+      paymentMethod: order.paymentMethod || null,
+      source: 'manual',
     });
 
     // Notify admin
@@ -80,13 +82,14 @@ exports.createRefund = async (req, res) => {
  */
 exports.getAllRefunds = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, source } = req.query;
     const query = {};
     if (status && status !== 'all') query.refundStatus = status;
+    if (source && source !== 'all') query.source = source;
 
     const refunds = await Refund.find(query)
       .populate('user', 'name email phone')
-      .populate('order', 'orderNumber totalAmount orderStatus')
+      .populate('order', 'orderNumber totalAmount orderStatus paymentMethod paymentStatus items createdAt')
       .populate('processedBy', 'name')
       .sort('-createdAt');
 
@@ -104,7 +107,7 @@ exports.getRefundById = async (req, res) => {
   try {
     const refund = await Refund.findById(req.params.id)
       .populate('user', 'name email phone')
-      .populate('order', 'orderNumber totalAmount items shippingAddress orderStatus paymentMethod')
+      .populate('order', 'orderNumber totalAmount items shippingAddress orderStatus paymentMethod paymentStatus')
       .populate('processedBy', 'name');
 
     if (!refund) {
@@ -169,13 +172,54 @@ exports.updateRefundStatus = async (req, res) => {
 };
 
 /**
+ * Admin reply for a refund request
+ * @route POST /api/refunds/:id/reply
+ */
+exports.replyToRefund = async (req, res) => {
+  try {
+    const { replyMessage, newStatus } = req.body;
+
+    if (!replyMessage || !replyMessage.trim()) {
+      return res.status(400).json({ success: false, message: 'Reply message is required' });
+    }
+
+    const refund = await Refund.findById(req.params.id)
+      .populate('user', 'name email phone')
+      .populate('order', 'orderNumber');
+
+    if (!refund) {
+      return res.status(404).json({ success: false, message: 'Refund not found' });
+    }
+
+    refund.adminReply = replyMessage.trim();
+    refund.adminReplyAt = new Date();
+    if (newStatus) {
+      refund.refundStatus = newStatus;
+      refund.processedBy = req.admin._id || req.admin.id;
+      refund.processedAt = new Date();
+    }
+
+    await refund.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Reply sent successfully',
+      refund,
+      userPhone: refund.user?.phone || null,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
  * Get user's refunds
  * @route GET /api/refunds/my
  */
 exports.getMyRefunds = async (req, res) => {
   try {
     const refunds = await Refund.find({ user: req.user.id })
-      .populate('order', 'orderNumber totalAmount orderStatus')
+      .populate('order', 'orderNumber totalAmount orderStatus paymentMethod')
       .sort('-createdAt');
 
     res.status(200).json({ success: true, count: refunds.length, refunds });

@@ -12,7 +12,7 @@ const testStockAndCustomerReports = async () => {
   console.log('=' .repeat(70));
   
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect((process.env.MONGO_URI || process.env.MONGODB_URI));
     console.log('✅ Connected to MongoDB\n');
     
     // Test 1: Stock Report Data

@@ -20,7 +20,7 @@ import {
   getTimelinePoints,
   mapSeriesToTimeline,
   bucketKeyForDate,
-  hasAnyNonZero,
+  buildZeroSeriesForRange,
 } from '../../utils/reportChartTimeline';
 import ModernReportChart from '../../components/admin/ModernReportChart';
 import useReportAutoRefresh from '../../hooks/useReportAutoRefresh';
@@ -37,10 +37,7 @@ const CustomerReport = () => {
   const [selectedRange, setSelectedRange] = useState('monthly');
   const [periodAnchor, setPeriodAnchor] = useState(new Date());
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [comparison, setComparison] = useState(null);
-  const [backendChart, setBackendChart] = useState(null);
-  const [growthTrend, setGrowthTrend] = useState([]);
   const [dateRangeLabel, setDateRangeLabel] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const initialRange = getRangeDates('monthly');
@@ -114,10 +111,7 @@ const CustomerReport = () => {
       if (response.data.success) {
         const reportData = response.data.data || [];
         const summary = response.data.summary || {};
-        const chart = response.data.chart || null;
-
         setAllCustomerData(reportData);
-        setBackendChart(chart);
         setComparison(summary.comparison || null);
         if (summary.dateRange?.from && summary.dateRange?.to) {
           setDateRangeLabel(`${formatDateLabel(summary.dateRange.from)} - ${formatDateLabel(summary.dateRange.to)}`);
@@ -146,8 +140,6 @@ const CustomerReport = () => {
         error('Server error. Please try again later.');
       } else {
         setComparison(null);
-        setBackendChart(null);
-        setGrowthTrend([]);
         error(err.response?.data?.message || 'Failed to fetch customer data');
       }
     } finally {
@@ -205,13 +197,6 @@ const CustomerReport = () => {
       totalOrders: totals.totalOrders,
     });
 
-    const timeline = getTimelinePoints(selectedRange, filters.dateFrom, filters.dateTo);
-    const trend = mapSeriesToTimeline(timeline, filtered, {
-      getBucketKey: (item) => bucketKeyForDate(item.createdAt || item.joinedAt, selectedRange),
-      getValue: () => 1,
-    });
-    setGrowthTrend(trend);
-
     setPagination((prev) => ({
       ...prev,
       totalUsers: totalCustomers,
@@ -230,12 +215,7 @@ const CustomerReport = () => {
   };
 
   const handleApplyFilters = async () => {
-    setIsUpdating(true);
-    try {
-      await fetchCustomerData(selectedRange, filters);
-    } finally {
-      setIsUpdating(false);
-    }
+    await fetchCustomerData(selectedRange, filters);
   };
 
   const handleRangeChange = async (range) => {
@@ -250,12 +230,7 @@ const CustomerReport = () => {
     setPeriodAnchor(nextAnchor);
     setSelectedRange(range);
     setFilters(nextFilters);
-    setIsUpdating(true);
-    try {
-      await fetchCustomerData(range, nextFilters);
-    } finally {
-      setIsUpdating(false);
-    }
+    await fetchCustomerData(range, nextFilters);
   };
 
   const handleShiftPeriod = async (direction) => {
@@ -269,12 +244,7 @@ const CustomerReport = () => {
 
     setPeriodAnchor(nextAnchor);
     setFilters(nextFilters);
-    setIsUpdating(true);
-    try {
-      await fetchCustomerData(selectedRange, nextFilters);
-    } finally {
-      setIsUpdating(false);
-    }
+    await fetchCustomerData(selectedRange, nextFilters);
   };
 
   const handleClearFilters = () => {
@@ -308,19 +278,22 @@ const CustomerReport = () => {
 
       // Load Unicode font for ₹ symbol
       const PDF_FONT = await loadUnicodeFonts(doc);
+      const exportTitle = `${getRangeTitle(selectedRange)} Customer Report`;
+      const exportRangeLabel =
+        dateRangeLabel || `${formatDateLabel(filters.dateFrom)} - ${formatDateLabel(filters.dateTo)}`;
 
       let yPos = addShopHeader(doc, 'CUSTOMER REPORT', [139, 92, 246]);
 
       doc.setFont(PDF_FONT, 'bold');
       doc.setFontSize(9);
       doc.setTextColor(50, 50, 50);
-      doc.text(`${getRangeTitle(selectedRange)} Customer Report`, 14, yPos);
+      doc.text(exportTitle, 14, yPos);
       yPos += 5;
-      if (dateRangeLabel) {
+      if (exportRangeLabel) {
         doc.setFont(PDF_FONT, 'normal');
         doc.setFontSize(8);
         doc.setTextColor(120, 120, 120);
-        doc.text(`Range: ${dateRangeLabel}`, 14, yPos);
+        doc.text(`Range: ${exportRangeLabel}`, 14, yPos);
         yPos += 5;
       }
 
@@ -415,6 +388,10 @@ const CustomerReport = () => {
         pdfRupee(customer.totalSpent || 0),
         formatDate(customer.lastOrderDate)
       ]);
+
+      if (tableData.length === 0) {
+        tableData.push(['No records for selected filter', '—', '—', '—', '—', '0', pdfRupee(0), '—']);
+      }
       
       autoTable(doc, {
         startY: yPos,
@@ -459,20 +436,17 @@ const CustomerReport = () => {
   };
 
   const customerChartData = useMemo(() => {
-    if (backendChart?.labels?.length && backendChart?.data?.length) {
-      return backendChart.labels.map((label, index) => ({
-        label,
-        value: Number(backendChart.data[index] || 0),
-      }));
-    }
-
     const timeline = getTimelinePoints(selectedRange, filters.dateFrom, filters.dateTo);
-    return mapSeriesToTimeline(timeline, growthTrend, {
-      getBucketKey: (item) => bucketKeyForDate(item.date || item.name, selectedRange),
-      getValue: (item) => Number(item.users || item.value || 0),
+    return mapSeriesToTimeline(timeline, customerData, {
+      getBucketKey: (item) => bucketKeyForDate(item.createdAt || item.joinedAt, selectedRange),
+      getValue: () => 1,
     });
-  }, [backendChart, growthTrend, selectedRange, filters.dateFrom, filters.dateTo]);
-  const showNoDataHint = !hasAnyNonZero(customerChartData);
+  }, [customerData, selectedRange, filters.dateFrom, filters.dateTo]);
+  const fallbackFlatChartData = useMemo(
+    () => buildZeroSeriesForRange(selectedRange, filters.dateFrom, filters.dateTo),
+    [selectedRange, filters.dateFrom, filters.dateTo]
+  );
+  const customerChartRenderData = customerChartData.length > 0 ? customerChartData : fallbackFlatChartData;
   const topCustomersData = useMemo(() => {
     const ranked = [...customerData]
       .sort((a, b) => Number(b.totalSpent || 0) - Number(a.totalSpent || 0))
@@ -504,7 +478,7 @@ const CustomerReport = () => {
 
   return (
     <AdminLayout>
-      <div className={`admin-report-page ${isUpdating ? 'is-updating' : ''}`}>
+      <div className="admin-report-page">
         {/* Header */}
         <div className="report-page-header">
           <button className="btn-back" onClick={() => navigate('/admin/reports')}>
@@ -581,7 +555,7 @@ const CustomerReport = () => {
             <div className="report-chart-grid two-col">
               <ModernReportChart
                 type="line"
-                data={customerChartData}
+                data={customerChartRenderData}
                 xKey="label"
                 valueKey="value"
                 title="User Growth Curve"
@@ -607,11 +581,6 @@ const CustomerReport = () => {
                 animationDuration={800}
               />
             </div>
-            {showNoDataHint && (
-              <div className="report-chart-overlay">
-                <span className="report-chart-overlay__text">No sales recorded</span>
-              </div>
-            )}
           </div>
         </div>
 

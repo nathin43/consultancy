@@ -6,7 +6,7 @@ dotenv.config();
 
 async function checkAdmins() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect((process.env.MONGO_URI || process.env.MONGODB_URI));
     console.log('Connected to DB');
 
     const admins = await Admin.find().select('name email role');
@@ -17,7 +17,7 @@ async function checkAdmins() {
     if (mainAdmin) {
       console.log('\n✅ MAIN_ADMIN found:', mainAdmin.email, 'Role:', mainAdmin.role);
     } else {
-      console.log('\n❌ MAIN_ADMIN not found');
+        await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI);
     }
 
     await mongoose.connection.close();

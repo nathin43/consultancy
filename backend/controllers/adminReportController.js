@@ -210,7 +210,6 @@ const buildUserReportPipeline = ({ filters, accountStatus, minOrders, maxOrders,
   return pipeline;
 };
 
-const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const startOfDayLocal = (date) => {
@@ -223,21 +222,6 @@ const endOfDayLocal = (date) => {
   const d = new Date(date);
   d.setHours(23, 59, 59, 999);
   return d;
-};
-
-const startOfWeekLocal = (date) => {
-  const d = startOfDayLocal(date);
-  const day = d.getDay();
-  const diffToMonday = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diffToMonday);
-  return d;
-};
-
-const endOfWeekLocal = (date) => {
-  const start = startOfWeekLocal(date);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  return endOfDayLocal(end);
 };
 
 const getRangeWindow = (range = 'monthly', dateFrom, dateTo) => {
@@ -256,7 +240,10 @@ const getRangeWindow = (range = 'monthly', dateFrom, dateTo) => {
   }
 
   if (range === 'weekly') {
-    return { from: startOfWeekLocal(now), to: endOfWeekLocal(now) };
+    const to = endOfDayLocal(now);
+    const from = startOfDayLocal(now);
+    from.setDate(from.getDate() - 6);
+    return { from, to };
   }
 
   if (range === 'yearly') {
@@ -282,12 +269,6 @@ const toDateBucketKey = (value) => {
   return `${y}-${m}-${day}`;
 };
 
-const getWeekdayIndex = (date) => {
-  const d = new Date(date);
-  if (Number.isNaN(d.getTime())) return -1;
-  return (d.getDay() + 6) % 7;
-};
-
 const buildGroupedChartData = (events = [], {
   range = 'monthly',
   dateFrom,
@@ -298,21 +279,34 @@ const buildGroupedChartData = (events = [], {
   const { from, to } = getRangeWindow(range, dateFrom, dateTo);
 
   if (range === 'weekly') {
-    const labels = [...WEEKDAY_LABELS];
-    const data = new Array(7).fill(0);
+    const labels = [];
+    const keys = [];
+    const valuesByKey = new Map();
+
+    const cursor = startOfDayLocal(from);
+    const last = endOfDayLocal(to);
+    while (cursor <= last) {
+      const key = toDateBucketKey(cursor);
+      keys.push(key);
+      labels.push(cursor.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
+      cursor.setDate(cursor.getDate() + 1);
+    }
 
     events.forEach((event) => {
+      const key = toDateBucketKey(getDate(event));
+      if (!key) return;
       const value = Number(getValue(event) || 0);
-      const index = getWeekdayIndex(getDate(event));
-      if (index >= 0 && index < 7) {
-        data[index] += value;
+      if (valuesByKey.has(key)) {
+        valuesByKey.set(key, valuesByKey.get(key) + value);
       }
     });
+
+    const data = keys.map((key) => Number((valuesByKey.get(key) || 0).toFixed(2)));
 
     return {
       range,
       labels,
-      data: data.map((value) => Number(value.toFixed(2))),
+      data,
     };
   }
 
@@ -859,7 +853,9 @@ exports.getSalesReport = async (req, res) => {
       status: order.orderStatus,
       orderStatus: order.orderStatus,
       paymentMethod: order.paymentMethod,
+      paymentStatus: order.paymentStatus,
       createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
       items: order.items
     }));
 
@@ -977,124 +973,18 @@ exports.getOrderReport = async (req, res) => {
       paymentMethod: order.paymentMethod,
       paymentStatus: order.paymentStatus,
       createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
       items: order.items,
       shippingAddress: order.shippingAddress
     }));
 
-    const movementRange = range === 'daily' ? 'monthly' : range;
-    const movementWindow = getRangeWindow(movementRange, dateFrom, dateTo);
-    const productIdSet = new Set(products.map((product) => String(product._id)));
-
-    const buildMovementBuckets = () => {
-      if (movementRange === 'yearly') {
-        return Array.from({ length: 12 }, (_, monthIndex) => {
-          const start = new Date(movementWindow.from.getFullYear(), monthIndex, 1, 0, 0, 0, 0);
-          const end = new Date(movementWindow.from.getFullYear(), monthIndex + 1, 0, 23, 59, 59, 999);
-          return {
-            label: MONTH_LABELS[monthIndex],
-            start,
-            end,
-          };
-        });
-      }
-
-      const totalDays = Math.max(
-        1,
-        Math.ceil((movementWindow.to.getTime() - movementWindow.from.getTime()) / (24 * 60 * 60 * 1000)) + 1
-      );
-      const bucketSize = Math.max(1, Math.ceil(totalDays / 4));
-
-      return Array.from({ length: 4 }, (_, index) => {
-        const start = new Date(movementWindow.from);
-        start.setDate(movementWindow.from.getDate() + index * bucketSize);
-
-        const end = new Date(start);
-        end.setDate(start.getDate() + bucketSize - 1);
-        if (end > movementWindow.to) {
-          end.setTime(movementWindow.to.getTime());
-        }
-        end.setHours(23, 59, 59, 999);
-
-        return {
-          label: `Week ${index + 1}`,
-          start,
-          end,
-        };
-      });
-    };
-
-    const movementBuckets = buildMovementBuckets();
-
-    const findBucketIndex = (value) => {
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return -1;
-      return movementBuckets.findIndex((bucket) => date >= bucket.start && date <= bucket.end);
-    };
-
-    const ordersForMovement = await Order.find({
-      createdAt: {
-        $gte: movementWindow.from,
-        $lte: movementWindow.to,
-      },
-      orderStatus: { $nin: ['cancelled', 'Cancelled'] },
-    })
-      .select('createdAt items.product items.quantity')
-      .lean();
-
-    const openingStock = new Array(movementBuckets.length).fill(0);
-    const addedStock = new Array(movementBuckets.length).fill(0);
-    const soldStock = new Array(movementBuckets.length).fill(0);
-    const closingStock = new Array(movementBuckets.length).fill(0);
-
-    products.forEach((product) => {
-      const index = findBucketIndex(product.createdAt);
-      if (index >= 0) {
-        addedStock[index] += Number(product.stock || 0);
-      }
+    const chart = buildGroupedChartData(reportData, {
+      range,
+      dateFrom,
+      dateTo,
+      getDate: (item) => item.createdAt,
+      getValue: () => 1,
     });
-
-    ordersForMovement.forEach((order) => {
-      const index = findBucketIndex(order.createdAt);
-      if (index < 0) return;
-
-      (order.items || []).forEach((item) => {
-        const rawProductId = item?.product?._id || item?.product;
-        const productId = rawProductId ? String(rawProductId) : '';
-        if (!productIdSet.has(productId)) return;
-        soldStock[index] += Number(item?.quantity || 0);
-      });
-    });
-
-    const currentTotalStock = products.reduce((sum, product) => sum + Number(product.stock || 0), 0);
-    const totalAddedStock = addedStock.reduce((sum, value) => sum + value, 0);
-    const totalSoldStock = soldStock.reduce((sum, value) => sum + value, 0);
-
-    let rollingOpening = Math.max(0, currentTotalStock + totalSoldStock - totalAddedStock);
-    for (let i = 0; i < movementBuckets.length; i += 1) {
-      openingStock[i] = Number(rollingOpening.toFixed(2));
-      const nextClosing = Math.max(0, rollingOpening + addedStock[i] - soldStock[i]);
-      closingStock[i] = Number(nextClosing.toFixed(2));
-      rollingOpening = nextClosing;
-      addedStock[i] = Number(addedStock[i].toFixed(2));
-      soldStock[i] = Number(soldStock[i].toFixed(2));
-    }
-
-    const chart = {
-      range: movementRange,
-      labels: movementBuckets.map((bucket) => bucket.label),
-      openingStock,
-      addedStock,
-      soldStock,
-      closingStock,
-      data: closingStock,
-    };
-
-    summary.stockMovement = {
-      openingStock: openingStock[0] || 0,
-      addedStock: totalAddedStock,
-      soldStock: totalSoldStock,
-      closingStock: closingStock[closingStock.length - 1] || currentTotalStock,
-    };
 
     // Auto-save report to database
     try {
@@ -1193,8 +1083,10 @@ exports.getPaymentReport = async (req, res) => {
       totalAmount: order.totalAmount,
       paymentMethod: order.paymentMethod,
       paymentStatus: order.paymentStatus,
+      orderStatus: order.orderStatus,
       paymentDetails: order.paymentDetails,
-      createdAt: order.createdAt
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt
     }));
 
     const chart = buildGroupedChartData(reportData, {
@@ -1266,12 +1158,12 @@ exports.getStockReport = async (req, res) => {
       if (maxStock !== undefined) filters.stock.$lte = parseInt(maxStock);
     }
     if (dateFrom || dateTo) {
-      filters.createdAt = {};
-      if (dateFrom) filters.createdAt.$gte = new Date(dateFrom);
+      filters.updatedAt = {};
+      if (dateFrom) filters.updatedAt.$gte = new Date(dateFrom);
       if (dateTo) {
         const endDate = new Date(dateTo);
         endDate.setHours(23, 59, 59, 999);
-        filters.createdAt.$lte = endDate;
+        filters.updatedAt.$lte = endDate;
       }
     }
 
@@ -1338,7 +1230,7 @@ exports.getStockReport = async (req, res) => {
       range,
       dateFrom,
       dateTo,
-      getDate: (item) => item.createdAt,
+      getDate: (item) => item.updatedAt || item.createdAt,
       getValue: () => 1,
     });
 
@@ -1515,11 +1407,13 @@ exports.getCustomerReport = async (req, res) => {
       phone: user.phone,
       address: user.address,
       status: user.actualStatus,
+      accountStatus: user.actualStatus,
       totalOrders: user.totalOrders,
       totalSpent: user.totalSpent,
       lastOrderDate: user.lastOrderDate,
       lastLoginAt: user.lastLoginAt,
-      createdAt: user.createdAt
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
     }));
 
     const chart = buildGroupedChartData(reportData, {

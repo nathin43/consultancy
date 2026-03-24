@@ -29,8 +29,8 @@ const endOfDay = (date) => {
 
 const startOfWeek = (date) => {
   const d = startOfDay(date);
-  const day = d.getDay();
-  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const weekday = d.getDay();
+  const diffToMonday = weekday === 0 ? -6 : 1 - weekday;
   d.setDate(d.getDate() + diffToMonday);
   return d;
 };

@@ -7,9 +7,24 @@ import useToast from '../../hooks/useToast';
 import api from '../../services/api';
 import './ReportStyles.css';
 import { addShopHeader, addPageNumbers, loadUnicodeFonts, pdfRupee } from '../../utils/pdfUtils';
-import { formatDateLabel } from '../../utils/reportRange';
+import {
+  REPORT_RANGE_OPTIONS,
+  getRangeTitle,
+  getRangeDates,
+  shiftRangeAnchor,
+  getRangePeriodLabel,
+  formatDateInput,
+  formatDateLabel,
+} from '../../utils/reportRange';
+import {
+  getTimelinePoints,
+  mapSeriesToTimeline,
+  bucketKeyForDate,
+  buildZeroSeriesForRange,
+} from '../../utils/reportChartTimeline';
 import ModernReportChart from '../../components/admin/ModernReportChart';
 import useReportAutoRefresh from '../../hooks/useReportAutoRefresh';
+import { filterByDateRange } from '../../utils/reportDataSync';
 
 const StockReport = () => {
   const navigate = useNavigate();
@@ -19,18 +34,20 @@ const StockReport = () => {
   const [exporting, setExporting] = useState(false);
   const [allStockData, setAllStockData] = useState([]);
   const [stockData, setStockData] = useState([]);
+  const [selectedRange, setSelectedRange] = useState('monthly');
+  const [periodAnchor, setPeriodAnchor] = useState(new Date());
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [backendChart, setBackendChart] = useState(null);
+  const [comparison, setComparison] = useState(null);
   const [dateRangeLabel, setDateRangeLabel] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const initialRange = getRangeDates('monthly');
   const [filters, setFilters] = useState({
     search: '',
     category: '',
     brand: '',
     stockStatus: '',
-    dateFrom: '',
-    dateTo: '',
+    dateFrom: formatDateInput(initialRange.from),
+    dateTo: formatDateInput(initialRange.to),
   });
   const [analytics, setAnalytics] = useState({
     totalProducts: 0,
@@ -40,48 +57,36 @@ const StockReport = () => {
   });
   const chartRef = useRef(null);
   const stockMovementData = useMemo(() => {
-    if (backendChart?.labels?.length) {
-      return backendChart.labels.map((label, index) => ({
-        name: label,
-        openingStock: Number(backendChart.openingStock?.[index] || 0),
-        addedStock: Number(backendChart.addedStock?.[index] || 0),
-        soldStock: Number(backendChart.soldStock?.[index] || 0),
-        closingStock: Number(backendChart.closingStock?.[index] || 0),
-      }));
+    const timeline = getTimelinePoints(selectedRange, filters.dateFrom, filters.dateTo);
+    const closingSeries = mapSeriesToTimeline(timeline, stockData, {
+      getBucketKey: (item) => bucketKeyForDate(item.updatedAt || item.createdAt, selectedRange),
+      getValue: (item) => Number(item.stock || 0),
+    });
+
+    if (closingSeries.length > 0) {
+      return closingSeries.map((point, index) => {
+        const previous = index === 0 ? 0 : Number(closingSeries[index - 1].value || 0);
+        const current = Number(point.value || 0);
+        const delta = current - previous;
+
+        return {
+          name: point.label,
+          openingStock: previous,
+          addedStock: delta > 0 ? delta : 0,
+          soldStock: delta < 0 ? Math.abs(delta) : 0,
+          closingStock: current,
+        };
+      });
     }
 
-    return [
-      { name: 'Week 1', openingStock: 0, addedStock: 0, soldStock: 0, closingStock: 0 },
-      { name: 'Week 2', openingStock: 0, addedStock: 0, soldStock: 0, closingStock: 0 },
-      { name: 'Week 3', openingStock: 0, addedStock: 0, soldStock: 0, closingStock: 0 },
-      { name: 'Week 4', openingStock: 0, addedStock: 0, soldStock: 0, closingStock: 0 },
-    ];
-  }, [backendChart]);
-
-  const stockMovementSummary = useMemo(() => {
-    return stockMovementData.reduce(
-      (acc, item, index) => {
-        if (index === 0) {
-          acc.openingStock = Number(item.openingStock || 0);
-        }
-        acc.addedStock += Number(item.addedStock || 0);
-        acc.soldStock += Number(item.soldStock || 0);
-        acc.closingStock = Number(item.closingStock || 0);
-        return acc;
-      },
-      {
-        openingStock: 0,
-        addedStock: 0,
-        soldStock: 0,
-        closingStock: 0,
-      }
-    );
-  }, [stockMovementData]);
-
-  const showNoMovementHint = useMemo(
-    () => stockMovementSummary.addedStock === 0 && stockMovementSummary.soldStock === 0,
-    [stockMovementSummary]
-  );
+    return buildZeroSeriesForRange(selectedRange, filters.dateFrom, filters.dateTo, 7).map((point) => ({
+      name: point.label,
+      openingStock: 0,
+      addedStock: 0,
+      soldStock: 0,
+      closingStock: 0,
+    }));
+  }, [stockData, selectedRange, filters.dateFrom, filters.dateTo]);
 
   const stockStatusChartData = useMemo(
     () => [
@@ -93,21 +98,47 @@ const StockReport = () => {
   );
 
   const productWiseStockData = useMemo(
-    () =>
-      [...stockData]
+    () => {
+      const ranked = [...stockData]
         .sort((a, b) => Number(b.stock || 0) - Number(a.stock || 0))
         .slice(0, 8)
         .map((item) => ({
           name: item.name || 'Product',
           stock: Number(item.stock || 0),
-        })),
+        }));
+
+      if (ranked.length > 0) return ranked;
+
+      return Array.from({ length: 5 }, (_, index) => ({
+        name: `P${index + 1}`,
+        stock: 0,
+      }));
+    },
     [stockData]
   );
+
+  const lowStockAlertData = useMemo(() => {
+    const alerts = [...stockData]
+      .filter((item) => Number(item.stock || 0) <= 10)
+      .sort((a, b) => Number(a.stock || 0) - Number(b.stock || 0))
+      .slice(0, 8)
+      .map((item) => ({
+        name: item.name || 'Product',
+        stock: Number(item.stock || 0),
+      }));
+
+    if (alerts.length > 0) return alerts;
+
+    return Array.from({ length: 5 }, (_, index) => ({
+      name: `L${index + 1}`,
+      stock: 0,
+    }));
+  }, [stockData]);
 
   useEffect(() => {
     let mounted = true;
     run(async () => {
-      await fetchStockData(null);
+      await fetchStockData(selectedRange, filters);
     }).finally(() => {
       if (mounted) setIsInitialLoading(false);
     });
@@ -116,7 +147,7 @@ const StockReport = () => {
     };
   }, []);
 
-  const fetchStockData = async (filtersOverride = null) => {
+  const fetchStockData = async (rangeOverride = selectedRange, filtersOverride = null) => {
     const activeFilters = filtersOverride || filters;
     // loading managed by useAdminLoader's run()
     try {
@@ -133,6 +164,7 @@ const StockReport = () => {
       if (activeFilters.stockStatus) params.append('stockStatus', activeFilters.stockStatus);
       if (activeFilters.dateFrom) params.append('dateFrom', activeFilters.dateFrom);
       if (activeFilters.dateTo) params.append('dateTo', activeFilters.dateTo);
+      params.append('range', rangeOverride);
 
       const queryString = params.toString();
       const endpoint = queryString ? `/admin/reports/stock?${queryString}` : '/admin/reports/stock';
@@ -147,10 +179,9 @@ const StockReport = () => {
       if (response.data.success) {
         const reportData = response.data.data || [];
         const summary = response.data.summary || {};
-        const chart = response.data.chart || null;
 
         setAllStockData(reportData);
-        setBackendChart(chart);
+        setComparison(summary.comparison || null);
         if (summary.dateRange?.from && summary.dateRange?.to) {
           setDateRangeLabel(`${formatDateLabel(summary.dateRange.from)} - ${formatDateLabel(summary.dateRange.to)}`);
         } else {
@@ -177,7 +208,6 @@ const StockReport = () => {
       } else if (err.response?.status === 500) {
         error('Server error. Please try again later.');
       } else {
-        setBackendChart(null);
         error(err.response?.data?.message || 'Failed to fetch stock data');
       }
     } finally {
@@ -186,7 +216,16 @@ const StockReport = () => {
   };
 
   useEffect(() => {
-    const filtered = allStockData;
+    const hasDateMeta = allStockData.some((item) => item?.createdAt || item?.updatedAt);
+    const filtered = hasDateMeta
+      ? filterByDateRange(
+          allStockData,
+          selectedRange,
+          ['updatedAt', 'createdAt'],
+          filters.dateFrom,
+          filters.dateTo
+        )
+      : allStockData;
 
     setStockData(filtered);
 
@@ -218,12 +257,41 @@ const StockReport = () => {
       outOfStock: totals.outOfStock,
     });
 
-  }, [allStockData]);
+  }, [allStockData, selectedRange, filters.dateFrom, filters.dateTo]);
 
   useReportAutoRefresh(
-    () => fetchStockData(filters),
+    () => fetchStockData(selectedRange, filters),
     { intervalMs: 10000 }
   );
+
+  const handleRangeChange = async (range) => {
+    if (range === selectedRange) return;
+    const nextAnchor = new Date();
+    const next = getRangeDates(range, nextAnchor);
+    const nextFilters = {
+      ...filters,
+      dateFrom: formatDateInput(next.from),
+      dateTo: formatDateInput(next.to),
+    };
+    setPeriodAnchor(nextAnchor);
+    setSelectedRange(range);
+    setFilters(nextFilters);
+    await fetchStockData(range, nextFilters);
+  };
+
+  const handleShiftPeriod = async (direction) => {
+    const nextAnchor = shiftRangeAnchor(selectedRange, periodAnchor, direction);
+    const next = getRangeDates(selectedRange, nextAnchor);
+    const nextFilters = {
+      ...filters,
+      dateFrom: formatDateInput(next.from),
+      dateTo: formatDateInput(next.to),
+    };
+
+    setPeriodAnchor(nextAnchor);
+    setFilters(nextFilters);
+    await fetchStockData(selectedRange, nextFilters);
+  };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -231,22 +299,18 @@ const StockReport = () => {
   };
 
   const handleApplyFilters = async () => {
-    setIsUpdating(true);
-    try {
-      await fetchStockData(filters);
-    } finally {
-      setIsUpdating(false);
-    }
+    await fetchStockData(selectedRange, filters);
   };
 
   const handleClearFilters = () => {
+    const currentRange = getRangeDates(selectedRange);
     setFilters({
       search: '',
       category: '',
       brand: '',
       stockStatus: '',
-      dateFrom: '',
-      dateTo: '',
+      dateFrom: formatDateInput(currentRange.from),
+      dateTo: formatDateInput(currentRange.to),
     });
   };
 
@@ -262,19 +326,22 @@ const StockReport = () => {
 
       // Load Unicode font for ₹ symbol
       const PDF_FONT = await loadUnicodeFonts(doc);
+      const exportTitle = `${getRangeTitle(selectedRange)} Stock Report`;
+      const exportRangeLabel =
+        dateRangeLabel || `${formatDateLabel(filters.dateFrom)} - ${formatDateLabel(filters.dateTo)}`;
 
       let yPos = addShopHeader(doc, 'STOCK REPORT', [16, 185, 129]);
 
       doc.setFont(PDF_FONT, 'bold');
       doc.setFontSize(9);
       doc.setTextColor(50, 50, 50);
-      doc.text('Stock Report', 14, yPos);
+      doc.text(exportTitle, 14, yPos);
       yPos += 5;
-      if (dateRangeLabel) {
+      if (exportRangeLabel) {
         doc.setFont(PDF_FONT, 'normal');
         doc.setFontSize(8);
         doc.setTextColor(120, 120, 120);
-        doc.text(`Range: ${dateRangeLabel}`, 14, yPos);
+        doc.text(`Range: ${exportRangeLabel}`, 14, yPos);
         yPos += 5;
       }
 
@@ -293,6 +360,9 @@ const StockReport = () => {
         if (filters.stockStatus) doc.text(`  • Status: ${filters.stockStatus}`, 14, yPos), yPos += 5;
         yPos += 5;
       }
+
+      doc.text(`Selected Range: ${getRangeTitle(selectedRange)}`, 14, yPos);
+      yPos += 6;
       
       // Analytics Summary
       doc.setFont(PDF_FONT, 'bold');
@@ -366,6 +436,10 @@ const StockReport = () => {
         product.stock > 10 ? 'In Stock' : product.stock > 0 ? 'Low Stock' : 'Out of Stock',
         product.createdAt ? new Date(product.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'
       ]);
+
+      if (tableData.length === 0) {
+        tableData.push(['No records for selected filter', '—', pdfRupee(0), '0', pdfRupee(0), '—', '—']);
+      }
       
       autoTable(doc, {
         startY: yPos,
@@ -379,7 +453,7 @@ const StockReport = () => {
       
       // Save PDF
       addPageNumbers(doc, [16, 185, 129]);
-      const fileName = 'stock-report.pdf';
+      const fileName = `stock-report-${selectedRange}.pdf`;
       doc.save(fileName);
       
       success('Stock report exported as PDF successfully');
@@ -409,7 +483,7 @@ const StockReport = () => {
 
   return (
     <AdminLayout>
-      <div className={`admin-report-page ${isUpdating ? 'is-updating' : ''}`}>
+      <div className="admin-report-page">
         {/* Header */}
         <div className="report-page-header">
           <button className="btn-back" onClick={() => navigate('/admin/reports')}>
@@ -426,6 +500,11 @@ const StockReport = () => {
               <div>
                 <h1>Stock Report</h1>
                 <p className="subtitle">Monitor inventory levels and stock movements</p>
+                {comparison && (
+                  <span className={`report-comparison-chip ${comparison.isUp ? 'up' : 'down'}`}>
+                    {comparison.isUp ? '↑' : '↓'} {Math.abs(comparison.growthPercent || 0).toFixed(1)}% vs previous period
+                  </span>
+                )}
               </div>
             </div>
             <div className="header-actions">
@@ -443,90 +522,137 @@ const StockReport = () => {
               </button>
             </div>
           </div>
+          <div className="report-controls">
+            <div className="report-period-nav">
+              <button type="button" className="period-nav-btn" onClick={() => handleShiftPeriod(-1)}>
+                ← Prev
+              </button>
+              <span className="period-nav-current">{getRangePeriodLabel(selectedRange, periodAnchor)}</span>
+              <button type="button" className="period-nav-btn" onClick={() => handleShiftPeriod(1)}>
+                Next →
+              </button>
+            </div>
+            <div className="report-range-group">
+              {REPORT_RANGE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={`report-range-btn ${selectedRange === opt.value ? 'is-active' : ''}`}
+                  onClick={() => handleRangeChange(opt.value)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="report-chart-panel" ref={chartRef}>
           <div className="report-chart-header">
             <h3 className="report-chart-title">Stock Dashboard</h3>
+            {comparison && (
+              <span className={`report-comparison-chip ${comparison.isUp ? 'up' : 'down'}`}>
+                {comparison.isUp ? '↑' : '↓'} {Math.abs(comparison.growthPercent || 0).toFixed(1)}%
+              </span>
+            )}
           </div>
 
-          {showNoMovementHint ? (
-            <div className="report-chart-empty-state">
-              <span className="report-chart-empty-state__icon" aria-hidden="true">
-                📦
-              </span>
-              <h4 className="report-chart-empty-state__title">No Stock Movement</h4>
-              <p className="report-chart-empty-state__subtitle">No stock movement is available for this selection.</p>
-            </div>
-          ) : (
-            <div className="report-chart-grid two-col">
-              <ModernReportChart
-                type="pie"
-                data={stockStatusChartData}
-                xKey="name"
-                valueKey="value"
-                title="Stock Status"
-                description="Current product distribution by stock level"
-                colors={['#16a34a', '#f59e0b', '#ef4444']}
-                seriesLabel="Products"
-                animationDuration={900}
-              />
-
-              {productWiseStockData.length > 0 && (
-                <ModernReportChart
-                  type="bar"
-                  data={productWiseStockData}
-                  xKey="name"
-                  valueKey="stock"
-                  title="Product-wise Stock"
-                  description="Top products by available stock"
-                  colors={['#2563eb', '#60a5fa']}
-                  seriesLabel="Stock"
-                  valueSuffix=" units"
-                  showPeakLow={false}
-                  animationDuration={900}
-                />
-              )}
-            </div>
-          )}
+          <div className="report-chart-grid two-col">
+            <ModernReportChart
+              type="bar"
+              data={stockMovementData}
+              xKey="name"
+              valueKey="closingStock"
+              title="Stock Movement"
+              description="Opening, added, sold and closing stock over selected period"
+              colors={['#16a34a', '#4ade80', '#f59e0b', '#2563eb']}
+              seriesLabel="Stock"
+              valueSuffix=" units"
+              animationDuration={900}
+              showPeakLow={false}
+              barSeries={[
+                { key: 'openingStock', label: 'Opening', color: '#16a34a' },
+                { key: 'addedStock', label: 'Added', color: '#4ade80' },
+                { key: 'soldStock', label: 'Sold', color: '#f59e0b' },
+                { key: 'closingStock', label: 'Closing', color: '#2563eb' },
+              ]}
+            />
+            <ModernReportChart
+              type="pie"
+              data={stockStatusChartData}
+              xKey="name"
+              valueKey="value"
+              title="Stock Status"
+              description="Current product distribution by stock level"
+              colors={['#16a34a', '#f59e0b', '#ef4444']}
+              seriesLabel="Products"
+              animationDuration={900}
+            />
+            <ModernReportChart
+              type="bar"
+              data={productWiseStockData}
+              xKey="name"
+              valueKey="stock"
+              title="Product-wise Stock"
+              description="Top products by available stock"
+              colors={['#16a34a', '#22c55e']}
+              seriesLabel="Stock"
+              valueSuffix=" units"
+              showPeakLow={false}
+              animationDuration={900}
+            />
+            <ModernReportChart
+              type="bar"
+              data={lowStockAlertData}
+              xKey="name"
+              valueKey="stock"
+              title="Low Stock Alerts"
+              description="Products at or below alert threshold"
+              colors={['#ef4444', '#f87171']}
+              seriesLabel="Stock"
+              valueSuffix=" units"
+              showPeakLow={false}
+              animationDuration={900}
+            />
+          </div>
         </div>
 
         {/* Analytics Summary */}
         <div className="analytics-summary">
           <div className="analytics-card">
             <div className="analytics-icon" style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)' }}>
-              📥
+              📦
             </div>
             <div className="analytics-content">
-              <p className="analytics-label">Opening Stock</p>
-              <h3 className="analytics-value">{stockMovementSummary.openingStock}</h3>
+              <p className="analytics-label">Total Products</p>
+              <h3 className="analytics-value">{analytics.totalProducts}</h3>
             </div>
           </div>
           <div className="analytics-card">
             <div className="analytics-icon" style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}>
-              ➕
+              ✅
             </div>
             <div className="analytics-content">
-              <p className="analytics-label">Added Stock</p>
-              <h3 className="analytics-value">{stockMovementSummary.addedStock}</h3>
+              <p className="analytics-label">In Stock</p>
+              <h3 className="analytics-value">{analytics.inStock}</h3>
             </div>
           </div>
           <div className="analytics-card">
             <div className="analytics-icon" style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)' }}>
-              📤
+              ⚠️
             </div>
             <div className="analytics-content">
-              <p className="analytics-label">Sold Stock</p>
-              <h3 className="analytics-value">{stockMovementSummary.soldStock}</h3>
+              <p className="analytics-label">Low Stock</p>
+              <h3 className="analytics-value">{analytics.lowStock}</h3>
             </div>
           </div>
           <div className="analytics-card">
             <div className="analytics-icon" style={{ background: 'linear-gradient(135deg, #EF4444, #DC2626)' }}>
-              📦
+              ⛔
             </div>
             <div className="analytics-content">
-              <p className="analytics-label">Closing Stock</p>
-              <h3 className="analytics-value">{stockMovementSummary.closingStock}</h3>
+              <p className="analytics-label">Out of Stock</p>
+              <h3 className="analytics-value">{analytics.outOfStock}</h3>
             </div>
           </div>
         </div>

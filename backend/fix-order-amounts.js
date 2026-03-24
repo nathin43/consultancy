@@ -12,7 +12,7 @@ const Order = require('./models/Order');
  */
 async function fixOrderTotalAmounts() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect((process.env.MONGO_URI || process.env.MONGODB_URI));
     console.log('✅ Connected to MongoDB\n');
 
     // STEP 1: Normalize order statuses to lowercase

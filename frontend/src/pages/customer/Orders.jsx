@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { useToast } from '../../hooks/useToast';
+import { useLoading } from '../../context/LoadingContext';
 import API from '../../services/api';
 import './Orders.css';
 
@@ -12,16 +13,16 @@ import './Orders.css';
  */
 const Orders = () => {
   const cancellationReasonOptions = [
-    'Ordered by mistake',
-    'Found cheaper elsewhere',
-    'Delivery too long',
-    'Wrong item',
-    'Change address',
-    'Other reason'
+    { label: 'Ordered by mistake', icon: '🛒' },
+    { label: 'Found better price', icon: '🏷️' },
+    { label: 'Delivery too slow', icon: '🐢' },
+    { label: 'Changed mind', icon: '🔄' },
+    { label: 'Other', icon: '✍️' }
   ];
 
   const location = useLocation();
   const [orders, setOrders] = useState([]);
+  const [refundMap, setRefundMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cancelModal, setCancelModal] = useState({
@@ -36,14 +37,16 @@ const Orders = () => {
     paidAmount: 0,
     cancelReason: '',
     customCancelReason: '',
-    sendSupportMessage: false,
-    supportMessage: '',
+    refundMethod: 'original_payment_method',
+    bankDetails: '',
+    userMessage: '',
     validationError: ''
   });
   const [cancelling, setCancelling] = useState(false);
   const [showOrderSuccess, setShowOrderSuccess] = useState(!!location.state?.orderSuccess);
   const [dismissingSuccess, setDismissingSuccess] = useState(false);
   const { success, error: showError } = useToast();
+  const { showLoader, hideLoader } = useLoading();
 
   const dismissSuccessOverlay = () => {
     setDismissingSuccess(true);
@@ -64,18 +67,63 @@ const Orders = () => {
     fetchOrders();
   }, []);
 
+  useEffect(() => {
+    const intervalId = setInterval(async () => {
+      try {
+        const { data } = await API.get('/refunds/my/list');
+        const fetchedRefunds = data?.refunds || [];
+        const nextRefundMap = {};
+
+        fetchedRefunds.forEach((refund) => {
+          if (refund.order && refund.order._id) {
+            nextRefundMap[refund.order._id] = refund;
+          } else if (typeof refund.order === 'string') {
+            nextRefundMap[refund.order] = refund;
+          }
+        });
+
+        setRefundMap(nextRefundMap);
+      } catch (_) {
+        // Ignore polling failures silently.
+      }
+    }, 20000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
   const fetchOrders = async () => {
+    showLoader('Loading orders...');
+    setLoading(true);
     try {
       setError('');
-      const { data } = await API.get('/orders/myorders');
-      setOrders(data.orders || []);
+      const [orderRes, refundRes] = await Promise.all([
+        API.get('/orders/myorders'),
+        API.get('/refunds/my/list').catch(() => ({ data: { refunds: [] } }))
+      ]);
+
+      const fetchedOrders = orderRes.data?.orders || [];
+      const fetchedRefunds = refundRes.data?.refunds || [];
+      const nextRefundMap = {};
+
+      fetchedRefunds.forEach((refund) => {
+        if (refund.order && refund.order._id) {
+          nextRefundMap[refund.order._id] = refund;
+        } else if (typeof refund.order === 'string') {
+          nextRefundMap[refund.order] = refund;
+        }
+      });
+
+      setOrders(fetchedOrders);
+      setRefundMap(nextRefundMap);
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message || 'Error fetching orders';
       console.error('Error fetching orders:', error);
       setError(errorMsg);
       setOrders([]);
+      setRefundMap({});
     } finally {
       setLoading(false);
+      hideLoader();
     }
   };
 
@@ -126,8 +174,9 @@ const Orders = () => {
       paidAmount: order.totalAmount || order.totalPrice || 0,
       cancelReason: '',
       customCancelReason: '',
-      sendSupportMessage: false,
-      supportMessage: '',
+      refundMethod: 'original_payment_method',
+      bankDetails: '',
+      userMessage: '',
       validationError: ''
     });
   };
@@ -145,24 +194,39 @@ const Orders = () => {
       paidAmount: 0,
       cancelReason: '',
       customCancelReason: '',
-      sendSupportMessage: false,
-      supportMessage: '',
+      refundMethod: 'original_payment_method',
+      bankDetails: '',
+      userMessage: '',
       validationError: ''
     });
   };
 
-  const isCodOrder = (cancelModal.paymentMethod || '').toLowerCase() === 'cash on delivery';
-  const isRazorpayOrder = (cancelModal.paymentMethod || '').toLowerCase() === 'razorpay';
+  const paymentMethodLower = (cancelModal.paymentMethod || '').toLowerCase();
+  const isCodOrder = paymentMethodLower === 'cash on delivery' || paymentMethodLower === 'cod';
+  const isOnlinePaymentOrder = !isCodOrder;
+
+  const getExpectedRefundDate = (createdAt, refundStatus) => {
+    const normalizedStatus = String(refundStatus || '').toLowerCase();
+    if (normalizedStatus === 'completed') return 'Refund Completed';
+
+    const baseDate = createdAt ? new Date(createdAt) : new Date();
+    const expectedDate = new Date(baseDate.getTime() + 5 * 24 * 60 * 60 * 1000);
+    return expectedDate.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
 
   const isCancelReasonValid = Boolean(
     cancelModal.cancelReason &&
-    (cancelModal.cancelReason !== 'Other reason' || cancelModal.customCancelReason.trim())
+    (cancelModal.cancelReason !== 'Other' || cancelModal.customCancelReason.trim())
   );
 
   const handleCancelOrder = async () => {
     const selectedReason = cancelModal.cancelReason?.trim();
     const customReason = cancelModal.customCancelReason?.trim();
-    const hasValidReason = selectedReason && (selectedReason !== 'Other reason' || customReason);
+    const hasValidReason = selectedReason && (selectedReason !== 'Other' || customReason);
 
     if (!hasValidReason) {
       setCancelModal((prev) => ({
@@ -174,12 +238,24 @@ const Orders = () => {
 
     setCancelling(true);
     try {
-      await API.put(`/orders/${cancelModal.orderId}/cancel`, {
+      const payload = {
         cancelReason: cancelModal.cancelReason,
         customCancelReason: cancelModal.customCancelReason,
-        supportMessage: cancelModal.sendSupportMessage ? cancelModal.supportMessage?.trim() : ''
-      });
-      success('Order cancelled successfully. Refund will be processed within 5-7 business days.');
+        userMessage: isOnlinePaymentOrder ? cancelModal.userMessage?.trim() : '',
+        refundMethod: isOnlinePaymentOrder ? cancelModal.refundMethod : null,
+        bankDetails: isOnlinePaymentOrder && cancelModal.refundMethod === 'bank'
+          ? cancelModal.bankDetails?.trim()
+          : ''
+      };
+
+      const { data } = await API.put(`/orders/${cancelModal.orderId}/cancel`, payload);
+
+      if (isCodOrder) {
+        success('Order cancelled');
+      } else {
+        success('Order cancelled');
+        success('Refund request sent to admin');
+      }
       closeCancelModal();
       fetchOrders();
     } catch (error) {
@@ -188,24 +264,6 @@ const Orders = () => {
       setCancelling(false);
     }
   };
-
-  // Don't show the loading spinner if we came from a successful order —
-  // the success overlay should appear immediately without the spinner flash.
-  if (loading && !showOrderSuccess) {
-    return (
-      <>
-        <Navbar />
-        <div className="orders-page">
-          <div className="container">
-            <div className="loading-spinner">
-              <div className="spinner"></div>
-              <p>Loading your orders...</p>
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
 
   return (
     <>
@@ -272,12 +330,7 @@ const Orders = () => {
             </div>
           )}
 
-          {loading ? (
-            <div className="loading-spinner">
-              <div className="spinner"></div>
-              <p>Loading your orders...</p>
-            </div>
-          ) : orders.length === 0 ? (
+          {loading ? null : orders.length === 0 ? (
             <div className="no-orders">
               <div className="no-orders-icon">📦</div>
               <h2>No orders yet</h2>
@@ -290,6 +343,10 @@ const Orders = () => {
                 const isCancellableStatus = ['pending', 'confirmed'].includes((order.orderStatus || '').toLowerCase());
                 const canCancel = isCancellableStatus && isWithinCancellationWindow(order.createdAt);
                 const hoursRemaining = getHoursRemaining(order.createdAt);
+                const refundInfo = refundMap[order._id];
+                const orderPaymentMethodLower = String(order.paymentMethod || '').toLowerCase();
+                const orderIsCod = orderPaymentMethodLower === 'cash on delivery' || orderPaymentMethodLower === 'cod';
+                const isRefundCompleted = ['completed'].includes(String(refundInfo?.refundStatus || '').toLowerCase());
 
                 return (
                   <div key={order._id} className="order-card">
@@ -350,6 +407,11 @@ const Orders = () => {
                           <span className={`badge badge-${order.paymentStatus === 'paid' ? 'success' : 'warning'}`}>
                             {order.paymentStatus.toUpperCase()}
                           </span>
+                          {order.paymentStatus === 'paid' && (
+                            <span className="badge badge-primary" style={{ marginLeft: '8px' }}>
+                              Already Paid
+                            </span>
+                          )}
                         </p>
                       </div>
 
@@ -389,6 +451,9 @@ const Orders = () => {
                         {order.orderStatus === 'cancelled' && (
                           <div className="order-cancelled-info">
                             <span className="cancelled-badge">Order Cancelled</span>
+                            <button className="btn-cancel-order btn-cancel-order-disabled" disabled>
+                              Already Cancelled
+                            </button>
                             {order.cancelReason && (
                               <p className="order-cancelled-reason">Reason: {order.cancelReason}</p>
                             )}
@@ -402,6 +467,41 @@ const Orders = () => {
                                   minute: '2-digit'
                                 })}
                               </p>
+                            )}
+                            {!orderIsCod && refundInfo && (
+                              <div className="order-refund-details">
+                                <h4 className="order-refund-title">Refund Communication</h4>
+                                <div className="order-refund-status">
+                                  <span className="order-refund-label">Status:</span>
+                                  <span
+                                    className={`badge badge-${
+                                      ['approved', 'completed'].includes(String(refundInfo.refundStatus || '').toLowerCase())
+                                        ? 'success'
+                                        : String(refundInfo.refundStatus || '').toLowerCase() === 'rejected'
+                                          ? 'danger'
+                                          : 'warning'
+                                    }`}
+                                  >
+                                    {String(refundInfo.refundStatus || 'pending').toUpperCase()}
+                                  </span>
+                                </div>
+                                <p className="order-refund-row"><strong>Refund Amount:</strong> ₹{Number(refundInfo.amount || order.totalAmount || 0).toLocaleString('en-IN')}</p>
+                                <p className="order-refund-row">
+                                  <strong>{isRefundCompleted ? 'Completed On:' : 'Expected Date:'}</strong> {getExpectedRefundDate(refundInfo.createdAt, refundInfo.refundStatus)}
+                                </p>
+                                <p className="order-refund-row"><strong>Your Message:</strong> {refundInfo.userMessage || 'No message provided.'}</p>
+                                {refundInfo.adminReply ? (
+                                  <div className="order-refund-reply">
+                                    <span className="order-refund-reply-label">Admin Message</span>
+                                    <p>{refundInfo.adminReply}</p>
+                                  </div>
+                                ) : (
+                                  <p className="order-refund-row"><strong>Admin Reply:</strong> Waiting for response...</p>
+                                )}
+                                {isRefundCompleted && (
+                                  <p className="order-refund-completed">Refund Completed</p>
+                                )}
+                              </div>
                             )}
                           </div>
                         )}
@@ -436,7 +536,7 @@ const Orders = () => {
             </div>
 
             {/* Body */}
-            <div className="modal-body">
+            <div className="modal-body modal-body-compact-grid">
               <div className="modal-section modal-order-summary-card">
                 <h4 className="modal-section-title">Product</h4>
                 {cancelModal.orderItems.length > 0 && (
@@ -460,7 +560,7 @@ const Orders = () => {
                         ₹{Number(cancelModal.totalAmount || 0).toLocaleString('en-IN')}
                       </p>
                       <p className="modal-order-payment-line">
-                        Payment: {isCodOrder ? 'COD' : isRazorpayOrder ? 'Razorpay' : (cancelModal.paymentMethod || 'Online')}
+                        Payment: {isCodOrder ? 'COD' : 'ONLINE'}
                         <span className="modal-order-qty-divider">•</span>
                         {(cancelModal.paymentStatus || (isCodOrder ? 'pending' : 'paid')).toUpperCase()}
                       </p>
@@ -472,41 +572,40 @@ const Orders = () => {
                 )}
               </div>
 
-              <div className="modal-divider" />
-
               <div className="modal-section cancel-reason-section">
                 <h4 className="modal-section-title">Cancel Reason</h4>
                 <div className="cancel-reason-radio-group">
                   {cancellationReasonOptions.map((reason) => (
                     <label
-                      key={reason}
-                      className={`cancel-reason-radio-label${cancelModal.cancelReason === reason ? ' cancel-reason-radio-label--selected' : ''}`}
+                      key={reason.label}
+                      className={`cancel-reason-radio-label${cancelModal.cancelReason === reason.label ? ' cancel-reason-radio-label--selected' : ''}`}
                     >
                       <input
                         type="radio"
                         name="cancelReason"
-                        value={reason}
-                        checked={cancelModal.cancelReason === reason}
+                        value={reason.label}
+                        checked={cancelModal.cancelReason === reason.label}
                         onChange={(e) => {
                           const nextReason = e.target.value;
                           setCancelModal((prev) => ({
                             ...prev,
                             cancelReason: nextReason,
-                            customCancelReason: nextReason === 'Other reason' ? prev.customCancelReason : '',
+                            customCancelReason: nextReason === 'Other' ? prev.customCancelReason : '',
                             validationError: ''
                           }));
                         }}
                       />
-                      <span>{reason}</span>
+                      <span className="cancel-reason-radio-icon" aria-hidden="true">{reason.icon}</span>
+                      <span>{reason.label}</span>
                     </label>
                   ))}
                 </div>
 
-                {cancelModal.cancelReason === 'Other reason' && (
+                {cancelModal.cancelReason === 'Other' && (
                   <textarea
                     className="cancel-reason-textarea"
                     placeholder="Please tell us more"
-                    rows={3}
+                    rows={2}
                     value={cancelModal.customCancelReason}
                     onChange={(e) => setCancelModal((prev) => ({
                       ...prev,
@@ -523,61 +622,56 @@ const Orders = () => {
                 )}
               </div>
 
-              <div className="modal-divider" />
+              {!isCodOrder && (
+                <div className="modal-section modal-section-right-stack">
+                  <div className="refund-info-box refund-info-row-compact">
+                    <h4 className="refund-info-title">Refund Info</h4>
+                    <p className="refund-processing-note">₹{Number(cancelModal.paidAmount || 0).toLocaleString('en-IN')} | 3-5 business days</p>
+                    <div className="refund-method-options refund-method-options-compact">
+                      <label className={`refund-method-option${cancelModal.refundMethod === 'original_payment_method' ? ' refund-method-option--selected' : ''}`}>
+                        <input
+                          type="radio"
+                          name="refundMethod"
+                          value="original_payment_method"
+                          checked={cancelModal.refundMethod === 'original_payment_method'}
+                          onChange={(e) => setCancelModal((prev) => ({ ...prev, refundMethod: e.target.value }))}
+                        />
+                        <span>Original Payment Method</span>
+                      </label>
+                      <label className={`refund-method-option${cancelModal.refundMethod === 'bank' ? ' refund-method-option--selected' : ''}`}>
+                        <input
+                          type="radio"
+                          name="refundMethod"
+                          value="bank"
+                          checked={cancelModal.refundMethod === 'bank'}
+                          onChange={(e) => setCancelModal((prev) => ({ ...prev, refundMethod: e.target.value }))}
+                        />
+                        <span>Bank</span>
+                      </label>
+                    </div>
+                    {cancelModal.refundMethod === 'bank' && (
+                      <input
+                        type="text"
+                        className="refund-input"
+                        placeholder="Bank account details"
+                        value={cancelModal.bankDetails}
+                        onChange={(e) => setCancelModal((prev) => ({ ...prev, bankDetails: e.target.value }))}
+                      />
+                    )}
+                  </div>
 
-              {isCodOrder ? (
-                <div className="modal-section cod-info-box">
-                  <p className="cod-info-text">
-                    This order was placed using Cash on Delivery. No refund will be issued.
-                  </p>
-                </div>
-              ) : (
-                <div className="modal-section cancellation-terms refund-info-box">
-                  <h4 className="refund-info-title">Refund Details</h4>
-                  <ul className="cancellation-terms-list">
-                    <li>
-                      <span className="terms-check-icon">•</span>
-                      Refund will be sent to original payment method
-                    </li>
-                    <li>
-                      <span className="terms-check-icon">•</span>
-                      Refund processing time: 5-7 business days
-                    </li>
-                    <li>
-                      <span className="terms-check-icon">•</span>
-                      Refund status will be updated in your orders page
-                    </li>
-                  </ul>
+                  <div className="optional-message-box message-admin-box">
+                    <h4 className="modal-section-title">Message to Admin (Optional)</h4>
+                    <textarea
+                      className="cancel-reason-textarea optional-message-textarea"
+                      placeholder="Explain your issue or refund request..."
+                      rows={2}
+                      value={cancelModal.userMessage}
+                      onChange={(e) => setCancelModal((prev) => ({ ...prev, userMessage: e.target.value }))}
+                    />
+                  </div>
                 </div>
               )}
-
-              <div className="modal-divider" />
-
-              <div className="modal-section optional-message-box">
-                <h4 className="modal-section-title">Optional Message to Support / Admin</h4>
-                <label className="optional-message-toggle">
-                  <input
-                    type="checkbox"
-                    checked={cancelModal.sendSupportMessage}
-                    onChange={(e) => setCancelModal((prev) => ({
-                      ...prev,
-                      sendSupportMessage: e.target.checked,
-                      supportMessage: e.target.checked ? prev.supportMessage : ''
-                    }))}
-                  />
-                  <span>Send a message regarding this cancellation</span>
-                </label>
-
-                {cancelModal.sendSupportMessage && (
-                  <textarea
-                    className="cancel-reason-textarea optional-message-textarea"
-                    placeholder="Write a message for the refund or cancellation request (optional)"
-                    rows={2}
-                    value={cancelModal.supportMessage}
-                    onChange={(e) => setCancelModal((prev) => ({ ...prev, supportMessage: e.target.value }))}
-                  />
-                )}
-              </div>
             </div>
 
             {/* Footer */}
@@ -600,7 +694,7 @@ const Orders = () => {
                     Cancelling...
                   </>
                 ) : (
-                  'Cancel Order'
+                  'Confirm Cancellation'
                 )}
               </button>
             </div>

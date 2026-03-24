@@ -21,13 +21,11 @@ const loadRazorpayScript = () =>
     document.body.appendChild(script);
   });
 
-const CONFIRMATION_REDIRECT_SECONDS = 12;
-
 const CheckoutModal = ({ isOpen, onClose, selectedItems, subtotal = 0, gst = 0, shipping = 0, total = 0 }) => {
   const navigate = useNavigate();
-  const { fetchCart } = useContext(CartContext);
+  const { clearCart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
-  const { success, error: showError } = useToast();
+  const { error: showError } = useToast();
 
   const getInitialFormData = () => {
     const street = user?.address?.street || '';
@@ -90,7 +88,7 @@ const CheckoutModal = ({ isOpen, onClose, selectedItems, subtotal = 0, gst = 0, 
   });
   const [paymentRetryContext, setPaymentRetryContext] = useState(null);
   const [confirmationData, setConfirmationData] = useState(null);
-  const [redirectCountdown, setRedirectCountdown] = useState(CONFIRMATION_REDIRECT_SECONDS);
+  const [ordersNavigationLoading, setOrdersNavigationLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [pincodeLookupLoading, setPincodeLookupLoading] = useState(false);
   const [pincodeHint, setPincodeHint] = useState('Enter 6-digit pincode to auto-detect city and state.');
@@ -120,7 +118,7 @@ const CheckoutModal = ({ isOpen, onClose, selectedItems, subtotal = 0, gst = 0, 
         setPaymentResult({ status: 'idle', message: '', details: null });
         setPaymentRetryContext(null);
         setConfirmationData(null);
-        setRedirectCountdown(CONFIRMATION_REDIRECT_SECONDS);
+        setOrdersNavigationLoading(false);
         setFieldErrors({});
         setPincodeLookupLoading(false);
         setPincodeHint('Enter 6-digit pincode to auto-detect city and state.');
@@ -152,25 +150,6 @@ const CheckoutModal = ({ isOpen, onClose, selectedItems, subtotal = 0, gst = 0, 
       document.body.style.overflow = '';
     };
   }, [isOpen, user]);
-
-  useEffect(() => {
-    if (checkoutStage !== 'FORM' || currentStep !== 4 || !confirmationData) return;
-
-    setRedirectCountdown(CONFIRMATION_REDIRECT_SECONDS);
-
-    const intervalId = setInterval(() => {
-      setRedirectCountdown((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-
-    const timeoutId = setTimeout(() => {
-      closeConfirmationAndNavigate('/orders');
-    }, CONFIRMATION_REDIRECT_SECONDS * 1000);
-
-    return () => {
-      clearInterval(intervalId);
-      clearTimeout(timeoutId);
-    };
-  }, [checkoutStage, currentStep, confirmationData]);
 
   const fmt = (n) => Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 
@@ -322,7 +301,7 @@ const CheckoutModal = ({ isOpen, onClose, selectedItems, subtotal = 0, gst = 0, 
 
   const handleBackdropClick = (e) => {
     if (!isOpen) return;
-    if (paymentProcessing || checkoutStage === 'PROCESSING') return;
+    if (paymentProcessing || checkoutStage === 'PROCESSING' || ordersNavigationLoading) return;
     if (e.target.classList.contains('checkout-modal-overlay')) {
       onClose();
     }
@@ -408,13 +387,25 @@ const CheckoutModal = ({ isOpen, onClose, selectedItems, subtotal = 0, gst = 0, 
     setCurrentStep(4);
   };
 
-  const closeConfirmationAndNavigate = async (path = '/products') => {
+  const closeConfirmationAndNavigate = (path = '/products') => {
+    setOrdersNavigationLoading(false);
+
+    // Clear cart silently in background after successful order.
+    if (path === '/orders') {
+      clearCart().catch(() => {});
+    }
+
     window.dispatchEvent(new CustomEvent('order-placed'));
-    await fetchCart();
     setConfirmationData(null);
     setCheckoutStage('FORM');
     onClose();
     navigate(path, { replace: true });
+  };
+
+  const handleViewMyOrders = () => {
+    if (ordersNavigationLoading) return;
+    setOrdersNavigationLoading(true);
+    closeConfirmationAndNavigate('/orders');
   };
 
   const failPaymentFlow = (message, shouldToast = true) => {
@@ -516,7 +507,6 @@ const CheckoutModal = ({ isOpen, onClose, selectedItems, subtotal = 0, gst = 0, 
               });
               setLoading(false);
               setPaymentProcessing(false);
-              success('Payment successful! Order placed. 🎉');
               moveToConfirmationStep(confirmationPayload);
             } else {
               failPaymentFlow('Payment verification failed. Please contact support.');
@@ -642,7 +632,6 @@ const CheckoutModal = ({ isOpen, onClose, selectedItems, subtotal = 0, gst = 0, 
         const { data } = await API.post('/orders', orderData);
 
         if (data.success) {
-          success('Order placed successfully! 🎉');
           const confirmationPayload = {
             order: data.order,
             items: data.order.items,
@@ -684,7 +673,7 @@ const CheckoutModal = ({ isOpen, onClose, selectedItems, subtotal = 0, gst = 0, 
           className="checkout-modal-close"
           onClick={currentStep === 4 && confirmationData ? () => closeConfirmationAndNavigate('/products') : onClose}
           aria-label="Close"
-          disabled={paymentProcessing || checkoutStage === 'PROCESSING'}
+          disabled={paymentProcessing || checkoutStage === 'PROCESSING' || ordersNavigationLoading}
         >
           ✕
         </button>
@@ -905,20 +894,25 @@ const CheckoutModal = ({ isOpen, onClose, selectedItems, subtotal = 0, gst = 0, 
                   </div>
                 </div>
 
-                <p className="checkout-redirect-countdown">Redirecting in {redirectCountdown} seconds...</p>
+                <div className="checkout-success-banner" role="status" aria-live="polite">
+                  <span className="checkout-success-banner__icon">✓</span>
+                  <span>Order placed successfully!</span>
+                </div>
 
                 <div className="checkout-success-actions">
                   <button
                     type="button"
                     className="checkout-btn checkout-btn-primary"
-                    onClick={() => closeConfirmationAndNavigate('/orders')}
+                    onClick={handleViewMyOrders}
+                    disabled={ordersNavigationLoading}
                   >
-                    View My Orders
+                    {ordersNavigationLoading ? 'Opening Orders...' : 'View My Orders'}
                   </button>
                   <button
                     type="button"
                     className="checkout-btn checkout-btn-secondary"
                     onClick={() => closeConfirmationAndNavigate('/products')}
+                    disabled={ordersNavigationLoading}
                   >
                     Continue Shopping
                   </button>
@@ -967,6 +961,7 @@ const CheckoutModal = ({ isOpen, onClose, selectedItems, subtotal = 0, gst = 0, 
             )}
           </form>
         </div>
+
       </div>
     </div>
   );

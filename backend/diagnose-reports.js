@@ -26,7 +26,7 @@ async function diagnose() {
   try {
     // Step 1: Check MongoDB Connection
     console.log('\n📡 Step 1: Checking MongoDB Connection...');
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect((process.env.MONGO_URI || process.env.MONGODB_URI));
     console.log('   ✅ MongoDB Connected Successfully');
     console.log(`   📍 Database: ${mongoose.connection.name}`);
 

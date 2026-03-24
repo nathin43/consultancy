@@ -29,12 +29,12 @@ function testMongoDB() {
   require('dotenv').config();
 
   return new Promise((resolve) => {
-    const uri = process.env.MONGODB_URI;
+    const uri = (process.env.MONGO_URI || process.env.MONGODB_URI);
     
     if (!uri) {
       resolve({
         success: false,
-        message: '❌ MONGODB_URI not found in .env file'
+        message: '❌ MONGO_URI (or legacy MONGODB_URI) not found in .env file'
       });
       return;
     }

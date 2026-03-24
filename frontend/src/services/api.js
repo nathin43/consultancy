@@ -56,7 +56,11 @@ API.interceptors.request.use((config) => {
     config.url.includes('/admin') ||
     config.url.includes('/admin-management') ||
     config.url.startsWith('/returns') ||
-    config.url.startsWith('/refunds')
+    (
+      config.url.startsWith('/refunds') &&
+      !config.url.includes('/refunds/my/list') &&
+      !(config.url === '/refunds' && config.method.toLowerCase() === 'post')
+    )
   ) {
     token = adminToken;
   }
@@ -70,6 +74,8 @@ API.interceptors.request.use((config) => {
     config.url.includes('/orders/myorders')      ||  // customer: view own orders
     (config.url === '/orders' && config.method.toLowerCase() === 'post') || // customer: place order
     (config.url.includes('/orders/') && config.url.includes('/cancel')) || // customer: cancel own order
+    config.url.includes('/refunds/my/list')      ||  // customer: view own refund updates
+    (config.url === '/refunds' && config.method.toLowerCase() === 'post') || // customer: create refund request
     config.url.includes('/contact/my-messages')  ||
     config.url.includes('/user/notifications')   ||  // customer: notification bell
     config.url.includes('/users/profile')        ||  // customer: profile page
@@ -99,6 +105,8 @@ API.interceptors.request.use((config) => {
     config.url.includes('/orders/myorders')    ||
     (config.url === '/orders' && config.method.toLowerCase() === 'post') ||
     (config.url.includes('/orders/') && config.url.includes('/cancel')) ||
+    config.url.includes('/refunds/my/list')    ||
+    (config.url === '/refunds' && config.method.toLowerCase() === 'post') ||
     config.url.includes('/user/notifications') ||
     config.url.includes('/users/profile')      ||
     config.url.includes('/auth/logout');

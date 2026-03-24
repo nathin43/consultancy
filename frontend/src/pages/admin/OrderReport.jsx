@@ -20,7 +20,7 @@ import {
   getTimelinePoints,
   mapSeriesToTimeline,
   bucketKeyForDate,
-  hasAnyNonZero,
+  buildZeroSeriesForRange,
 } from '../../utils/reportChartTimeline';
 import ModernReportChart from '../../components/admin/ModernReportChart';
 import useReportAutoRefresh from '../../hooks/useReportAutoRefresh';
@@ -37,9 +37,7 @@ const OrderReport = () => {
   const [selectedRange, setSelectedRange] = useState('monthly');
   const [periodAnchor, setPeriodAnchor] = useState(new Date());
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [comparison, setComparison] = useState(null);
-  const [backendChart, setBackendChart] = useState(null);
   const [statusDistribution, setStatusDistribution] = useState([]);
   const [dateRangeLabel, setDateRangeLabel] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -60,25 +58,19 @@ const OrderReport = () => {
   });
 
   const isFetchingRef = useRef(false);
-  const cacheRef = useRef(null);
-  const cacheTimeRef = useRef(0);
   const chartRef = useRef(null);
-  const CACHE_DURATION = 30000;
   const orderTimelineData = useMemo(() => {
-    if (backendChart?.labels?.length && backendChart?.data?.length) {
-      return backendChart.labels.map((label, index) => ({
-        label,
-        value: Number(backendChart.data[index] || 0),
-      }));
-    }
-
     const timeline = getTimelinePoints(selectedRange, filters.dateFrom, filters.dateTo);
     return mapSeriesToTimeline(timeline, orderData, {
       getBucketKey: (item) => bucketKeyForDate(item.createdAt, selectedRange),
       getValue: () => 1,
     });
-  }, [backendChart, orderData, selectedRange, filters.dateFrom, filters.dateTo]);
-  const showNoDataHint = !hasAnyNonZero(orderTimelineData);
+  }, [orderData, selectedRange, filters.dateFrom, filters.dateTo]);
+  const fallbackFlatTimelineData = useMemo(
+    () => buildZeroSeriesForRange(selectedRange, filters.dateFrom, filters.dateTo),
+    [selectedRange, filters.dateFrom, filters.dateTo]
+  );
+  const orderTimelineRenderData = orderTimelineData.length > 0 ? orderTimelineData : fallbackFlatTimelineData;
 
   const fetchOrderData = useCallback(async (forceRefresh = false, rangeOverride = selectedRange, filtersOverride = null) => {
     const activeFilters = filtersOverride || filters;
@@ -87,12 +79,6 @@ const OrderReport = () => {
       return;
     }
 
-    if (!forceRefresh && cacheRef.current && (Date.now() - cacheTimeRef.current < CACHE_DURATION)) {
-      console.log('📋 Using cached order data');
-      setAllOrderData(cacheRef.current.data);
-      return; // run() handles loading=false
-    }
-    
     isFetchingRef.current = true;
     // loading managed by useAdminLoader's run()
     setErrorMessage('');
@@ -121,10 +107,7 @@ const OrderReport = () => {
       if (response.data?.success) {
         const reportData = response.data.data || [];
         const summary = response.data.summary || {};
-        const chart = response.data.chart || null;
-
         setAllOrderData(reportData);
-        setBackendChart(chart);
         setComparison(summary.comparison || null);
         if (summary.dateRange?.from && summary.dateRange?.to) {
           setDateRangeLabel(`${formatDateLabel(summary.dateRange.from)} - ${formatDateLabel(summary.dateRange.to)}`);
@@ -132,9 +115,6 @@ const OrderReport = () => {
           setDateRangeLabel('');
         }
 
-        cacheRef.current = { data: reportData };
-        cacheTimeRef.current = Date.now();
-        
         console.log(`✅ Order report loaded: ${reportData.length} records`);
       } else {
         throw new Error('Invalid response format');
@@ -151,7 +131,6 @@ const OrderReport = () => {
       
       const errorMsg = err.response?.data?.message || 'Failed to load order report. Please try again.';
       setErrorMessage(errorMsg);
-      setBackendChart(null);
       setComparison(null);
       setStatusDistribution([]);
       error(errorMsg);
@@ -228,13 +207,7 @@ const OrderReport = () => {
     setPeriodAnchor(nextAnchor);
     setSelectedRange(range);
     setFilters(nextFilters);
-    cacheRef.current = null;
-    setIsUpdating(true);
-    try {
-      await fetchOrderData(true, range, nextFilters);
-    } finally {
-      setIsUpdating(false);
-    }
+    await fetchOrderData(true, range, nextFilters);
   };
 
   const handleShiftPeriod = async (direction) => {
@@ -248,13 +221,7 @@ const OrderReport = () => {
 
     setPeriodAnchor(nextAnchor);
     setFilters(nextFilters);
-    cacheRef.current = null;
-    setIsUpdating(true);
-    try {
-      await fetchOrderData(true, selectedRange, nextFilters);
-    } finally {
-      setIsUpdating(false);
-    }
+    await fetchOrderData(true, selectedRange, nextFilters);
   };
 
   const handleFilterChange = (e) => {
@@ -263,13 +230,7 @@ const OrderReport = () => {
   };
 
   const handleApplyFilters = async () => {
-    cacheRef.current = null;
-    setIsUpdating(true);
-    try {
-      await fetchOrderData(true, selectedRange);
-    } finally {
-      setIsUpdating(false);
-    }
+    await fetchOrderData(true, selectedRange);
   };
 
   const handleClearFilters = () => {
@@ -295,19 +256,22 @@ const OrderReport = () => {
 
       // Load Unicode font for ₹ symbol
       const PDF_FONT = await loadUnicodeFonts(doc);
+      const exportTitle = `${getRangeTitle(selectedRange)} Order Report`;
+      const exportRangeLabel =
+        dateRangeLabel || `${formatDateLabel(filters.dateFrom)} - ${formatDateLabel(filters.dateTo)}`;
 
       let yPos = addShopHeader(doc, 'ORDER REPORT', [236, 72, 153]);
 
       doc.setFont(PDF_FONT, 'bold');
       doc.setFontSize(9);
       doc.setTextColor(50, 50, 50);
-      doc.text(`${getRangeTitle(selectedRange)} Order Report`, 14, yPos);
+      doc.text(exportTitle, 14, yPos);
       yPos += 5;
-      if (dateRangeLabel) {
+      if (exportRangeLabel) {
         doc.setFont(PDF_FONT, 'normal');
         doc.setFontSize(8);
         doc.setTextColor(120, 120, 120);
-        doc.text(`Range: ${dateRangeLabel}`, 14, yPos);
+        doc.text(`Range: ${exportRangeLabel}`, 14, yPos);
         yPos += 5;
       }
 
@@ -397,9 +361,13 @@ const OrderReport = () => {
         formatDate(order.createdAt),
         pdfRupee(order.totalAmount),
         order.paymentMethod || 'N/A',
-        order.status || 'Pending',
+        order.orderStatus || order.status || 'Pending',
         (order.items?.length || 0).toString()
       ]);
+
+      if (tableData.length === 0) {
+        tableData.push(['—', 'No records for selected filter', '—', pdfRupee(0), '—', '—', '0']);
+      }
       
       autoTable(doc, {
         startY: yPos,
@@ -443,7 +411,7 @@ const OrderReport = () => {
 
   return (
     <AdminLayout>
-      <div className={`admin-report-page ${isUpdating ? 'is-updating' : ''}`}>
+      <div className="admin-report-page">
         {/* Header */}
         <div className="report-page-header">
           <button className="btn-back" onClick={() => navigate('/admin/reports')}>
@@ -518,23 +486,18 @@ const OrderReport = () => {
           </div>
           <div className="report-chart-box" ref={chartRef}>
             <ModernReportChart
-              type="line"
-              data={orderTimelineData}
+              type="bar"
+              data={orderTimelineRenderData}
               xKey="label"
               valueKey="value"
               title="Order Trend"
               description="Clear daily/weekly/monthly order movement"
-              colors={['#ec4899', '#3b82f6']}
+              colors={['#ec4899', '#db2777']}
               seriesLabel="Orders"
               showArea
               showPeakLow
               animationDuration={800}
             />
-            {showNoDataHint && (
-              <div className="report-chart-overlay">
-                <span className="report-chart-overlay__text">No sales recorded</span>
-              </div>
-            )}
           </div>
         </div>
 

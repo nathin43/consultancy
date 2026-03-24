@@ -48,7 +48,7 @@ const diagnose = async () => {
   const jwt = require('jsonwebtoken');
   
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect((process.env.MONGO_URI || process.env.MONGODB_URI));
     
     const admin = await User.findOne({ role: { $in: ['admin', 'ADMIN', 'MAIN_ADMIN', 'SUB_ADMIN'] } });
     

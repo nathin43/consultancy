@@ -5,6 +5,7 @@ const {
   getAllRefunds,
   getRefundById,
   updateRefundStatus,
+  replyToRefund,
   getMyRefunds,
   getRefundStats,
 } = require('../controllers/refundController');
@@ -19,6 +20,7 @@ router.get('/stats', adminProtect, getRefundStats);
 router.get('/', adminProtect, getAllRefunds);
 router.get('/:id', adminProtect, getRefundById);
 router.put('/:id', adminProtect, updateRefundStatus);
+router.post('/:id/reply', adminProtect, replyToRefund);
 
 // Customer routes
 router.post('/', protect, createRefund);

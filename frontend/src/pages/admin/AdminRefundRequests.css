@@ -235,6 +235,36 @@
   border-left: 3px solid #f59e0b;
 }
 
+.rr-row-refund-highlight td {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.06), rgba(245, 158, 11, 0));
+}
+
+.rr-payment-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rr-paid-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+  letter-spacing: 0.4px;
+}
+
+.rr-payment-text {
+  font-size: 12px;
+  color: #166534;
+  font-weight: 600;
+}
+
 /* Order ID */
 .rr-order-id {
   font-family: 'Courier New', monospace;
@@ -262,6 +292,18 @@
 .rr-customer-email {
   font-size: 12px;
   color: #94a3b8;
+}
+
+.rr-product-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.rr-product-more {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
 }
 
 /* Category pill */

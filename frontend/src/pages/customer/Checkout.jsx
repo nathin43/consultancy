@@ -67,7 +67,7 @@ const INDIA_STATES = [
 const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cart, fetchCart } = useContext(CartContext);
+  const { cart, clearCart } = useContext(CartContext);
   const { user } = useContext(AuthContext);
   const { success, error: showError } = useToast();
 
@@ -99,14 +99,16 @@ const Checkout = () => {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [confirmationData, setConfirmationData] = useState(null);
+  const [orderPlaced, setOrderPlaced] = useState(false);
 
   const { categoriesMap } = useCategories();
 
   useEffect(() => {
+    if (orderPlaced) return;
     if (!cart || cart.items.length === 0 || selectedItemIds.length === 0) {
       navigate('/cart');
     }
-  }, [cart, selectedItemIds.length, navigate]);
+  }, [cart, selectedItemIds.length, navigate, orderPlaced]);
 
   const selectedItems = useMemo(() => {
     const allItems = cart?.items || [];
@@ -270,7 +272,8 @@ const Checkout = () => {
 
             if (verifyRes.data.success) {
               success('Payment successful! Order placed.');
-              await fetchCart();
+              setOrderPlaced(true);
+              clearCart().catch(() => {});
               window.dispatchEvent(new CustomEvent('order-placed'));
               setConfirmationData({
                 order: verifyRes.data.order,
@@ -366,7 +369,8 @@ const Checkout = () => {
 
       if (data.success) {
         success('Order placed successfully!');
-        await fetchCart();
+        setOrderPlaced(true);
+        clearCart().catch(() => {});
         window.dispatchEvent(new CustomEvent('order-placed'));
         setConfirmationData({
           order: data.order,

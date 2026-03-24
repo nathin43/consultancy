@@ -479,7 +479,14 @@ exports.updateOrderStatus = async (req, res) => {
  */
 exports.cancelOrder = async (req, res) => {
   try {
-    const { cancelReason, customCancelReason, supportMessage } = req.body || {};
+    const {
+      cancelReason,
+      customCancelReason,
+      supportMessage,
+      userMessage,
+      refundMethod,
+      bankDetails,
+    } = req.body || {};
 
     const order = await Order.findById(req.params.id);
 
@@ -499,16 +506,20 @@ exports.cancelOrder = async (req, res) => {
     }
 
     // Only allow cancellation for pending/confirmed orders
-    if (['processing', 'shipped', 'delivered'].includes(order.orderStatus)) {
+    if (['processing', 'shipped', 'delivered', 'cancelled', 'refunded'].includes(order.orderStatus)) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot cancel order at this stage'
+        message: `Cannot cancel order at this stage (Status: ${order.orderStatus})`
       });
     }
 
     const selectedReason = String(cancelReason || '').trim();
     const customReason = String(customCancelReason || '').trim();
-    const optionalSupportMessage = String(supportMessage || '').trim();
+    const optionalSupportMessage = String(userMessage || supportMessage || '').trim();
+    const normalizedRefundMethod = refundMethod === 'bank' ? 'bank' : 'original_payment_method';
+    const normalizedBankDetails = normalizedRefundMethod === 'bank'
+      ? String(bankDetails || '').trim()
+      : '';
     const isOtherReason = ['other', 'other reason'].includes(selectedReason.toLowerCase());
     const finalCancelReason = isOtherReason ? customReason : selectedReason;
 
@@ -534,8 +545,11 @@ exports.cancelOrder = async (req, res) => {
     order.cancelledBy = cancelledBy;
     await order.save();
 
-    // Create a refund request automatically for paid orders.
-    if (order.paymentStatus === 'paid') {
+    let createdRefund = null;
+
+    // Create a refund request automatically for online payment orders.
+    const isCodOrder = ['cash on delivery', 'cod'].includes(String(order.paymentMethod || '').toLowerCase());
+    if (!isCodOrder) {
       try {
         const existingRefund = await Refund.findOne({
           order: order._id,
@@ -543,22 +557,40 @@ exports.cancelOrder = async (req, res) => {
         });
 
         if (!existingRefund) {
-          await Refund.create({
+          createdRefund = await Refund.create({
             order: order._id,
             user: order.user,
             amount: order.totalAmount,
-            reason: `Order cancelled by ${cancelledBy}. Reason: ${finalCancelReason}`,
-            refundStatus: 'processing',
+            reason: finalCancelReason,
+            cancelReason: finalCancelReason,
+            userMessage: optionalSupportMessage || null,
+            paymentMethod: order.paymentMethod || null,
+            refundMethod: normalizedRefundMethod,
+            bankDetails: normalizedBankDetails || null,
+            source: 'order_cancellation',
+            refundStatus: 'pending',
             adminNotes: optionalSupportMessage
-              ? `Auto-initiated refund after order cancellation. User message: ${optionalSupportMessage}`
-              : 'Auto-initiated refund after order cancellation'
+              ? `User message: ${optionalSupportMessage}`
+              : null,
           });
 
-          // Persist refund state on payment record for transparency in user/admin flows.
-          await Payment.findOneAndUpdate(
-            { order: order._id },
-            { paymentStatus: 'refunded' }
-          );
+          try {
+            const mainAdmin = await Admin.findOne({ role: 'MAIN_ADMIN' }).select('_id').lean();
+            const customer = await User.findById(order.user).select('name').lean();
+            if (mainAdmin) {
+              await NotificationService.notifyRefundRequest(mainAdmin._id, {
+                refundId: createdRefund._id,
+                orderId: order._id,
+                orderNumber: order.orderNumber,
+                amount: order.totalAmount,
+                customerId: order.user,
+                customerName: customer?.name || 'Customer',
+              });
+            }
+          } catch (notifErr) {
+            console.error('Refund request notification error (non-fatal):', notifErr.message);
+          }
+
         }
       } catch (refundError) {
         console.error('Auto refund creation error (non-fatal):', refundError.message);
@@ -607,8 +639,11 @@ exports.cancelOrder = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Order cancelled successfully',
-      order
+      message: isCodOrder
+        ? 'Order cancelled successfully'
+        : 'Order cancelled. Refund initiated successfully',
+      order,
+      refund: createdRefund
     });
   } catch (error) {
     res.status(500).json({

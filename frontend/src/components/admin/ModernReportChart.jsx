@@ -19,8 +19,15 @@ import ReportChartTooltip from './ReportChartTooltip';
 
 const baseGridProps = {
   strokeDasharray: '3 3',
-  stroke: 'rgba(148, 163, 184, 0.2)',
+  stroke: '#eeeeee',
   vertical: false,
+};
+
+const chartTheme = {
+  axisTick: { fontSize: 12, fill: '#64748b' },
+  axisTickMuted: { fontSize: 11, fill: '#64748b' },
+  axisPadding: { left: 8, right: 8 },
+  barRadius: 8,
 };
 
 const toValue = (value) => Number(value || 0);
@@ -47,6 +54,25 @@ const getPeakAndLow = (data, valueKey) => {
 
 const formatPieLabel = ({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`;
 
+const getXAxisConfig = (length) => {
+  if (length <= 12) {
+    return { interval: 0, minTickGap: 0 };
+  }
+  return { interval: 'preserveStartEnd', minTickGap: 16 };
+};
+
+const hasMeaningfulValue = (data, valueKey, barSeries) => {
+  if (!Array.isArray(data) || data.length === 0) return false;
+
+  if (Array.isArray(barSeries) && barSeries.length > 0) {
+    return data.some((point) =>
+      barSeries.some((series) => Number(point?.[series.key] || 0) > 0)
+    );
+  }
+
+  return data.some((point) => Number(point?.[valueKey] || 0) > 0);
+};
+
 const ModernReportChart = ({
   type = 'line',
   data = [],
@@ -64,33 +90,60 @@ const ModernReportChart = ({
   showPeakLow = true,
   pulseLow = false,
   barSeries = null,
+  noActivityText = 'No activity in this period',
+  showNoActivityOverlay = true,
   className = '',
 }) => {
   const gradientId = useId().replace(/:/g, '');
   const { peak, low } = useMemo(() => getPeakAndLow(data, valueKey), [data, valueKey]);
+  const xAxisConfig = useMemo(() => getXAxisConfig(data.length), [data.length]);
+  const hasDataActivity = useMemo(
+    () => hasMeaningfulValue(data, valueKey, barSeries),
+    [data, valueKey, barSeries]
+  );
+  const legendItems = useMemo(() => {
+    if (type === 'pie') {
+      return [];
+    }
+
+    if (Array.isArray(barSeries) && barSeries.length > 0) {
+      return barSeries.map((series, index) => ({
+        label: series.label || series.key,
+        color: series.color || colors[index % colors.length],
+      }));
+    }
+
+    return [
+      {
+        label: seriesLabel || 'Value',
+        color: colors[0],
+      },
+    ];
+  }, [type, barSeries, colors, seriesLabel]);
 
   const renderLineChart = () => (
     <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={data} margin={{ top: 20, right: 22, left: 10, bottom: 25 }}>
+      <AreaChart data={data} margin={{ top: 16, right: 18, left: 6, bottom: 24 }}>
         <defs>
           <linearGradient id={`${gradientId}-line`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgba(37,99,235,0.2)" stopOpacity={1} />
-            <stop offset="100%" stopColor="rgba(37,99,235,0.2)" stopOpacity={0} />
+            <stop offset="0%" stopColor={colors[0]} stopOpacity={0.28} />
+            <stop offset="100%" stopColor={colors[0]} stopOpacity={0.02} />
           </linearGradient>
         </defs>
         <CartesianGrid {...baseGridProps} />
         <XAxis
           dataKey={xKey}
-          tick={{ fontSize: 12, fill: '#475569' }}
+          tick={chartTheme.axisTick}
           tickMargin={10}
-          interval={0}
+          interval={xAxisConfig.interval}
           axisLine={false}
           tickLine={false}
-          minTickGap={0}
+          minTickGap={xAxisConfig.minTickGap}
+          padding={chartTheme.axisPadding}
         />
         <YAxis
           width={64}
-          tick={{ fontSize: 12, fill: '#475569' }}
+          tick={chartTheme.axisTick}
           tickMargin={10}
           axisLine={false}
           tickLine={false}
@@ -102,10 +155,10 @@ const ModernReportChart = ({
         <Line
           type="monotone"
           dataKey={valueKey}
-          stroke="#2563eb"
-          strokeWidth={4}
-          dot={{ r: 4, fill: '#2563eb', stroke: '#ffffff', strokeWidth: 1.5 }}
-          activeDot={{ r: 6, fill: '#2563eb', stroke: '#ffffff', strokeWidth: 2 }}
+          stroke={colors[0]}
+          strokeWidth={3.5}
+          dot={{ r: 4, fill: colors[0], stroke: '#ffffff', strokeWidth: 1.5 }}
+          activeDot={{ r: 7, fill: colors[0], stroke: '#ffffff', strokeWidth: 2.5 }}
           animationDuration={animationDuration}
           animationEasing="easeInOutQuart"
         />
@@ -141,7 +194,12 @@ const ModernReportChart = ({
 
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout={isHorizontal ? 'vertical' : 'horizontal'} margin={{ top: 20, right: 22, left: isHorizontal ? 12 : 10, bottom: 25 }}>
+        <BarChart
+          data={data}
+          layout={isHorizontal ? 'vertical' : 'horizontal'}
+          margin={{ top: 16, right: 18, left: isHorizontal ? 10 : 6, bottom: 24 }}
+          barCategoryGap={data.length > 12 ? '18%' : '26%'}
+        >
           <defs>
             <linearGradient id={`${gradientId}-bar`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={colors[0]} stopOpacity={0.95} />
@@ -153,29 +211,30 @@ const ModernReportChart = ({
             <>
               <XAxis
                 type="number"
-                tick={{ fontSize: 12, fill: '#64748b' }}
+                tick={chartTheme.axisTick}
                 tickMargin={10}
                 axisLine={false}
                 tickLine={false}
                 domain={[0, (max) => (max > 0 ? max : 1)]}
                 allowDecimals={false}
               />
-              <YAxis type="category" dataKey={xKey} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} width={90} />
+              <YAxis type="category" dataKey={xKey} tick={chartTheme.axisTickMuted} axisLine={false} tickLine={false} width={90} />
             </>
           ) : (
             <>
               <XAxis
                 dataKey={xKey}
-                tick={{ fontSize: 12, fill: '#64748b' }}
+                tick={chartTheme.axisTick}
                 tickMargin={10}
-                interval={0}
+                interval={xAxisConfig.interval}
                 axisLine={false}
                 tickLine={false}
-                minTickGap={0}
+                minTickGap={xAxisConfig.minTickGap}
+                padding={chartTheme.axisPadding}
               />
               <YAxis
                 width={64}
-                tick={{ fontSize: 12, fill: '#64748b' }}
+                tick={chartTheme.axisTick}
                 tickMargin={10}
                 axisLine={false}
                 tickLine={false}
@@ -192,19 +251,21 @@ const ModernReportChart = ({
                 dataKey={series.key}
                 name={series.label || series.key}
                 fill={series.color || colors[index % colors.length]}
-                radius={isHorizontal ? [0, 6, 6, 0] : [6, 6, 0, 0]}
+                radius={isHorizontal ? [0, chartTheme.barRadius, chartTheme.barRadius, 0] : [chartTheme.barRadius, chartTheme.barRadius, 0, 0]}
                 animationDuration={animationDuration}
                 animationEasing="ease-out"
+                className="modern-chart-bar"
               />
             ))
           ) : (
             <Bar
               dataKey={valueKey}
               fill={`url(#${gradientId}-bar)`}
-              radius={isHorizontal ? [0, 8, 8, 0] : [8, 8, 0, 0]}
+              radius={isHorizontal ? [0, chartTheme.barRadius, chartTheme.barRadius, 0] : [chartTheme.barRadius, chartTheme.barRadius, 0, 0]}
               animationDuration={animationDuration}
               animationEasing="ease-out"
               activeBar={{ stroke: colors[0], strokeWidth: 2 }}
+              className="modern-chart-bar"
             >
               {pulseLow &&
                 data.map((entry, index) => {
@@ -265,7 +326,24 @@ const ModernReportChart = ({
         {type === 'bar' && renderBarChart()}
         {type === 'pie' && renderPieChart()}
         {type === 'line' && renderLineChart()}
+
+        {showNoActivityOverlay && (type === 'line' || type === 'bar') && !hasDataActivity && (
+          <div className="report-chart-overlay">
+            <span className="report-chart-overlay__text">{noActivityText}</span>
+          </div>
+        )}
       </div>
+
+      {legendItems.length > 0 && (
+        <div className="report-legend-row" aria-hidden="true">
+          {legendItems.map((item, index) => (
+            <span key={`${item.label}-${index}`} className="report-legend-item">
+              <span className="report-legend-dot" style={{ background: item.color }} />
+              {item.label}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
